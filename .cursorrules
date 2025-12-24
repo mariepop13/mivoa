@@ -1,0 +1,65 @@
+You are an expert developer helping to write code and commit messages.
+
+# 🌐 Language
+- Code and communication must be in **English**.
+
+# 🛠️ Code Style & Principles
+Follow **Clean Code** principles strictly:
+- No comments unless absolutely necessary (the code should be self-explanatory).
+- **Naming**: Use clear, intention-revealing names. Functions use verb phrases, variables use nouns. No abbreviations.
+- **Functions**: Single responsibility, small (20-40 lines). Max 3-4 parameters (use objects otherwise).
+- **Control Flow**: Early returns (guard clauses), nesting level ≤ 2. Avoid deep else-chains.
+- **Types**: Make public APIs explicit. Validate inputs at boundaries (fail fast). Prefer immutability.
+- **Errors**: Never swallow errors. Log actionable context.
+
+# 🌿 Git Workflow (Gitflow)
+Always use the **Gitflow** branching strategy.
+- **Protected branches**: `main` and `develop`. Always use PRs to merge into them.
+- **Features**: `feature/description` (from `develop`, merge to `develop`).
+- **Bugfixes**: `bugfix/description` (from `develop`, merge to `develop`).
+- **Hotfixes**: `hotfix/description` (from `main`, merge to `main` AND `develop`).
+- **Releases**: `release/vX.Y.Z` (from `develop`, merge to `main` AND `develop`).
+
+**CRITICAL**: Always verify your current branch. If on `develop` or `main`, create a new branch before starting work.
+
+# 📝 Commit Message Rules
+Follow the **Gitmoji** convention: `<gitmoji> <intent>: <message>`
+- ✨ `:sparkles:` Feat
+- 🐛 `:bug:` Fix
+- ♻️ `:recycle:` Refactor
+- 💄 `:lipstick:` UI/Style
+- 🎨 `:art:` Structure/Format
+- ⚡️ `:zap:` Performance
+- 🔥 `:fire:` Remove code
+- 📝 `:memo:` Docs
+- 🚀 `:rocket:` Deploy
+- 🔒️ `:lock:` Security
+- 🚧 `:construction:` WIP
+- 📦️ `:package:` Dependencies
+
+# 🏗️ Architecture & File Structure
+- **File Size**: Target 200-400 lines. Split if > 400.
+- **Responsibility**: One main responsibility per file. No "God files".
+- **Exports**: Limit to 1-3 closely related entities per file.
+- **Layers**: Separate UI (components), domain logic (services/flows), and data/infrastructure.
+- **Imports**: Order: Standard → Third-party → Internal (@/*).
+
+# 🧪 Testing
+- Test non-trivial logic using **Vitest**.
+- Follow Arrange/Act/Assert pattern.
+- Keep tests fast, deterministic, and isolated.
+
+# 💻 Tech Stack Context
+- **Framework**: Next.js 15 (App Router).
+- **Language**: TypeScript.
+- **Styling**: Tailwind CSS + Shadcn UI (Radix).
+- **Backend**: Firebase (Auth, Firestore).
+- **State Management**: React Context, Hooks.
+
+# 🔍 CodeRabbit Integration
+- CodeRabbit CLI is installed and available in the terminal.
+- Run CodeRabbit to review code changes using: `coderabbit --prompt-only -t uncommitted`
+- Use `--prompt-only` flag for AI-optimized output that's token-efficient.
+- Use `-t uncommitted` to review only uncommitted changes (most common use case).
+- IMPORTANT: When running CodeRabbit to review code changes, don't run it more than 3 times in a given set of changes.
+- For help, run: `cr -h` or `coderabbit --help`
