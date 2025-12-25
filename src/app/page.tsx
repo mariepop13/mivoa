@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { useUser } from '@/firebase/auth/use-user';
-import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -205,6 +205,43 @@ function JournalApp() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedEntryDocRef || !selectedEntryId || !entries) {
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await deleteDocumentNonBlocking(selectedEntryDocRef);
+      
+      const currentIndex = entries.findIndex(e => e.id === selectedEntryId);
+      const remainingEntries = entries.filter(e => e.id !== selectedEntryId);
+      
+      if (remainingEntries.length > 0) {
+        const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
+        setSelectedEntryId(remainingEntries[nextIndex].id);
+      } else {
+        setSelectedEntryId(null);
+        setContent('');
+        setLastSavedAt(null);
+      }
+      
+      hasInitializedRef.current = false;
+    } catch (error) {
+      console.error('deleteDoc error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error deleting entry';
+      setSaveError(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleEntrySelect = (entryId: string) => {
     setSelectedEntryId(entryId);
     hasInitializedRef.current = false;
@@ -293,10 +330,12 @@ function JournalApp() {
             content={content}
             onContentChange={handleContentChange}
             onSave={handleSave}
+            onDelete={handleDelete}
             isLoading={isSaving}
             isSaved={lastSavedAt !== null && !isSaving}
             error={saveError}
             hideDate={true}
+            canDelete={!!selectedEntryId}
           />
         </div>
       </div>

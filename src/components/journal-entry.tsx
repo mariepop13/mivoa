@@ -9,10 +9,12 @@ interface JournalEntryProps {
   content: string;
   onContentChange: (content: string) => void;
   onSave: () => void;
+  onDelete?: () => void;
   isLoading?: boolean;
   isSaved?: boolean;
   error?: string | null;
   hideDate?: boolean;
+  canDelete?: boolean;
 }
 
 export function JournalEntry({
@@ -20,10 +22,12 @@ export function JournalEntry({
   content,
   onContentChange,
   onSave,
+  onDelete,
   isLoading = false,
   isSaved = false,
   error = null,
   hideDate = false,
+  canDelete = false,
 }: JournalEntryProps) {
   const [localContent, setLocalContent] = useState(content);
 
@@ -81,13 +85,24 @@ export function JournalEntry({
             </span>
           )}
         </div>
-        <button
-          onClick={onSave}
-          disabled={isLoading}
-          className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98]"
-        >
-          Save
-        </button>
+        <div className="flex items-center gap-3">
+          {canDelete && onDelete && (
+            <button
+              onClick={onDelete}
+              disabled={isLoading}
+              className="px-4 py-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium active:scale-[0.98] border border-transparent hover:border-destructive/20"
+            >
+              Delete
+            </button>
+          )}
+          <button
+            onClick={onSave}
+            disabled={isLoading}
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98]"
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );
