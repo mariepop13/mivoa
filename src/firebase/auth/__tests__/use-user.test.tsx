@@ -31,7 +31,7 @@ describe('useUser', () => {
   });
 
   const createWrapper = (auth: any) => {
-    return ({ children }: { children: React.ReactNode }) => (
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <FirebaseProvider
         auth={auth}
         firebaseApp={{} as any}
@@ -41,6 +41,8 @@ describe('useUser', () => {
         {children}
       </FirebaseProvider>
     );
+    Wrapper.displayName = 'TestWrapper';
+    return Wrapper;
   };
 
   it('should return loading state initially', () => {

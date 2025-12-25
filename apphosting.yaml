@@ -1,0 +1,19 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  maxInstances: 1
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyBPbgynBQHRnskvKAsa57dpFHFlgYYKByo
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: mivoa-f4895.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: mivoa-f4895
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: mivoa-f4895.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "198404203456"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:198404203456:web:c14effaa29bb7c9ea29e25"
