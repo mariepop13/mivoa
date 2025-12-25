@@ -83,8 +83,9 @@ function createLazyConfig() {
       const config = ensureInitialized();
       return Object.getPrototypeOf(config);
     },
-    set(_target, _prop, _value) {
-      throw new TypeError('Firebase config is immutable');
+    set(_target, prop, value) {
+      const config = ensureInitialized();
+      return Reflect.set(config, prop, value);
     }
   });
 }
