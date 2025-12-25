@@ -18,7 +18,7 @@ export const useUser = (): UseUserResult => {
 
   useEffect(() => {
     if (!auth) {
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 0);
       return;
     }
 

@@ -9,6 +9,7 @@ interface JournalEntryProps {
   content: string;
   onContentChange: (content: string) => void;
   isLoading?: boolean;
+  isSaved?: boolean;
   error?: string | null;
 }
 
@@ -17,6 +18,7 @@ export function JournalEntry({
   content,
   onContentChange,
   isLoading = false,
+  isSaved = false,
   error = null,
 }: JournalEntryProps) {
   const [localContent, setLocalContent] = useState(content);
@@ -47,7 +49,6 @@ export function JournalEntry({
           value={localContent}
           onChange={handleChange}
           placeholder="Write your thoughts..."
-          disabled={isLoading}
           className="flex-1 w-full resize-none bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-base leading-relaxed font-body"
           style={{ minHeight: '400px' }}
         />
@@ -57,11 +58,11 @@ export function JournalEntry({
         {isLoading && (
           <span className="text-muted-foreground">Saving...</span>
         )}
-        {!isLoading && !error && content && (
-          <span className="text-muted-foreground">Saved</span>
-        )}
-        {error && (
+        {!isLoading && error && (
           <span className="text-destructive">Error: {error}</span>
+        )}
+        {!isLoading && !error && isSaved && (
+          <span className="text-muted-foreground">Saved</span>
         )}
       </div>
     </div>

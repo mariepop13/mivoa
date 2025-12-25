@@ -5,13 +5,13 @@ import { JournalEntry } from '@/components/journal-entry';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useDoc, FirebaseContext } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 
 interface JournalEntryData extends Record<string, unknown> {
   content: string;
   date: string;
-  updatedAt: string;
+  updatedAt: string | Timestamp;
 }
 
 const SAVE_DEBOUNCE_MS = 1000;
@@ -24,6 +24,7 @@ function JournalApp() {
   const [selectedDate] = useState(new Date());
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,15 +47,44 @@ function JournalApp() {
   const { data: entryData, isLoading: entryLoading } = useDoc<JournalEntryData>(
     entryDocRef
   );
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (entryData?.content !== undefined) {
-      setContent(entryData.content || '');
+    hasInitializedRef.current = false;
+    setContent('');
+    setLastSavedAt(null);
+  }, [entryDocRef]);
+
+  useEffect(() => {
+    if (!hasInitializedRef.current && entryData !== undefined && !entryLoading) {
+      if (entryData?.content !== undefined) {
+        setContent(entryData.content || '');
+        if (entryData.updatedAt) {
+          let date: Date;
+          if (entryData.updatedAt instanceof Timestamp) {
+            date = entryData.updatedAt.toDate();
+          } else if (typeof entryData.updatedAt === 'string') {
+            date = new Date(entryData.updatedAt);
+          } else {
+            date = new Date();
+          }
+          setLastSavedAt(date);
+        }
+      } else {
+        setContent('');
+        setLastSavedAt(null);
+      }
+      hasInitializedRef.current = true;
     }
-  }, [entryData]);
+  }, [entryData, entryLoading]);
 
   const saveEntry = async (newContent: string) => {
     if (!entryDocRef || !user) {
+      console.warn('Cannot save: missing entryDocRef or user', { 
+        entryDocRef: Boolean(entryDocRef), 
+        user: Boolean(user) 
+      });
+      setIsSaving(false);
       return;
     }
 
@@ -62,20 +92,23 @@ function JournalApp() {
     setSaveError(null);
     
     try {
-      await setDoc(
-        entryDocRef,
-        {
-          content: newContent,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          updatedAt: new Date().toISOString(),
-          createdAt: entryData?.updatedAt || new Date().toISOString(),
-        },
-        { merge: true }
-      );
+      const data = {
+        content: newContent,
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        updatedAt: serverTimestamp(),
+      };
+
+      if (!entryData) {
+        (data as Record<string, unknown>).createdAt = serverTimestamp();
+      }
+
+      await setDoc(entryDocRef, data, { merge: true });
+      setLastSavedAt(new Date());
     } catch (error) {
+      console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error saving entry';
-      console.error('Error saving entry:', error);
       setSaveError(errorMessage);
+      setLastSavedAt(null);
     } finally {
       setIsSaving(false);
     }
@@ -84,6 +117,7 @@ function JournalApp() {
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
     setSaveError(null);
+    setLastSavedAt(null);
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -130,6 +164,7 @@ function JournalApp() {
         content={content}
         onContentChange={handleContentChange}
         isLoading={isSaving}
+        isSaved={lastSavedAt !== null && !isSaving}
         error={saveError}
       />
     </main>

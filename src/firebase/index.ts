@@ -35,7 +35,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
   if (typeof window !== 'undefined') {
     try {
       analytics = getAnalytics(firebaseApp);
-    } catch (error) {
+    } catch {
       // Analytics initialization failed (e.g., not supported in SSR environment)
       // This is expected and handled gracefully
     }
