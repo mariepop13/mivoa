@@ -83,9 +83,8 @@ function createLazyConfig() {
       const config = ensureInitialized();
       return Object.getPrototypeOf(config);
     },
-    set(_target, prop, value) {
-      const config = ensureInitialized();
-      return Reflect.set(config, prop, value);
+    set(_target, prop, _value) {
+      throw new Error(`Cannot modify Firebase config property '${String(prop)}': configuration is immutable after initialization.`);
     }
   });
 }

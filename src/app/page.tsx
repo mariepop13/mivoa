@@ -28,12 +28,20 @@ function JournalApp() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    
     if (!authLoading && !user && auth) {
       initiateAnonymousSignIn(auth).catch((error) => {
-        console.error('Failed to sign in anonymously:', error);
-        setAuthError('Authentication failed. Please check your Firebase configuration.');
+        if (mounted) {
+          console.error('Failed to sign in anonymously:', error);
+          setAuthError('Authentication failed. Please check your Firebase configuration.');
+        }
       });
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [auth, authLoading, user]);
 
   const entryDocRef = useMemo(() => {

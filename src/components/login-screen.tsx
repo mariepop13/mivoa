@@ -7,13 +7,19 @@ import { signInWithGoogle, initiateAnonymousSignIn } from '@/firebase/non-blocki
 export function LoginScreen() {
   const auth = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       await signInWithGoogle(auth);
     } catch (error) {
       console.error('Login failed:', error);
+      const message = error instanceof Error 
+        ? `Sign in failed: ${error.message}` 
+        : 'Sign in failed. Please try again.';
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -21,10 +27,15 @@ export function LoginScreen() {
 
   const handleAnonymousLogin = async () => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       await initiateAnonymousSignIn(auth);
     } catch (error) {
       console.error('Anonymous login failed:', error);
+      const message = error instanceof Error 
+        ? `Anonymous sign in failed: ${error.message}` 
+        : 'Anonymous sign in failed. Please try again.';
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -41,6 +52,12 @@ export function LoginScreen() {
         </p>
         
         <div className="space-y-3">
+          {errorMessage && (
+            <div role="alert" className="px-4 py-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20">
+              {errorMessage}
+            </div>
+          )}
+          
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading}
