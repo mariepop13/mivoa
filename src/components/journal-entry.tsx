@@ -8,6 +8,7 @@ interface JournalEntryProps {
   date: Date;
   content: string;
   onContentChange: (content: string) => void;
+  onSave: () => void;
   isLoading?: boolean;
   isSaved?: boolean;
   error?: string | null;
@@ -17,6 +18,7 @@ export function JournalEntry({
   date,
   content,
   onContentChange,
+  onSave,
   isLoading = false,
   isSaved = false,
   error = null,
@@ -54,16 +56,25 @@ export function JournalEntry({
         />
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-sm">
-        {isLoading && (
-          <span className="text-muted-foreground">Saving...</span>
-        )}
-        {!isLoading && error && (
-          <span className="text-destructive">Error: {error}</span>
-        )}
-        {!isLoading && !error && isSaved && (
-          <span className="text-muted-foreground">Saved</span>
-        )}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm">
+          {isLoading && (
+            <span className="text-muted-foreground">Saving...</span>
+          )}
+          {!isLoading && error && (
+            <span className="text-destructive">Error: {error}</span>
+          )}
+          {!isLoading && !error && isSaved && (
+            <span className="text-muted-foreground">Saved</span>
+          )}
+        </div>
+        <button
+          onClick={onSave}
+          disabled={isLoading}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Save
+        </button>
       </div>
     </div>
   );

@@ -14,7 +14,6 @@ interface JournalEntryData extends Record<string, unknown> {
   updatedAt: string | Timestamp;
 }
 
-const SAVE_DEBOUNCE_MS = 1000;
 
 function JournalApp() {
   const auth = useAuth();
@@ -27,7 +26,6 @@ function JournalApp() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user && auth) {
@@ -117,24 +115,11 @@ function JournalApp() {
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
     setSaveError(null);
-    setLastSavedAt(null);
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      saveEntry(newContent);
-    }, SAVE_DEBOUNCE_MS);
   };
 
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
+  const handleSave = () => {
+    saveEntry(content);
+  };
 
   if (authError) {
     return (
@@ -163,6 +148,7 @@ function JournalApp() {
         date={selectedDate}
         content={content}
         onContentChange={handleContentChange}
+        onSave={handleSave}
         isLoading={isSaving}
         isSaved={lastSavedAt !== null && !isSaving}
         error={saveError}
