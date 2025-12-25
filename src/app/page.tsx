@@ -3,9 +3,9 @@
 import { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { useUser } from '@/firebase/auth/use-user';
-import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp, Timestamp, setDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
@@ -131,8 +131,8 @@ function JournalApp() {
   }, [selectedEntryData, selectedEntryLoading]);
 
   const createNewEntry = async (initialContent: string = '') => {
-    if (!entriesCollectionRef || !user) {
-      console.warn('Cannot create entry: missing collection ref or user');
+    if (!entriesCollectionRef || !user || !firestore) {
+      console.warn('Cannot create entry: missing collection ref, user, or firestore');
       return;
     }
 
@@ -140,6 +140,15 @@ function JournalApp() {
     setSaveError(null);
 
     try {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+      
+      const entryId = `${dateKey}-${hours}${minutes}${seconds}${milliseconds}`;
+      const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+
       const data = {
         content: initialContent,
         date: dateKey,
@@ -147,13 +156,13 @@ function JournalApp() {
         updatedAt: serverTimestamp(),
       };
 
-      const newDocRef = await addDocumentNonBlocking(entriesCollectionRef, data);
+      await setDocumentNonBlocking(newDocRef, data, {});
       hasInitializedRef.current = false;
-      setSelectedEntryId(newDocRef.id);
+      setSelectedEntryId(entryId);
       setContent(initialContent);
-      setLastSavedAt(new Date());
+      setLastSavedAt(now);
     } catch (error) {
-      console.error('addDoc error:', error);
+      console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
       setSaveError(errorMessage);
     } finally {
