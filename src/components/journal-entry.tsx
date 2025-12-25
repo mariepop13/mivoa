@@ -12,6 +12,7 @@ interface JournalEntryProps {
   isLoading?: boolean;
   isSaved?: boolean;
   error?: string | null;
+  hideDate?: boolean;
 }
 
 export function JournalEntry({
@@ -22,6 +23,7 @@ export function JournalEntry({
   isLoading = false,
   isSaved = false,
   error = null,
+  hideDate = false,
 }: JournalEntryProps) {
   const [localContent, setLocalContent] = useState(content);
 
@@ -38,13 +40,15 @@ export function JournalEntry({
   const formattedDate = format(date, "EEEE, MMMM d, yyyy", { locale: enUS });
 
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-headline font-semibold text-foreground mb-2">
-          {formattedDate}
-        </h1>
-        <div className="h-px bg-border" />
-      </div>
+    <div className="flex flex-col h-full">
+      {!hideDate && (
+        <div className="mb-6">
+          <h1 className="text-2xl font-headline font-semibold text-foreground mb-2">
+            {formattedDate}
+          </h1>
+          <div className="h-px bg-border" />
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col">
         <textarea
