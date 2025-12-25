@@ -244,31 +244,41 @@ function JournalApp() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-headline font-semibold text-foreground">
-            {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
-          </h1>
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-center justify-between border-b border-border/40 pb-4">
+          <div>
+            <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+              {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
+            </h1>
+            {entries && entries.length > 0 && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {entries.length} {entries.length === 1 ? 'entry' : 'entries'} today
+              </p>
+            )}
+          </div>
           <button
             onClick={() => createNewEntry('')}
             disabled={isSaving}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98]"
           >
-            New Entry
+            <span className="flex items-center gap-2">
+              <span>+</span>
+              <span>New Entry</span>
+            </span>
           </button>
         </div>
         
         {entries && entries.length > 0 && (
-          <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+          <div className="mb-6 flex gap-3 overflow-x-auto pb-3 scrollbar-hide -mx-1 px-1">
             {entries.map((entry) => (
               <button
                 key={entry.id}
                 onClick={() => handleEntrySelect(entry.id)}
-                className={`px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors ${
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
                   selectedEntryId === entry.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                    : 'bg-card text-card-foreground border border-border hover:bg-accent hover:text-accent-foreground hover:border-primary/20 hover:shadow-sm'
                 }`}
               >
                 {formatEntryTime(entry)}
@@ -277,16 +287,18 @@ function JournalApp() {
           </div>
         )}
 
-        <JournalEntry
-          date={selectedDate}
-          content={content}
-          onContentChange={handleContentChange}
-          onSave={handleSave}
-          isLoading={isSaving}
-          isSaved={lastSavedAt !== null && !isSaving}
-          error={saveError}
-          hideDate={true}
-        />
+        <div className="bg-card rounded-xl border border-border shadow-sm">
+          <JournalEntry
+            date={selectedDate}
+            content={content}
+            onContentChange={handleContentChange}
+            onSave={handleSave}
+            isLoading={isSaving}
+            isSaved={lastSavedAt !== null && !isSaving}
+            error={saveError}
+            hideDate={true}
+          />
+        </div>
       </div>
     </main>
   );
