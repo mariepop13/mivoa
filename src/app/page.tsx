@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
+import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
@@ -328,12 +329,15 @@ function JournalApp() {
               <h1 className="text-xl sm:text-2xl font-headline font-bold text-foreground">
                 {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
               </h1>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-              >
-                <span className="text-2xl">×</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <SettingsMenu />
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+                >
+                  <span className="text-2xl">×</span>
+                </button>
+              </div>
             </div>
             {entries && entries.length > 0 && (
               <p className="text-xs sm:text-sm text-muted-foreground">
@@ -395,7 +399,7 @@ function JournalApp() {
             <h2 className="text-lg font-headline font-semibold text-foreground">
               {selectedEntry?.title || (selectedEntry ? formatEntryTime(selectedEntry) : entries?.[0] ? formatEntryTime(entries[0]) : '')}
             </h2>
-            <div className="w-10" />
+            <SettingsMenu />
           </div>
           
           <div className="flex-1 overflow-y-auto">
