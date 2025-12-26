@@ -11,6 +11,7 @@ import { enUS } from 'date-fns/locale';
 
 interface JournalEntryData extends Record<string, unknown> {
   content: string;
+  title?: string;
   date: string;
   createdAt: string | Timestamp;
   updatedAt: string | Timestamp;
@@ -25,10 +26,12 @@ function JournalApp() {
   const [selectedDate] = useState(new Date());
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -97,6 +100,7 @@ function JournalApp() {
   useEffect(() => {
     hasInitializedRef.current = false;
     setContent('');
+    setTitle('');
     setLastSavedAt(null);
     setSelectedEntryId(null);
   }, [dateKey]);
@@ -111,6 +115,7 @@ function JournalApp() {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
       if (selectedEntryData?.content !== undefined) {
         setContent(selectedEntryData.content || '');
+        setTitle(selectedEntryData.title || '');
         if (selectedEntryData.updatedAt) {
           let date: Date;
           if (selectedEntryData.updatedAt instanceof Timestamp) {
@@ -124,13 +129,14 @@ function JournalApp() {
         }
       } else {
         setContent('');
+        setTitle('');
         setLastSavedAt(null);
       }
       hasInitializedRef.current = true;
     }
   }, [selectedEntryData, selectedEntryLoading]);
 
-  const createNewEntry = async (initialContent: string = '') => {
+  const createNewEntry = async (initialContent: string = '', initialTitle: string = '') => {
     if (!entriesCollectionRef || !user || !firestore) {
       console.warn('Cannot create entry: missing collection ref, user, or firestore');
       return;
@@ -151,6 +157,7 @@ function JournalApp() {
 
       const data = {
         content: initialContent,
+        title: initialTitle || undefined,
         date: dateKey,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -160,6 +167,7 @@ function JournalApp() {
       hasInitializedRef.current = false;
       setSelectedEntryId(entryId);
       setContent(initialContent);
+      setTitle(initialTitle);
       setLastSavedAt(now);
     } catch (error) {
       console.error('setDoc error:', error);
@@ -170,7 +178,7 @@ function JournalApp() {
     }
   };
 
-  const saveEntry = async (newContent: string) => {
+  const saveEntry = async (newContent: string, newTitle: string) => {
     if (!selectedEntryDocRef || !user) {
       console.warn('Cannot save: missing entryDocRef or user', { 
         entryDocRef: Boolean(selectedEntryDocRef), 
@@ -186,6 +194,7 @@ function JournalApp() {
     try {
       const data = {
         content: newContent,
+        title: newTitle || undefined,
         updatedAt: serverTimestamp(),
       };
 
@@ -206,11 +215,16 @@ function JournalApp() {
     setSaveError(null);
   };
 
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    setSaveError(null);
+  };
+
   const handleSave = () => {
     if (selectedEntryId) {
-      saveEntry(content);
+      saveEntry(content, title);
     } else {
-      createNewEntry(content);
+      createNewEntry(content, title);
     }
   };
 
@@ -238,6 +252,7 @@ function JournalApp() {
       } else {
         setSelectedEntryId(null);
         setContent('');
+        setTitle('');
         setLastSavedAt(null);
       }
       
@@ -254,6 +269,7 @@ function JournalApp() {
   const handleEntrySelect = (entryId: string) => {
     setSelectedEntryId(entryId);
     hasInitializedRef.current = false;
+    setIsSidebarOpen(false);
   };
 
   const formatEntryTime = (entry: JournalEntryData & { id: string }) => {
@@ -265,7 +281,7 @@ function JournalApp() {
     } else {
       return '';
     }
-    return format(date, 'HH:mm');
+    return format(date, 'HH:mm:ss');
   };
 
   if (authError) {
@@ -289,63 +305,119 @@ function JournalApp() {
     );
   }
 
+  const selectedEntry = entries?.find(e => e.id === selectedEntryId);
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between border-b border-border/40 pb-4">
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
-              {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
-            </h1>
+    <main className="min-h-screen bg-background">
+      <div className="flex h-screen relative">
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        <div className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-80 border-r border-border bg-card flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <div className="p-4 sm:p-6 border-b border-border">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-xl sm:text-2xl font-headline font-bold text-foreground">
+                {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
+              </h1>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
             {entries && entries.length > 0 && (
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {entries.length} {entries.length === 1 ? 'entry' : 'entries'} today
               </p>
             )}
           </div>
-          <button
-            onClick={() => createNewEntry('')}
-            disabled={isSaving}
-            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98]"
-          >
-            <span className="flex items-center gap-2">
+          
+          <div className="p-4 sm:p-6 border-b border-border">
+            <button
+              onClick={() => {
+                createNewEntry('');
+                setIsSidebarOpen(false);
+              }}
+              disabled={isSaving}
+              className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+            >
               <span>+</span>
               <span>New Entry</span>
-            </span>
-          </button>
-        </div>
-        
-        {entries && entries.length > 0 && (
-          <div className="mb-6 flex gap-3 overflow-x-auto pb-3 scrollbar-hide -mx-1 px-1">
-            {entries.map((entry) => (
-              <button
-                key={entry.id}
-                onClick={() => handleEntrySelect(entry.id)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
-                  selectedEntryId === entry.id
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                    : 'bg-card text-card-foreground border border-border hover:bg-accent hover:text-accent-foreground hover:border-primary/20 hover:shadow-sm'
-                }`}
-              >
-                {formatEntryTime(entry)}
-              </button>
-            ))}
+            </button>
           </div>
-        )}
 
-        <div className="bg-card rounded-xl border border-border shadow-sm">
-          <JournalEntry
-            date={selectedDate}
-            content={content}
-            onContentChange={handleContentChange}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            isLoading={isSaving}
-            isSaved={lastSavedAt !== null && !isSaving}
-            error={saveError}
-            hideDate={true}
-            canDelete={!!selectedEntryId}
-          />
+          <div className="flex-1 overflow-y-auto p-4">
+            {entries && entries.length > 0 ? (
+              <div className="space-y-2">
+                {entries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => handleEntrySelect(entry.id)}
+                    className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      selectedEntryId === entry.id
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground border border-transparent'
+                    }`}
+                  >
+                    <div className="font-medium">{entry.title || formatEntryTime(entry)}</div>
+                    {entry.title && (
+                      <div className="text-xs text-muted-foreground mt-1">{formatEntryTime(entry)}</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground text-sm py-8">
+                No entries yet
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col bg-background">
+          <div className="lg:hidden p-4 border-b border-border bg-card flex items-center justify-between">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
+            >
+              <span className="text-xl">☰</span>
+            </button>
+            <h2 className="text-lg font-headline font-semibold text-foreground">
+              {selectedEntry?.title || (selectedEntry ? formatEntryTime(selectedEntry) : entries?.[0] ? formatEntryTime(entries[0]) : '')}
+            </h2>
+            <div className="w-10" />
+          </div>
+          
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+              <div className="bg-card rounded-xl border border-border shadow-sm">
+                <JournalEntry
+                  date={selectedDate}
+                  content={content}
+                  title={title}
+                  onContentChange={handleContentChange}
+                  onTitleChange={handleTitleChange}
+                  onSave={handleSave}
+                  onDelete={handleDelete}
+                  isLoading={isSaving}
+                  isSaved={lastSavedAt !== null && !isSaving}
+                  error={saveError}
+                  hideDate={true}
+                  canDelete={!!selectedEntryId}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
