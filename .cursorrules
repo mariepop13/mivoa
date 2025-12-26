@@ -45,9 +45,18 @@ Follow the **Gitmoji** convention: `<gitmoji> <intent>: <message>`
 - **Imports**: Order: Standard → Third-party → Internal (@/*).
 
 # 🧪 Testing
-- Test non-trivial logic using **Vitest**.
+- **Test frequently**: Run `npm run test:ci` after significant changes, before commits, and when fixing bugs.
+- **Test proactively**: After implementing a feature, refactoring, or fixing a bug, run tests immediately.
+- **Test non-trivial logic** using **Vitest**.
 - Follow Arrange/Act/Assert pattern.
 - Keep tests fast, deterministic, and isolated.
+- **Before committing**: Always run `npm run test:ci` to ensure lint, typecheck, and tests pass.
+- **Before requesting review**: Run `npm run test:ci` and `coderabbit --prompt-only -t uncommitted` to catch issues early.
+- **When adding features**: Write tests alongside the implementation (TDD when possible).
+- **When fixing bugs**: Add a test that reproduces the bug, then fix it.
+- **When refactoring**: Run tests before and after to ensure behavior is preserved.
+- **Test coverage**: Aim for meaningful coverage of business logic and edge cases.
+- **Quick test**: Use `npm run test:run` for faster feedback during development, but always use `npm run test:ci` before committing.
 
 # 💻 Tech Stack Context
 - **Framework**: Next.js 15 (App Router).

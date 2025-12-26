@@ -6,9 +6,11 @@ import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { collection, doc, query, where, serverTimestamp, Timestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { enUS, fr } from 'date-fns/locale';
+import { useTranslation } from '@/hooks/use-translation';
+import { LanguageContext } from '@/context/LanguageContext';
 
 interface JournalEntryData extends Record<string, unknown> {
   content: string;
@@ -23,6 +25,10 @@ function JournalApp() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isLoading: authLoading } = useUser();
+  const { language } = useContext(LanguageContext);
+  const { t } = useTranslation();
+  
+  const dateLocale = language === 'fr' ? fr : enUS;
   
   const [selectedDate] = useState(new Date());
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
@@ -234,7 +240,7 @@ function JournalApp() {
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this entry?')) {
+    if (!confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -290,7 +296,7 @@ function JournalApp() {
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center max-w-md px-4">
           <h1 className="text-2xl font-headline font-bold mb-4 text-destructive">
-            Authentication Error
+            {t('authenticationError')}
           </h1>
           <p className="text-muted-foreground mb-4">{authError}</p>
         </div>
@@ -301,7 +307,7 @@ function JournalApp() {
   if (authLoading || entriesLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t('loading')}</div>
       </main>
     );
   }
@@ -327,7 +333,7 @@ function JournalApp() {
           <div className="p-4 sm:p-6 border-b border-border">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-xl sm:text-2xl font-headline font-bold text-foreground">
-                {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: enUS })}
+                {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
               </h1>
               <div className="flex items-center gap-2">
                 <SettingsMenu />
@@ -341,7 +347,7 @@ function JournalApp() {
             </div>
             {entries && entries.length > 0 && (
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {entries.length} {entries.length === 1 ? 'entry' : 'entries'} today
+                {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
               </p>
             )}
           </div>
@@ -356,7 +362,7 @@ function JournalApp() {
               className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <span>+</span>
-              <span>New Entry</span>
+              <span>{t('newEntry')}</span>
             </button>
           </div>
 
@@ -382,7 +388,7 @@ function JournalApp() {
               </div>
             ) : (
               <div className="text-center text-muted-foreground text-sm py-8">
-                No entries yet
+                {t('noEntriesYet')}
               </div>
             )}
           </div>
@@ -430,19 +436,20 @@ function JournalApp() {
 
 export default function HomePage() {
   const firebaseContext = useContext(FirebaseContext);
+  const { t } = useTranslation();
   
   if (!firebaseContext?.areServicesAvailable) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center max-w-md px-4">
           <h1 className="text-2xl font-headline font-bold mb-4">
-            Firebase Configuration Required
+            {t('firebaseConfigurationRequired')}
           </h1>
           <p className="text-muted-foreground mb-4">
-            Please configure Firebase environment variables in your <code className="bg-muted px-2 py-1 rounded text-sm">.env.local</code> file
+            {t('firebaseConfigurationDescription')} <code className="bg-muted px-2 py-1 rounded text-sm">{t('envFile')}</code> {t('file')}
           </p>
           <div className="text-sm text-muted-foreground space-y-1">
-            <p>Required variables:</p>
+            <p>{t('requiredVariables')}</p>
             <ul className="list-disc list-inside space-y-1 text-left">
               <li>NEXT_PUBLIC_FIREBASE_API_KEY</li>
               <li>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
