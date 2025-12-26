@@ -71,7 +71,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         
         if (asChild && isActivationKey && onClick) {
           event.preventDefault()
-          onClick(event as unknown as React.MouseEvent<HTMLButtonElement>)
+          event.stopPropagation()
+          
+          const target = event.currentTarget as HTMLElement
+          target.click()
           return
         }
         
