@@ -27,14 +27,22 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Run type check
+      run: npm run typecheck
+    
     - name: Run tests
       run: npm run test:run -- --reporter=verbose --no-coverage
       timeout-minutes: 5
       env:
         CI: true
     
-    - name: Run type check
-      run: npm run typecheck
+    - name: Build check
+      run: npm run build
+      env:
+        CI: true
 
   coverage:
     runs-on: ubuntu-latest

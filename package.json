@@ -14,7 +14,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "test:ci": "npm run test:run -- --reporter=verbose --no-coverage && npm run typecheck"
+    "test:ci": "npm run lint && npm run typecheck && npm run test:run -- --reporter=verbose --no-coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
