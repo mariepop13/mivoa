@@ -1,22 +1,27 @@
 'use client';
 
-import * as React from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Settings2, Sun, Moon, Monitor, Check } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
+import { LanguageContext, SUPPORTED_LANGUAGES, LANGUAGE_LABELS } from '@/context/LanguageContext';
 
 export function SettingsMenu() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
+  const { language, setLanguage } = useContext(LanguageContext);
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -24,7 +29,7 @@ export function SettingsMenu() {
     return (
       <Button variant="ghost" size="icon" disabled>
         <Settings2 className="h-[1.2rem] w-[1.2rem]" />
-        <span className="sr-only">Settings</span>
+        <span className="sr-only">{t('settings')}</span>
       </Button>
     );
   }
@@ -34,18 +39,18 @@ export function SettingsMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings2 className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Settings</span>
+          <span className="sr-only">{t('settings')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="flex items-center gap-2 px-2 py-2 mb-2 border-b border-border">
           <Settings2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold tracking-tight">Settings</span>
+          <span className="text-sm font-bold tracking-tight">{t('settings')}</span>
         </div>
 
         <div className="space-y-1 p-1">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2">
-            Theme
+            {t('theme')}
           </label>
           <DropdownMenuItem
             onClick={() => setTheme('light')}
@@ -58,7 +63,7 @@ export function SettingsMenu() {
           >
             <div className="flex items-center gap-2">
               <Sun className="h-4 w-4" />
-              <span>Light</span>
+              <span>{t('light')}</span>
             </div>
             {theme === 'light' && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
@@ -73,7 +78,7 @@ export function SettingsMenu() {
           >
             <div className="flex items-center gap-2">
               <Moon className="h-4 w-4" />
-              <span>Dark</span>
+              <span>{t('dark')}</span>
             </div>
             {theme === 'dark' && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
@@ -88,10 +93,33 @@ export function SettingsMenu() {
           >
             <div className="flex items-center gap-2">
               <Monitor className="h-4 w-4" />
-              <span>System</span>
+              <span>{t('system')}</span>
             </div>
             {theme === 'system' && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        <div className="space-y-1 p-1">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2">
+            {t('language')}
+          </label>
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <DropdownMenuItem
+              key={lang}
+              onClick={() => setLanguage(lang)}
+              className={cn(
+                'flex items-center justify-between cursor-pointer',
+                language === lang && 'bg-accent'
+              )}
+              role="menuitemradio"
+              aria-checked={language === lang}
+            >
+              <span>{LANGUAGE_LABELS[lang]}</span>
+              {language === lang && <Check className="h-4 w-4" />}
+            </DropdownMenuItem>
+          ))}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

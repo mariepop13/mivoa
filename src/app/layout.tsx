@@ -4,6 +4,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({
@@ -35,9 +36,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            {children}
-          </FirebaseClientProvider>
+          <LanguageProvider>
+            <FirebaseClientProvider>
+              {children}
+            </FirebaseClientProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
