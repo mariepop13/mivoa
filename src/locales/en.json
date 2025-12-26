@@ -10,6 +10,7 @@
   "requiredVariables": "Required variables:",
   "entry": "entry",
   "entries": "entries",
+  "today": "today",
   "newEntry": "New Entry",
   "noEntriesYet": "No entries yet",
   "entryTitlePlaceholder": "Entry title (optional)",

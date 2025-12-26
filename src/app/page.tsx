@@ -6,7 +6,7 @@ import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { collection, doc, query, where, serverTimestamp, Timestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
@@ -347,7 +347,7 @@ function JournalApp() {
             </div>
             {entries && entries.length > 0 && (
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {entries.length} {entries.length === 1 ? t('entry') : t('entries')} today
+                {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
               </p>
             )}
           </div>

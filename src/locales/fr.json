@@ -10,6 +10,7 @@
   "requiredVariables": "Variables requises :",
   "entry": "entrée",
   "entries": "entrées",
+  "today": "aujourd'hui",
   "newEntry": "Nouvelle entrée",
   "noEntriesYet": "Aucune entrée pour le moment",
   "entryTitlePlaceholder": "Titre de l'entrée (optionnel)",

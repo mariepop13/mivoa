@@ -35,6 +35,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     try {
       const storedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
       if (storedLanguage && SUPPORTED_LANGUAGES.includes(storedLanguage as SupportedLanguage)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLanguageState(storedLanguage as SupportedLanguage);
       }
     } catch (error) {
