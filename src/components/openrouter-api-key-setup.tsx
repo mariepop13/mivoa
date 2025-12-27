@@ -5,7 +5,8 @@ import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { validateOpenRouterApiKey } from '@/lib/openrouter-client';
-import { KeyRound, LoaderCircle, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
+import { initiateOAuthFlow } from '@/lib/openrouter-oauth';
+import { KeyRound, LoaderCircle, CheckCircle2, XCircle, Trash2, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OpenRouterApiKeySetupProps {
@@ -15,6 +16,7 @@ interface OpenRouterApiKeySetupProps {
 export function OpenRouterApiKeySetup({ onCompletion }: OpenRouterApiKeySetupProps) {
   const [localApiKey, setLocalApiKey] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isOAuthLoading, setIsOAuthLoading] = useState(false);
   const { apiKey, setApiKey, resetApiKey } = useContext(OpenRouterApiKeyContext);
   const { t } = useTranslation();
 
@@ -34,11 +36,11 @@ export function OpenRouterApiKeySetup({ onCompletion }: OpenRouterApiKeySetupPro
           onCompletion();
         }
       } else {
-        alert(t('invalidOpenRouterApiKey') + ': ' + t('invalidOpenRouterApiKeyDescription'));
+        alert(`${t('invalidOpenRouterApiKey')}: ${t('invalidOpenRouterApiKeyDescription')}`);
       }
     } catch (error) {
       console.error('Error validating or saving OpenRouter API key', error);
-      alert(t('invalidOpenRouterApiKey') + ': ' + t('invalidOpenRouterApiKeyDescription'));
+      alert(`${t('invalidOpenRouterApiKey')}: ${t('invalidOpenRouterApiKeyDescription')}`);
     } finally {
       setIsVerifying(false);
     }
@@ -53,6 +55,18 @@ export function OpenRouterApiKeySetup({ onCompletion }: OpenRouterApiKeySetupPro
         console.error('Error resetting OpenRouter API key', error);
         alert('Failed to reset API key. Please try again.');
       }
+    }
+  };
+
+  const handleOAuthConnect = async () => {
+    setIsOAuthLoading(true);
+    try {
+      const callbackUrl = `${window.location.origin}/auth/openrouter/callback`;
+      await initiateOAuthFlow(callbackUrl);
+    } catch (error) {
+      console.error('Failed to initiate OAuth flow:', error);
+      alert(`${t('oauthInitiationFailed')}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsOAuthLoading(false);
     }
   };
 
@@ -84,46 +98,86 @@ export function OpenRouterApiKeySetup({ onCompletion }: OpenRouterApiKeySetupPro
       </div>
 
       {!apiKey && (
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-2">
-            <label htmlFor="openrouter-api-key" className="text-xs font-medium">
-              {t('openRouterApiKey')}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                id="openrouter-api-key"
-                placeholder={t('openRouterApiKeyPlaceholder')}
-                value={localApiKey}
-                onChange={(e) => setLocalApiKey(e.target.value)}
-                required
-                disabled={isVerifying}
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isVerifying || !localApiKey.trim()}
-              >
-                {isVerifying ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <KeyRound className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              <a
-                href="https://openrouter.ai/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary underline underline-offset-4 transition-colors"
-              >
-                {t('getOpenRouterApiKeyLink')}
-              </a>
-            </p>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 border-t border-border"></div>
+            <span className="text-xs text-muted-foreground">{t('or')}</span>
+            <div className="flex-1 border-t border-border"></div>
           </div>
-        </form>
+
+          <Button
+            onClick={handleOAuthConnect}
+            disabled={isOAuthLoading}
+            className="w-full"
+            variant="outline"
+          >
+            {isOAuthLoading ? (
+              <>
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                {t('connecting')}
+              </>
+            ) : (
+              <>
+                <LogIn className="mr-2 h-4 w-4" />
+                {t('connectWithOpenRouter')}
+              </>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex-1 border-t border-border"></div>
+            <span className="text-xs text-muted-foreground">{t('or')}</span>
+            <div className="flex-1 border-t border-border"></div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-2">
+              <label htmlFor="openrouter-api-key" className="text-xs font-medium">
+                {t('openRouterApiKey')}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  id="openrouter-api-key"
+                  placeholder={t('openRouterApiKeyPlaceholder')}
+                  value={localApiKey}
+                  onChange={(e) => setLocalApiKey(e.target.value)}
+                  required
+                  disabled={isVerifying}
+                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isVerifying || !localApiKey.trim()}
+                  aria-label={isVerifying ? t('verifyingApiKey') : t('verifyApiKey')}
+                >
+                  {isVerifying ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      <span className="sr-only">{t('verifyingApiKey')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="h-4 w-4" />
+                      <span className="sr-only">{t('verifyApiKey')}</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary underline underline-offset-4 transition-colors"
+                >
+                  {t('getOpenRouterApiKeyLink')}
+                </a>
+              </p>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

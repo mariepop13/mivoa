@@ -49,6 +49,18 @@
   "openRouterApiKeyValidatedDescription": "Your OpenRouter API key has been saved successfully.",
   "invalidOpenRouterApiKey": "Invalid API Key",
   "invalidOpenRouterApiKeyDescription": "The provided OpenRouter API key is not valid. Please check it and try again.",
-  "addOpenRouterApiKey": "Add API Key"
+  "addOpenRouterApiKey": "Add API Key",
+  "connectWithOpenRouter": "Connect with OpenRouter",
+  "connecting": "Connecting...",
+  "connectingToOpenRouter": "Connecting to OpenRouter...",
+  "openRouterConnected": "Successfully connected to OpenRouter!",
+  "openRouterConnectionFailed": "Failed to connect to OpenRouter",
+  "oauthInitiationFailed": "Failed to start OAuth flow",
+  "redirecting": "Redirecting...",
+  "goBack": "Go Back",
+  "or": "OR",
+  "noAuthorizationCode": "No authorization code received",
+  "verifyApiKey": "Verify API key",
+  "verifyingApiKey": "Verifying API key..."
 }
 

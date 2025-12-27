@@ -49,6 +49,18 @@
   "openRouterApiKeyValidatedDescription": "Votre clé API OpenRouter a été enregistrée avec succès.",
   "invalidOpenRouterApiKey": "Clé API invalide",
   "invalidOpenRouterApiKeyDescription": "La clé API OpenRouter fournie n'est pas valide. Veuillez la vérifier et réessayer.",
-  "addOpenRouterApiKey": "Ajouter une clé API"
+  "addOpenRouterApiKey": "Ajouter une clé API",
+  "connectWithOpenRouter": "Se connecter avec OpenRouter",
+  "connecting": "Connexion...",
+  "connectingToOpenRouter": "Connexion à OpenRouter...",
+  "openRouterConnected": "Connexion à OpenRouter réussie !",
+  "openRouterConnectionFailed": "Échec de la connexion à OpenRouter",
+  "oauthInitiationFailed": "Échec du démarrage du flux OAuth",
+  "redirecting": "Redirection...",
+  "goBack": "Retour",
+  "or": "OU",
+  "noAuthorizationCode": "Aucun code d'autorisation reçu",
+  "verifyApiKey": "Vérifier la clé API",
+  "verifyingApiKey": "Vérification de la clé API..."
 }
 

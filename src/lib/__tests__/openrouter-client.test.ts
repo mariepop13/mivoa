@@ -95,8 +95,6 @@ describe('validateOpenRouterApiKey', () => {
     const apiKey = process.env.TEST_OPENROUTER_API_KEY;
     
     if (!apiKey) {
-      console.log('Skipping real API key test: TEST_OPENROUTER_API_KEY not set in .env.local');
-      console.log('To test with a real key, add TEST_OPENROUTER_API_KEY=your-key to .env.local');
       return;
     }
 

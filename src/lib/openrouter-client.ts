@@ -1,18 +1,3 @@
-import { OpenRouter } from '@openrouter/sdk';
-
-let clientInstance: OpenRouter | null = null;
-let lastApiKey: string | null = null;
-
-export function getOpenRouterClient(apiKey: string): OpenRouter {
-  if (!clientInstance || lastApiKey !== apiKey) {
-    clientInstance = new OpenRouter({
-      apiKey,
-    });
-    lastApiKey = apiKey;
-  }
-  return clientInstance;
-}
-
 export async function validateOpenRouterApiKey(apiKey: string, debug = false): Promise<boolean> {
   if (!apiKey || typeof apiKey !== 'string') {
     return false;
@@ -45,9 +30,6 @@ export async function validateOpenRouterApiKey(apiKey: string, debug = false): P
     }
 
     const data = await response.json();
-    if (debug) {
-      console.log('[DEBUG] Response data:', JSON.stringify(data, null, 2));
-    }
     
     if (!data || typeof data !== 'object') {
       return false;
