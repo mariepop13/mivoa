@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { exchangeAuthCodeForApiKey } from '@/lib/openrouter-oauth';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
@@ -9,7 +9,7 @@ import { LoaderCircle, CheckCircle2, XCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default function OpenRouterCallbackPage() {
+function OpenRouterCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { setApiKey } = useContext(OpenRouterApiKeyContext);
@@ -106,6 +106,25 @@ export default function OpenRouterCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OpenRouterCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="w-full max-w-md space-y-4 rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="flex flex-col items-center gap-4">
+              <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <OpenRouterCallbackContent />
+    </Suspense>
   );
 }
 

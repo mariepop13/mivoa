@@ -27,7 +27,6 @@ function validateFirebaseEnv(): FirebaseConfig {
 
   if (missing.length > 0) {
     const errorMessage = `Missing required Firebase environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}\n\nPlease set these variables in your .env.local file.`;
-    console.error(errorMessage);
     throw new Error(errorMessage);
   }
 
@@ -47,8 +46,6 @@ export { validateFirebaseEnv };
 function createFirebaseConfig() {
   return validateFirebaseEnv();
 }
-
-const isServer = typeof window === 'undefined';
 
 export { createFirebaseConfig };
 
@@ -89,7 +86,5 @@ function createLazyConfig() {
   });
 }
 
-export const firebaseConfig = isServer 
-  ? createFirebaseConfig()
-  : createLazyConfig();
+export const firebaseConfig = createLazyConfig();
 
