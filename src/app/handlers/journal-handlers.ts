@@ -36,10 +36,19 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
     };
     const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
     updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
-      console.error('Failed to save entry analysis:', err);
+      console.error('Failed to save entry analysis:', {
+        entryId,
+        userId: user.uid,
+        error: err
+      });
     });
   }).catch((err) => {
-    console.error('Failed to analyze entry:', err);
+    console.error('Failed to analyze entry:', {
+      entryId,
+      userId: user.uid,
+      contentLength: content.length,
+      error: err
+    });
   });
 }
 
