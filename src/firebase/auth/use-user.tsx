@@ -19,7 +19,7 @@ export const useUser = (): UseUserResult => {
   useEffect(() => {
     if (!auth) {
       setTimeout(() => setIsLoading(false), 0);
-      return;
+      return undefined;
     }
 
     const unsubscribe = onAuthStateChanged(
@@ -36,7 +36,9 @@ export const useUser = (): UseUserResult => {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [auth]);
 
   return { user, isLoading, error };

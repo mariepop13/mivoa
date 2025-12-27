@@ -12,10 +12,14 @@ vi.mock('firebase/auth', () => ({
 
 import { onAuthStateChanged } from 'firebase/auth';
 
+interface MockAuth {
+  currentUser: unknown;
+}
+
 describe('useUser', () => {
   const mockOnAuthStateChanged = vi.mocked(onAuthStateChanged);
   let mockUnsubscribe: ReturnType<typeof vi.fn>;
-  let mockAuth: any;
+  let mockAuth: MockAuth;
 
   beforeEach(() => {
     mockUnsubscribe = vi.fn();
@@ -30,12 +34,12 @@ describe('useUser', () => {
     vi.restoreAllMocks();
   });
 
-  const createWrapper = (auth: any) => {
+  const createWrapper = (auth: MockAuth) => {
     const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <FirebaseProvider
-        auth={auth}
-        firebaseApp={{} as any}
-        firestore={{} as any}
+        auth={auth as unknown as ReturnType<typeof import('firebase/auth').getAuth>}
+        firebaseApp={{} as ReturnType<typeof import('firebase/app').getApp>}
+        firestore={{} as ReturnType<typeof import('firebase/firestore').getFirestore>}
         areServicesAvailable={true}
       >
         {children}
@@ -106,7 +110,11 @@ describe('useUser', () => {
     const mockError = new Error('Auth state error');
 
     mockOnAuthStateChanged.mockImplementation((auth, callback, errorCallback) => {
-      setTimeout(() => errorCallback?.(mockError), 0);
+      if (errorCallback) {
+        setTimeout(() => {
+          errorCallback(mockError);
+        }, 0);
+      }
       return mockUnsubscribe;
     });
 
