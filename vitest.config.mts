@@ -1,8 +1,12 @@
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
   plugins: [react()],
   test: {
     globals: true,
@@ -12,6 +16,7 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     maxConcurrency: 5,
+      env,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -30,5 +35,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  };
 });
 

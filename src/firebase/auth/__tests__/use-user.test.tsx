@@ -12,10 +12,14 @@ vi.mock('firebase/auth', () => ({
 
 import { onAuthStateChanged } from 'firebase/auth';
 
+interface MockAuth {
+  currentUser: unknown;
+}
+
 describe('useUser', () => {
   const mockOnAuthStateChanged = vi.mocked(onAuthStateChanged);
   let mockUnsubscribe: ReturnType<typeof vi.fn>;
-  let mockAuth: any;
+  let mockAuth: MockAuth;
 
   beforeEach(() => {
     mockUnsubscribe = vi.fn();
@@ -30,12 +34,12 @@ describe('useUser', () => {
     vi.restoreAllMocks();
   });
 
-  const createWrapper = (auth: any) => {
+  const createWrapper = (auth: MockAuth) => {
     const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <FirebaseProvider
-        auth={auth}
-        firebaseApp={{} as any}
-        firestore={{} as any}
+        auth={auth as unknown as ReturnType<typeof import('firebase/auth').getAuth>}
+        firebaseApp={{} as ReturnType<typeof import('firebase/app').getApp>}
+        firestore={{} as ReturnType<typeof import('firebase/firestore').getFirestore>}
         areServicesAvailable={true}
       >
         {children}
@@ -104,9 +108,12 @@ describe('useUser', () => {
 
   it('should handle auth state errors', async () => {
     const mockError = new Error('Auth state error');
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    mockOnAuthStateChanged.mockImplementation((auth, callback, errorCallback) => {
-      setTimeout(() => errorCallback?.(mockError), 0);
+    let errorCallback: ((error: Error) => void) | undefined;
+
+    mockOnAuthStateChanged.mockImplementation((auth, callback, errCallback) => {
+      errorCallback = errCallback;
       return mockUnsubscribe;
     });
 
@@ -114,13 +121,27 @@ describe('useUser', () => {
       wrapper: createWrapper(mockAuth),
     });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+    await act(async () => {
+      if (errorCallback) {
+        errorCallback(mockError);
+      }
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
+
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).not.toBe(null);
+      },
+      { timeout: 1000 }
+    );
 
     expect(result.current.user).toBe(null);
     expect(result.current.error).toEqual(mockError);
     expect(result.current.isLoading).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Auth state listener error:', mockError);
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should unsubscribe on unmount', () => {

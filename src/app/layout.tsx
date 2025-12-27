@@ -5,6 +5,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { OpenRouterApiKeyProvider } from '@/context/OpenRouterApiKeyContext';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({
@@ -37,9 +38,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <FirebaseClientProvider>
-              {children}
-            </FirebaseClientProvider>
+          <FirebaseClientProvider>
+              <OpenRouterApiKeyProvider>
+            {children}
+              </OpenRouterApiKeyProvider>
+          </FirebaseClientProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>
