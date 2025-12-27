@@ -12,6 +12,8 @@ interface JournalChatProps {
   isLoadingSummary?: boolean;
 }
 
+const MIN_MESSAGES_FOR_SUMMARY = 2;
+
 export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalChatProps) {
   const { t } = useTranslation();
   const { messages, isTyping, error, sendMessage } = useChatConversation();
@@ -47,7 +49,7 @@ export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalCh
     }
   };
 
-  const canSummarize = messages.length >= 2 && messages.some((msg) => msg.role === 'user');
+  const canSummarize = messages.length >= MIN_MESSAGES_FOR_SUMMARY && messages.some((msg) => msg.role === 'user');
 
   return (
     <div className="flex flex-col h-full">
@@ -126,4 +128,3 @@ export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalCh
     </div>
   );
 }
-

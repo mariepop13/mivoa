@@ -1,6 +1,9 @@
 import { generateChatCompletion } from './openrouter-client';
 import type { ChatMessage } from '../types/chat';
 
+const CHAT_MAX_TOKENS = 1000;
+const CHAT_TEMPERATURE = 0.8;
+
 const SYSTEM_PROMPT_EN = `You are a thoughtful and empathetic journaling assistant. Your role is to help users reflect on their thoughts and feelings through conversation. Ask open-ended questions that encourage deeper reflection. Be warm, supportive, and genuinely curious about the user's experiences. Keep responses conversational and natural.`;
 
 const SYSTEM_PROMPT_FR = `Tu es un assistant de journal intime attentionné et empathique. Ton rôle est d'aider les utilisateurs à réfléchir sur leurs pensées et émotions par la conversation. Pose des questions ouvertes qui encouragent une réflexion plus approfondie. Sois chaleureux, bienveillant et vraiment curieux des expériences de l'utilisateur. Garde les réponses conversationnelles et naturelles.`;
@@ -35,8 +38,8 @@ export async function sendChatMessage(
   messages.push({ role: 'user', content: userMessage });
 
   const response = await generateChatCompletion(messages, apiKey, {
-    temperature: 0.8,
-    max_tokens: 1000,
+    temperature: CHAT_TEMPERATURE,
+    max_tokens: CHAT_MAX_TOKENS,
   });
 
   return response.trim();

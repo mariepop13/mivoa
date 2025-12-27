@@ -1,6 +1,9 @@
 import { generateChatCompletion } from './openrouter-client';
 import type { ChatMessage, ConversationSummary } from '../types/chat';
 
+const MAX_SUMMARY_TOKENS = 2000;
+const DEFAULT_SUMMARY_TITLE = 'Journal Entry';
+const MAX_INSIGHTS_COUNT = 5;
 
 function parseSummaryResponse(response: string): ConversationSummary {
   try {
@@ -14,9 +17,9 @@ function parseSummaryResponse(response: string): ConversationSummary {
     const parsed = JSON.parse(jsonMatch[0]) as ConversationSummary;
     
     return {
-      title: parsed.title || 'Journal Entry',
+      title: parsed.title || DEFAULT_SUMMARY_TITLE,
       content: parsed.content || '',
-      insights: Array.isArray(parsed.insights) ? parsed.insights.slice(0, 5) : [],
+      insights: Array.isArray(parsed.insights) ? parsed.insights.slice(0, MAX_INSIGHTS_COUNT) : [],
     };
   } catch (error) {
     console.error('Failed to parse summary response:', error);
@@ -66,7 +69,7 @@ export async function generateConversationSummary(
     apiKey,
     {
       temperature: 0.5,
-      max_tokens: 2000,
+      max_tokens: MAX_SUMMARY_TOKENS,
     }
   );
 

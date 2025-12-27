@@ -8,7 +8,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { isAppOfflineError } from '@/firebase/utils';
-import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp, Timestamp, type Firestore } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
@@ -37,6 +37,92 @@ interface JournalEntryData extends Record<string, unknown> {
   conversationMode?: boolean;
 }
 
+const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
+
+function generateEntryId(dateKey: string): string {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+  return `${dateKey}-${hours}${minutes}${seconds}${milliseconds}`;
+}
+
+function triggerEntryAnalysis(
+  content: string,
+  entryId: string,
+  firestore: Firestore,
+  user: { uid: string },
+  analyze: (content: string) => Promise<{ mood?: string; themes?: string[]; keyTakeaways?: string[] } | null>
+): void {
+  if (content.trim().length <= MIN_CONTENT_LENGTH_FOR_ANALYSIS) return;
+
+  analyze(content).then((analysis) => {
+    if (!analysis) return;
+
+    const analysisData: Record<string, unknown> = {
+      mood: analysis.mood,
+      themes: analysis.themes,
+      keyTakeaways: analysis.keyTakeaways,
+      aiProcessedAt: serverTimestamp(),
+    };
+    const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+    updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
+      console.error('Failed to save entry analysis:', err);
+    });
+  }).catch((err) => {
+    console.error('Failed to analyze entry:', err);
+  });
+}
+
+function createEntryDocument(
+  entryId: string,
+  content: string,
+  title: string,
+  dateKey: string,
+  firestore: Firestore,
+  user: { uid: string }
+): Promise<void> {
+  const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+  const data: Record<string, unknown> = {
+    content,
+    date: dateKey,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  if (title) {
+    data.title = title;
+  }
+  return setDocumentNonBlocking(newDocRef, data, {});
+}
+
+function saveSummaryAsEntry(
+  entryId: string,
+  entryDateKey: string,
+  summary: { content: string; title: string; insights?: string[] },
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
+  firestore: Firestore,
+  user: { uid: string }
+): Promise<void> {
+  const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: Timestamp.fromDate(msg.timestamp),
+  }));
+  const data: Record<string, unknown> = {
+    content: summary.content,
+    title: summary.title,
+    date: entryDateKey,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    conversationMode: true,
+    conversationHistory: conversationHistoryForStorage,
+    summaryGeneratedAt: serverTimestamp(),
+    keyTakeaways: summary.insights,
+  };
+  return setDocumentNonBlocking(newDocRef, data, {});
+}
 
 function JournalApp() {
   const auth = useAuth();
@@ -179,50 +265,16 @@ function JournalApp() {
 
     try {
       const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+      const entryId = generateEntryId(dateKey);
+      await createEntryDocument(entryId, initialContent, initialTitle, dateKey, firestore, user);
       
-      const entryId = `${dateKey}-${hours}${minutes}${seconds}${milliseconds}`;
-      const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-
-      const data: Record<string, unknown> = {
-        content: initialContent,
-        date: dateKey,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      if (initialTitle) {
-        data.title = initialTitle;
-      }
-
-      await setDocumentNonBlocking(newDocRef, data, {});
       hasInitializedRef.current = false;
       setSelectedEntryId(entryId);
       setContent(initialContent);
       setTitle(initialTitle);
       setLastSavedAt(now);
 
-      if (initialContent.trim().length > 50) {
-        analyze(initialContent).then((analysis) => {
-          if (analysis) {
-            const analysisData: Record<string, unknown> = {
-              mood: analysis.mood,
-              themes: analysis.themes,
-              keyTakeaways: analysis.keyTakeaways,
-              aiProcessedAt: serverTimestamp(),
-            };
-            const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-            updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
-              console.error('Failed to save entry analysis:', err);
-            });
-          }
-        }).catch((err) => {
-          console.error('Failed to analyze entry:', err);
-        });
-      }
+      triggerEntryAnalysis(initialContent, entryId, firestore, user, analyze);
     } catch (error) {
       console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
@@ -303,57 +355,41 @@ function JournalApp() {
       }));
 
       const summary = await generateConversationSummary(chatMessages, apiKey, lang);
-
       const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
-      
       const entryDateKey = format(selectedDate, 'yyyy-MM-dd');
-      const entryId = `${entryDateKey}-${hours}${minutes}${seconds}${milliseconds}`;
-      const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+      const entryId = generateEntryId(entryDateKey);
 
-      const conversationHistoryForStorage = conversationHistory.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: Timestamp.fromDate(msg.timestamp),
-      }));
-
-      const data: Record<string, unknown> = {
-        content: summary.content,
-        title: summary.title,
-        date: entryDateKey,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        conversationMode: true,
-        conversationHistory: conversationHistoryForStorage,
-        summaryGeneratedAt: serverTimestamp(),
-        keyTakeaways: summary.insights,
+      const saveSummaryAsEntry = async (): Promise<void> => {
+        if (!firestore || !user) {
+          throw new Error('Missing firestore or user');
+        }
+        const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+        const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: Timestamp.fromDate(msg.timestamp),
+        }));
+        const data: Record<string, unknown> = {
+          content: summary.content,
+          title: summary.title,
+          date: entryDateKey,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          conversationMode: true,
+          conversationHistory: conversationHistoryForStorage,
+          summaryGeneratedAt: serverTimestamp(),
+          keyTakeaways: summary.insights,
+        };
+        await setDocumentNonBlocking(newDocRef, data, {});
       };
 
-      await setDocumentNonBlocking(newDocRef, data, {});
+      await saveSummaryAsEntry();
       setSelectedEntryId(entryId);
       setContent(summary.content);
       setTitle(summary.title);
       setLastSavedAt(now);
 
-      if (summary.content.trim().length > 50) {
-        analyze(summary.content).then((analysis) => {
-          if (analysis) {
-            const analysisData: Record<string, unknown> = {
-              mood: analysis.mood,
-              themes: analysis.themes,
-              aiProcessedAt: serverTimestamp(),
-            };
-            updateDocumentNonBlocking(newDocRef, analysisData).catch((err) => {
-              console.error('Failed to save entry analysis:', err);
-            });
-          }
-        }).catch((err) => {
-          console.error('Failed to analyze entry:', err);
-        });
-      }
+      triggerEntryAnalysis(summary.content, entryId, firestore, user, analyze);
     } catch (error) {
       console.error('Failed to generate summary:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error generating summary';
@@ -417,6 +453,16 @@ function JournalApp() {
       return '';
     }
     return format(date, 'HH:mm:ss');
+  };
+
+  const getEntryTitle = (
+    entry: (JournalEntryData & { id: string }) | undefined,
+    allEntries: (JournalEntryData & { id: string })[] | null
+  ): string => {
+    if (entry?.title) return entry.title;
+    if (entry) return formatEntryTime(entry);
+    if (allEntries?.[0]) return formatEntryTime(allEntries[0]);
+    return '';
   };
 
   const recentEntries = useMemo(() => {
@@ -551,7 +597,7 @@ function JournalApp() {
               <span className="text-xl">☰</span>
             </button>
             <h2 className="text-lg font-headline font-semibold text-foreground">
-              {selectedEntry?.title || (selectedEntry ? formatEntryTime(selectedEntry) : entries?.[0] ? formatEntryTime(entries[0]) : '')}
+              {getEntryTitle(selectedEntry, entries)}
             </h2>
           </div>
           
