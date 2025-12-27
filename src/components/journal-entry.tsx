@@ -6,6 +6,8 @@ import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
 import { useContext } from 'react';
 import { LanguageContext } from '@/context/LanguageContext';
+import { AiPromptSuggestion } from '@/components/ai-prompt-suggestion';
+import type { RecentEntry } from '@/ai/types/journal';
 
 interface JournalEntryProps {
   date: Date;
@@ -20,6 +22,7 @@ interface JournalEntryProps {
   error?: string | null;
   hideDate?: boolean;
   canDelete?: boolean;
+  recentEntries?: RecentEntry[];
 }
 
 export function JournalEntry({
@@ -35,6 +38,7 @@ export function JournalEntry({
   error = null,
   hideDate = false,
   canDelete = false,
+  recentEntries = [],
 }: JournalEntryProps) {
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
@@ -89,6 +93,16 @@ export function JournalEntry({
           />
         </div>
         <div className="flex-1 pt-4 sm:pt-6">
+          {!localContent.trim() && (
+            <div className="mb-4">
+              <AiPromptSuggestion
+                recentEntries={recentEntries}
+                onPromptSelected={(prompt) => {
+                  onContentChange(prompt);
+                }}
+              />
+            </div>
+          )}
           <textarea
             value={localContent}
             onChange={handleContentChange}

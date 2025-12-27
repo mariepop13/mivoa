@@ -8,6 +8,7 @@ import {
   signOut,
   UserCredential,
 } from 'firebase/auth';
+import { isAppOfflineError } from './utils';
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -34,6 +35,11 @@ export async function initiateAnonymousSignIn(authInstance: Auth): Promise<UserC
   try {
     return await signInAnonymously(authInstance);
   } catch (error) {
+    if (isAppOfflineError(error)) {
+      console.warn('Anonymous sign-in failed: Application is offline. Authentication will be retried when online.');
+      throw new Error('Application is offline. Please check your internet connection and try again.');
+    }
+    
     console.error('Failed to initiate anonymous sign-in:', error);
     throw error;
   }

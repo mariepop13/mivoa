@@ -61,6 +61,12 @@
   "or": "OR",
   "noAuthorizationCode": "No authorization code received",
   "verifyApiKey": "Verify API key",
-  "verifyingApiKey": "Verifying API key..."
+  "verifyingApiKey": "Verifying API key...",
+  "aiPromptSuggestion": "Writing Prompt",
+  "generatingPrompt": "Generating prompt...",
+  "regenerate": "New",
+  "useThisPrompt": "Use this prompt",
+  "analyzingEntry": "Analyzing entry...",
+  "entryAnalyzed": "Entry analyzed"
 }
 

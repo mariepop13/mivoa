@@ -6,11 +6,13 @@ import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { isAppOfflineError } from '@/firebase/utils';
 import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageContext } from '@/context/LanguageContext';
+import { useEntryAnalysis } from '@/hooks/use-entry-analysis';
 
 interface JournalEntryData extends Record<string, unknown> {
   content: string;
@@ -18,6 +20,10 @@ interface JournalEntryData extends Record<string, unknown> {
   date: string;
   createdAt: string | Timestamp;
   updatedAt: string | Timestamp;
+  mood?: string;
+  themes?: string[];
+  keyTakeaways?: string[];
+  aiProcessedAt?: Timestamp;
 }
 
 
@@ -27,6 +33,7 @@ function JournalApp() {
   const { user, isLoading: authLoading } = useUser();
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
+  const { analyze } = useEntryAnalysis();
   
   const dateLocale = language === 'fr' ? fr : enUS;
   
@@ -46,8 +53,13 @@ function JournalApp() {
     if (!authLoading && !user && auth) {
       initiateAnonymousSignIn(auth).catch((error) => {
         if (mounted) {
-          console.error('Failed to sign in anonymously:', error);
-          setAuthError('Authentication failed. Please check your Firebase configuration.');
+          if (isAppOfflineError(error)) {
+            console.warn('Authentication failed: Application is offline. Please check your internet connection.');
+            setAuthError('Application is offline. Please check your internet connection and try again.');
+          } else {
+            console.error('Failed to sign in anonymously:', error);
+            setAuthError('Authentication failed. Please check your Firebase configuration.');
+          }
         }
       });
     }
@@ -179,6 +191,25 @@ function JournalApp() {
       setContent(initialContent);
       setTitle(initialTitle);
       setLastSavedAt(now);
+
+      if (initialContent.trim().length > 50) {
+        analyze(initialContent).then((analysis) => {
+          if (analysis) {
+            const analysisData: Record<string, unknown> = {
+              mood: analysis.mood,
+              themes: analysis.themes,
+              keyTakeaways: analysis.keyTakeaways,
+              aiProcessedAt: serverTimestamp(),
+            };
+            const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+            updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
+              console.error('Failed to save entry analysis:', err);
+            });
+          }
+        }).catch((err) => {
+          console.error('Failed to analyze entry:', err);
+        });
+      }
     } catch (error) {
       console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
@@ -296,6 +327,26 @@ function JournalApp() {
     }
     return format(date, 'HH:mm:ss');
   };
+
+  const recentEntries = useMemo(() => {
+    if (!entries) return [];
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
+    
+    return entries
+      .filter((entry) => {
+        const entryDate = entry.date;
+        return entryDate >= sevenDaysAgoKey && entry.id !== selectedEntryId;
+      })
+      .slice(0, 7)
+      .map((entry) => ({
+        content: entry.content,
+        title: entry.title,
+        date: entry.date,
+      }));
+  }, [entries, selectedEntryId]);
 
   if (authError) {
     return (
@@ -429,6 +480,7 @@ function JournalApp() {
                   error={saveError}
                   hideDate={true}
                   canDelete={!!selectedEntryId}
+                  recentEntries={recentEntries}
                 />
               </div>
             </div>
