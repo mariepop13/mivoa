@@ -43,14 +43,17 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
   });
 }
 
-export function createEntryDocument(
-  entryId: string,
-  content: string,
-  title: string,
-  dateKey: string,
-  firestore: Firestore,
-  user: { uid: string }
-): Promise<void> {
+interface CreateEntryDocumentParams {
+  entryId: string;
+  content: string;
+  title: string;
+  dateKey: string;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function createEntryDocument(params: CreateEntryDocumentParams): Promise<void> {
+  const { entryId, content, title, dateKey, firestore, user } = params;
   const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
   const data: Record<string, unknown> = {
     content,

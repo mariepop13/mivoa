@@ -4,7 +4,7 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { analyzeEntry } from '@/ai/services/entry-analysis-service';
 import type { EntryAnalysis } from '@/ai/types/journal';
 
-interface UseEntryAnalysisResult {
+export interface UseEntryAnalysisResult {
   analyze: (entryContent: string) => Promise<EntryAnalysis | null>;
   isAnalyzing: boolean;
   error: string | null;

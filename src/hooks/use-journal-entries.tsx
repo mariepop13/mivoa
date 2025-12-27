@@ -139,7 +139,14 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
 
     try {
       const entryId = generateEntryId(dateKey);
-      await createEntryDocument(entryId, initialContent, initialTitle, dateKey, firestore, user);
+      await createEntryDocument({
+        entryId,
+        content: initialContent,
+        title: initialTitle,
+        dateKey,
+        firestore,
+        user,
+      });
       
       updateEntryState(entryId, initialContent, initialTitle);
       triggerEntryAnalysis({ content: initialContent, entryId, firestore, user, analyze });
@@ -253,21 +260,22 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     }
   }, [apiKey, user, firestore, language, dateKey, updateEntryState, analyze]);
 
-  const recentEntries = entries
-    ? entries
-        .filter((entry) => {
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
-          return entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId;
-        })
-        .slice(0, 7)
-        .map((entry) => ({
-          content: entry.content,
-          title: entry.title,
-          date: entry.date,
-        }))
-    : [];
+  const recentEntries = useMemo(() => {
+    if (!entries) return [];
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
+    
+    return entries
+      .filter((entry) => entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId)
+      .slice(0, 7)
+      .map((entry) => ({
+        content: entry.content,
+        title: entry.title,
+        date: entry.date,
+      }));
+  }, [entries, selectedEntryId]);
 
   const selectedEntry = entries?.find(e => e.id === selectedEntryId);
 

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { useChatConversation } from '@/hooks/use-chat-conversation';
 import { ChatMessage } from '@/components/chat-message';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles } from 'lucide-react';
+import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 
 interface JournalChatProps {
   onSummarize?: (conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>) => void;
@@ -45,7 +47,12 @@ export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalCh
 
   const handleSummarize = () => {
     if (onSummarize) {
-      onSummarize(messages);
+      const conversationHistory = messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
+      }));
+      onSummarize(conversationHistory);
     }
   };
 
@@ -62,9 +69,12 @@ export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalCh
             </div>
           )}
 
-          {messages.map((message, index) => (
-            <ChatMessage key={`${message.timestamp.getTime()}-${index}`} message={message} />
-          ))}
+          {messages.map((message, index) => {
+            const timestampMs = message.timestamp instanceof Timestamp 
+              ? message.timestamp.toMillis() 
+              : message.timestamp.getTime();
+            return <ChatMessage key={`${timestampMs}-${index}`} message={message} />;
+          })}
 
           {isTyping && (
             <div className="flex justify-start mb-4">

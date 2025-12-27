@@ -1,7 +1,9 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
+  timestamp: Date | Timestamp;
 }
 
 export interface ConversationState {

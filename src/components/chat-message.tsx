@@ -1,6 +1,7 @@
 'use client';
 
 import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
+import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useContext } from 'react';
@@ -13,7 +14,8 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const { language } = useContext(LanguageContext);
   const dateLocale = language === 'fr' ? fr : enUS;
-  const formattedTime = format(message.timestamp, 'HH:mm:ss', { locale: dateLocale });
+  const timestampDate = message.timestamp instanceof Timestamp ? message.timestamp.toDate() : message.timestamp;
+  const formattedTime = format(timestampDate, 'HH:mm:ss', { locale: dateLocale });
 
   const isUser = message.role === 'user';
 
