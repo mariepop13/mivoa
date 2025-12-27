@@ -9,17 +9,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings2, Sun, Moon, Monitor, Check } from 'lucide-react';
+import { Settings2, Sun, Moon, Monitor, Check, CheckCircle2, XCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageContext, SUPPORTED_LANGUAGES, LANGUAGE_LABELS } from '@/context/LanguageContext';
+import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
+import { OpenRouterApiKeyDialog } from '@/components/openrouter-api-key-dialog';
 
 export function SettingsMenu() {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useContext(LanguageContext);
+  const { apiKey: openRouterApiKey } = useContext(OpenRouterApiKeyContext);
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const [isOpenRouterDialogOpen, setIsOpenRouterDialogOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -122,7 +126,37 @@ export function SettingsMenu() {
             </DropdownMenuItem>
           ))}
         </div>
+
+        <DropdownMenuSeparator />
+
+        <div className="space-y-1 p-1">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2">
+            {t('openRouterApiKey')}
+          </label>
+          <DropdownMenuItem
+            onClick={() => setIsOpenRouterDialogOpen(true)}
+            className="flex items-center justify-between cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              {openRouterApiKey ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5 text-destructive" />
+              )}
+              <span className={cn(
+                "text-xs font-medium",
+                openRouterApiKey ? "text-green-600 dark:text-green-400" : "text-destructive"
+              )}>
+                {openRouterApiKey ? t('openRouterApiKeyConfigured') : t('openRouterApiKeyNotConfigured')}
+              </span>
+            </div>
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
+      <OpenRouterApiKeyDialog 
+        open={isOpenRouterDialogOpen} 
+        onOpenChange={setIsOpenRouterDialogOpen} 
+      />
     </DropdownMenu>
   );
 }
