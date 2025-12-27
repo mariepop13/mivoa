@@ -411,7 +411,6 @@ function JournalApp() {
             <h2 className="text-lg font-headline font-semibold text-foreground">
               {selectedEntry?.title || (selectedEntry ? formatEntryTime(selectedEntry) : entries?.[0] ? formatEntryTime(entries[0]) : '')}
             </h2>
-            <SettingsMenu />
           </div>
           
           <div className="flex-1 overflow-y-auto">
