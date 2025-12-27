@@ -7,6 +7,8 @@ import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { useTranslation } from '@/hooks/use-translation';
 import { LoaderCircle, CheckCircle2, XCircle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function OpenRouterCallbackPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
