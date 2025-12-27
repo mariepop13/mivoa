@@ -20,6 +20,25 @@ Expert developer. Code and communication in English.
 Format: `<gitmoji> <intent>: <message>`
 ✨ Feat, 🐛 Fix, ♻️ Refactor, 💄 UI/Style, 🎨 Structure, ⚡ Performance, 🔥 Remove, 📝 Docs, 🚀 Deploy, 🔒 Security, 🚧 WIP, 📦 Dependencies
 
+Commit message structure:
+```
+<gitmoji> <intent>: <short description>
+
+- First change or improvement
+- Second change or improvement
+- Third change or improvement
+```
+
+Example:
+```
+♻️ refactor: extract OAuth callback logic and improve component structure
+
+- Extracted OAuth callback handling logic into custom hook useOAuthCallback
+- Created presentational components for better separation of concerns
+- Reduced component size from ~100 lines to ~23 lines
+- Added explicit button type and focus styles for improved accessibility
+```
+
 # Architecture
 - File size: 200-400 lines (split if >400).
 - Single responsibility per file. No "God files".
@@ -44,6 +63,7 @@ Format: `<gitmoji> <intent>: <message>`
 - Language: TypeScript
 - Styling: Tailwind CSS + Shadcn UI (Radix)
 - Backend: Firebase (Auth, Firestore)
+- AI: OpenRouter
 - State: React Context, Hooks
 
 # CodeRabbit
