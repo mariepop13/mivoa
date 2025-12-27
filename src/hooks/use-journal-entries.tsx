@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useContext, useMemo, useEffect } from 'react';
-import { useFirestore, useCollection, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking, applyMemoMarker } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -65,14 +65,21 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
-  const entriesCollectionRef = collection(firestore, `users/${user?.uid}/entries`);
-  const entriesQuery = query(
-    entriesCollectionRef,
-    where('date', '==', dateKey)
-  );
+  const entriesCollectionRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `users/${user.uid}/entries`);
+  }, [firestore, user]);
+
+  const entriesQuery = useMemo(() => {
+    if (!entriesCollectionRef) return null;
+    return query(
+      entriesCollectionRef,
+      where('date', '==', dateKey)
+    );
+  }, [entriesCollectionRef, dateKey]);
 
   const { data: entriesRaw, isLoading: entriesLoading } = useCollection<JournalEntryData>(
-    user ? Object.assign(entriesQuery, { __memo: true }) : null
+    entriesQuery ? applyMemoMarker(entriesQuery) : null
   );
 
   function getTimestampMillis(value: string | Timestamp | unknown): number {
@@ -106,6 +113,10 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
   }, [firestore, user, selectedEntryId]);
 
   const { data: selectedEntryData, isLoading: selectedEntryLoading } = useDoc<JournalEntryData>(selectedEntryDocRef);
+
+  useEffect(() => {
+    hasInitializedRef.current = false;
+  }, [selectedEntryId]);
 
   useEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {

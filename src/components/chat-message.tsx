@@ -5,13 +5,14 @@ import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useContext } from 'react';
+import React from 'react';
 import { LanguageContext } from '@/context/LanguageContext';
 
 interface ChatMessageProps {
   message: ChatMessageType;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const dateLocale = language === 'fr' ? fr : enUS;
   const timestampDate = message.timestamp instanceof Timestamp ? message.timestamp.toDate() : message.timestamp;
