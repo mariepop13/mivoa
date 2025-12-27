@@ -108,13 +108,12 @@ describe('useUser', () => {
 
   it('should handle auth state errors', async () => {
     const mockError = new Error('Auth state error');
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    mockOnAuthStateChanged.mockImplementation((auth, callback, errorCallback) => {
-      if (errorCallback) {
-        setTimeout(() => {
-          errorCallback(mockError);
-        }, 0);
-      }
+    let errorCallback: ((error: Error) => void) | undefined;
+
+    mockOnAuthStateChanged.mockImplementation((auth, callback, errCallback) => {
+      errorCallback = errCallback;
       return mockUnsubscribe;
     });
 
@@ -122,13 +121,27 @@ describe('useUser', () => {
       wrapper: createWrapper(mockAuth),
     });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+    await act(async () => {
+      if (errorCallback) {
+        errorCallback(mockError);
+      }
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
+
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).not.toBe(null);
+      },
+      { timeout: 1000 }
+    );
 
     expect(result.current.user).toBe(null);
     expect(result.current.error).toEqual(mockError);
     expect(result.current.isLoading).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Auth state listener error:', mockError);
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should unsubscribe on unmount', () => {
