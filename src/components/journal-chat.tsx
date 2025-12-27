@@ -7,7 +7,6 @@ import { ChatMessage } from '@/components/chat-message';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles } from 'lucide-react';
-import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 
 interface JournalChatProps {
   onSummarize?: (conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>) => void;
