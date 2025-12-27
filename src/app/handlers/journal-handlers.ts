@@ -67,14 +67,17 @@ export function createEntryDocument(params: CreateEntryDocumentParams): Promise<
   return setDocumentNonBlocking(newDocRef, data, {});
 }
 
-export function saveSummaryAsEntry(
-  entryId: string,
-  entryDateKey: string,
-  summary: { content: string; title: string; insights?: string[] },
-  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
-  firestore: Firestore,
-  user: { uid: string }
-): Promise<void> {
+interface SaveSummaryParams {
+  entryId: string;
+  entryDateKey: string;
+  summary: { content: string; title: string; insights?: string[] };
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function saveSummaryAsEntry(params: SaveSummaryParams): Promise<void> {
+  const { entryId, entryDateKey, summary, conversationHistory, firestore, user } = params;
   const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
   const conversationHistoryForStorage = conversationHistory.map((msg) => ({
     role: msg.role,

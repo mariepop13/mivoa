@@ -247,7 +247,14 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
       const summary = await generateConversationSummary(chatMessages, apiKey, lang);
       const entryId = generateEntryId(dateKey);
 
-      await saveSummaryAsEntry(entryId, dateKey, summary, conversationHistory, firestore, user);
+      await saveSummaryAsEntry({
+        entryId,
+        entryDateKey: dateKey,
+        summary,
+        conversationHistory,
+        firestore,
+        user,
+      });
       
       updateEntryState(entryId, summary.content, summary.title);
       triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
