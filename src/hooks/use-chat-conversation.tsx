@@ -1,26 +1,36 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
 import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
 import type { ChatMessage } from '@/ai/types/chat';
 
-export function useChatConversation() {
+interface UseChatConversationResult {
+  messages: ChatMessage[];
+  isTyping: boolean;
+  error: string | null;
+  sendMessage: (content: string) => Promise<void>;
+  resetConversation: () => void;
+}
+
+export function useChatConversation(): UseChatConversationResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInitializedRef = useRef(false);
 
   const lang = (language || 'en') as 'en' | 'fr';
 
   useEffect(() => {
-    if (messages.length === 0 && apiKey) {
+    if (!hasInitializedRef.current && apiKey) {
       const initialMessage: ChatMessage = {
         role: 'assistant',
         content: generateInitialMessage(lang),
         timestamp: new Date(),
       };
       setMessages([initialMessage]);
+      hasInitializedRef.current = true;
     }
   }, [apiKey, lang]);
 
@@ -69,10 +79,11 @@ export function useChatConversation() {
     }
   }, [apiKey, messages, lang]);
 
-  const resetConversation = useCallback(() => {
+  const resetConversation = useCallback((): void => {
     setMessages([]);
     setError(null);
     setIsTyping(false);
+    hasInitializedRef.current = false;
   }, []);
 
   return {

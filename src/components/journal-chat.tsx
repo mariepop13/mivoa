@@ -61,7 +61,7 @@ export function JournalChat({ onSummarize, isLoadingSummary = false }: JournalCh
           )}
 
           {messages.map((message, index) => (
-            <ChatMessage key={index} message={message} />
+            <ChatMessage key={`${message.timestamp.getTime()}-${index}`} message={message} />
           ))}
 
           {isTyping && (

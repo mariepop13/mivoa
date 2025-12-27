@@ -4,7 +4,13 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { analyzeEntry } from '@/ai/services/entry-analysis-service';
 import type { EntryAnalysis } from '@/ai/types/journal';
 
-export function useEntryAnalysis() {
+interface UseEntryAnalysisResult {
+  analyze: (entryContent: string) => Promise<EntryAnalysis | null>;
+  isAnalyzing: boolean;
+  error: string | null;
+}
+
+export function useEntryAnalysis(): UseEntryAnalysisResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

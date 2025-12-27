@@ -7,6 +7,13 @@ import { format } from 'date-fns';
 
 const PROMPT_CACHE_KEY_PREFIX = 'journal_prompt_';
 
+interface UseJournalPromptsResult {
+  prompt: string | null;
+  isLoading: boolean;
+  error: string | null;
+  regenerate: () => Promise<void>;
+}
+
 function getCachedPrompt(dateKey: string): JournalPrompt | null {
   if (typeof window === 'undefined') return null;
   
@@ -34,7 +41,7 @@ function setCachedPrompt(prompt: JournalPrompt): void {
   }
 }
 
-export function useJournalPrompts(recentEntries: RecentEntry[] = []) {
+export function useJournalPrompts(recentEntries: RecentEntry[] = []): UseJournalPromptsResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
   const [prompt, setPrompt] = useState<JournalPrompt | null>(null);

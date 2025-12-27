@@ -3,7 +3,14 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { LanguageContext } from '@/context/LanguageContext';
 
-export function useTranslation() {
+interface UseTranslationResult {
+  t: (key: string, fallback?: string) => string;
+  language: string;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useTranslation(): UseTranslationResult {
   const { language } = useContext(LanguageContext);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
