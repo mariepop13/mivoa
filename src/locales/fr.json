@@ -67,6 +67,11 @@
   "regenerate": "Nouvelle",
   "useThisPrompt": "Utiliser cette invite",
   "analyzingEntry": "Analyse de l'entrée...",
-  "entryAnalyzed": "Entrée analysée"
+  "entryAnalyzed": "Entrée analysée",
+  "chatInitializing": "Démarrage de la conversation...",
+  "typeMessage": "Tapez votre message...",
+  "summarizeConversation": "Résumer la Conversation",
+  "generatingSummary": "Génération du résumé...",
+  "chatError": "Échec de l'envoi du message"
 }
 

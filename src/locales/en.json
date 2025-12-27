@@ -67,6 +67,11 @@
   "regenerate": "New",
   "useThisPrompt": "Use this prompt",
   "analyzingEntry": "Analyzing entry...",
-  "entryAnalyzed": "Entry analyzed"
+  "entryAnalyzed": "Entry analyzed",
+  "chatInitializing": "Starting conversation...",
+  "typeMessage": "Type your message...",
+  "summarizeConversation": "Summarize Conversation",
+  "generatingSummary": "Generating summary...",
+  "chatError": "Failed to send message"
 }
 

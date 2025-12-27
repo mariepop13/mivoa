@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useContext } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
+import { JournalChat } from '@/components/journal-chat';
 import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
 import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -13,6 +14,9 @@ import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useEntryAnalysis } from '@/hooks/use-entry-analysis';
+import { generateConversationSummary } from '@/ai/services/conversation-summary-service';
+import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
+import type { ChatMessage } from '@/ai/types/chat';
 
 interface JournalEntryData extends Record<string, unknown> {
   content: string;
@@ -24,6 +28,13 @@ interface JournalEntryData extends Record<string, unknown> {
   themes?: string[];
   keyTakeaways?: string[];
   aiProcessedAt?: Timestamp;
+  conversationHistory?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Timestamp | Date | string;
+  }>;
+  summaryGeneratedAt?: Timestamp;
+  conversationMode?: boolean;
 }
 
 
@@ -34,6 +45,7 @@ function JournalApp() {
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
   const { analyze } = useEntryAnalysis();
+  const { apiKey } = useContext(OpenRouterApiKeyContext);
   
   const dateLocale = language === 'fr' ? fr : enUS;
   
@@ -46,6 +58,7 @@ function JournalApp() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -272,6 +285,84 @@ function JournalApp() {
     }
   };
 
+  const handleSummarizeConversation = async (conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>) => {
+    if (!apiKey || !user || !firestore) {
+      setSaveError('API key not configured or services unavailable');
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+    setSaveError(null);
+
+    try {
+      const lang = (language || 'en') as 'en' | 'fr';
+      const chatMessages: ChatMessage[] = conversationHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+      }));
+
+      const summary = await generateConversationSummary(chatMessages, apiKey, lang);
+
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+      
+      const entryDateKey = format(selectedDate, 'yyyy-MM-dd');
+      const entryId = `${entryDateKey}-${hours}${minutes}${seconds}${milliseconds}`;
+      const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+
+      const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: Timestamp.fromDate(msg.timestamp),
+      }));
+
+      const data: Record<string, unknown> = {
+        content: summary.content,
+        title: summary.title,
+        date: entryDateKey,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        conversationMode: true,
+        conversationHistory: conversationHistoryForStorage,
+        summaryGeneratedAt: serverTimestamp(),
+        keyTakeaways: summary.insights,
+      };
+
+      await setDocumentNonBlocking(newDocRef, data, {});
+      setSelectedEntryId(entryId);
+      setContent(summary.content);
+      setTitle(summary.title);
+      setLastSavedAt(now);
+
+      if (summary.content.trim().length > 50) {
+        analyze(summary.content).then((analysis) => {
+          if (analysis) {
+            const analysisData: Record<string, unknown> = {
+              mood: analysis.mood,
+              themes: analysis.themes,
+              aiProcessedAt: serverTimestamp(),
+            };
+            updateDocumentNonBlocking(newDocRef, analysisData).catch((err) => {
+              console.error('Failed to save entry analysis:', err);
+            });
+          }
+        }).catch((err) => {
+          console.error('Failed to analyze entry:', err);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to generate summary:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error generating summary';
+      setSaveError(errorMessage);
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedEntryDocRef || !selectedEntryId || !entries) {
       return;
@@ -466,22 +557,29 @@ function JournalApp() {
           
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-              <div className="bg-card rounded-xl border border-border shadow-sm">
-                <JournalEntry
-                  date={selectedDate}
-                  content={content}
-                  title={title}
-                  onContentChange={handleContentChange}
-                  onTitleChange={handleTitleChange}
-                  onSave={handleSave}
-                  onDelete={handleDelete}
-                  isLoading={isSaving}
-                  isSaved={lastSavedAt !== null && !isSaving}
-                  error={saveError}
-                  hideDate={true}
-                  canDelete={!!selectedEntryId}
-                  recentEntries={recentEntries}
-                />
+              <div className="bg-card rounded-xl border border-border shadow-sm h-full min-h-[600px] flex flex-col">
+                {selectedEntryId ? (
+                  <JournalEntry
+                    date={selectedDate}
+                    content={content}
+                    title={title}
+                    onContentChange={handleContentChange}
+                    onTitleChange={handleTitleChange}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                    isLoading={isSaving}
+                    isSaved={lastSavedAt !== null && !isSaving}
+                    error={saveError}
+                    hideDate={true}
+                    canDelete={!!selectedEntryId}
+                    recentEntries={recentEntries}
+                  />
+                ) : (
+                  <JournalChat
+                    onSummarize={handleSummarizeConversation}
+                    isLoadingSummary={isGeneratingSummary}
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -28,3 +28,9 @@ export interface EntryMetadata {
   aiProcessedAt?: Timestamp;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Timestamp | Date;
+}
+
