@@ -1,29 +1,21 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
+import { JournalChat } from '@/components/journal-chat';
 import { SettingsMenu } from '@/components/settings-menu';
 import { useUser } from '@/firebase/auth/use-user';
-import { useAuth, useFirestore, useCollection, useDoc, FirebaseContext, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useAuth, FirebaseContext } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { collection, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { isAppOfflineError } from '@/firebase/utils';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageContext } from '@/context/LanguageContext';
-
-interface JournalEntryData extends Record<string, unknown> {
-  content: string;
-  title?: string;
-  date: string;
-  createdAt: string | Timestamp;
-  updatedAt: string | Timestamp;
-}
-
+import { useJournalEntries, type JournalEntryData } from '@/hooks/use-journal-entries';
 
 function JournalApp() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const { user, isLoading: authLoading } = useUser();
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
@@ -31,14 +23,30 @@ function JournalApp() {
   const dateLocale = language === 'fr' ? fr : enUS;
   
   const [selectedDate] = useState(new Date());
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-  const [content, setContent] = useState('');
-  const [title, setTitle] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const {
+    entries,
+    selectedEntry,
+    selectedEntryData,
+    entriesLoading,
+    selectedEntryId,
+    setSelectedEntryId,
+    content,
+    setContent,
+    title,
+    setTitle,
+    isSaving,
+    lastSavedAt,
+    saveError,
+    createNewEntry,
+    saveEntry,
+    handleDelete: handleDeleteFromHook,
+    handleSummarizeConversation,
+    isGeneratingSummary,
+    recentEntries,
+  } = useJournalEntries({ selectedDate });
 
   useEffect(() => {
     let mounted = true;
@@ -46,8 +54,13 @@ function JournalApp() {
     if (!authLoading && !user && auth) {
       initiateAnonymousSignIn(auth).catch((error) => {
         if (mounted) {
-          console.error('Failed to sign in anonymously:', error);
-          setAuthError('Authentication failed. Please check your Firebase configuration.');
+          if (isAppOfflineError(error)) {
+            console.warn('Authentication failed: Application is offline. Please check your internet connection.');
+            setAuthError('Application is offline. Please check your internet connection and try again.');
+          } else {
+            console.error('Failed to sign in anonymously:', error);
+            setAuthError('Authentication failed. Please check your Firebase configuration.');
+          }
         }
       });
     }
@@ -57,60 +70,11 @@ function JournalApp() {
     };
   }, [auth, authLoading, user]);
 
-  const entriesCollectionRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/entries`);
-  }, [firestore, user]);
-
-  const dateKey = format(selectedDate, 'yyyy-MM-dd');
-  const entriesQuery = useMemo(() => {
-    if (!entriesCollectionRef) return null;
-    const q = query(
-      entriesCollectionRef,
-      where('date', '==', dateKey)
-    );
-    return Object.assign(q, { __memo: true });
-  }, [entriesCollectionRef, dateKey]);
-
-  const { data: entriesRaw, isLoading: entriesLoading } = useCollection<JournalEntryData>(
-    entriesQuery
-  );
-
-  const entries = useMemo(() => {
-    if (!entriesRaw) return null;
-    return [...entriesRaw].sort((a, b) => {
-      const aTime = a.createdAt instanceof Timestamp 
-        ? a.createdAt.toMillis() 
-        : typeof a.createdAt === 'string' 
-          ? new Date(a.createdAt).getTime() 
-          : 0;
-      const bTime = b.createdAt instanceof Timestamp 
-        ? b.createdAt.toMillis() 
-        : typeof b.createdAt === 'string' 
-          ? new Date(b.createdAt).getTime() 
-          : 0;
-      return bTime - aTime;
-    });
-  }, [entriesRaw]);
-
-  const selectedEntryDocRef = useMemo(() => {
-    if (!firestore || !user || !selectedEntryId) return null;
-    return doc(firestore, `users/${user.uid}/entries/${selectedEntryId}`);
-  }, [firestore, user, selectedEntryId]);
-
-  const { data: selectedEntryData, isLoading: selectedEntryLoading } = useDoc<JournalEntryData>(
-    selectedEntryDocRef
-  );
-
-  const hasInitializedRef = useRef(false);
-
   useEffect(() => {
-    hasInitializedRef.current = false;
     setContent('');
     setTitle('');
-    setLastSavedAt(null);
     setSelectedEntryId(null);
-  }, [dateKey]);
+  }, [selectedDate, setContent, setTitle, setSelectedEntryId]);
 
   useEffect(() => {
     if (entries && entries.length > 0 && !selectedEntryId) {
@@ -119,118 +83,18 @@ function JournalApp() {
   }, [entries, selectedEntryId]);
 
   useEffect(() => {
-    if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
-      if (selectedEntryData?.content !== undefined) {
-        setContent(selectedEntryData.content || '');
-        setTitle(selectedEntryData.title || '');
-        if (selectedEntryData.updatedAt) {
-          let date: Date;
-          if (selectedEntryData.updatedAt instanceof Timestamp) {
-            date = selectedEntryData.updatedAt.toDate();
-          } else if (typeof selectedEntryData.updatedAt === 'string') {
-            date = new Date(selectedEntryData.updatedAt);
-          } else {
-            date = new Date();
-          }
-          setLastSavedAt(date);
-        }
-      } else {
-        setContent('');
-        setTitle('');
-        setLastSavedAt(null);
-      }
-      hasInitializedRef.current = true;
+    if (selectedEntryData && selectedEntryData.content !== undefined) {
+      setContent(selectedEntryData.content || '');
+      setTitle(selectedEntryData.title || '');
     }
-  }, [selectedEntryData, selectedEntryLoading]);
-
-  const createNewEntry = async (initialContent: string = '', initialTitle: string = '') => {
-    if (!entriesCollectionRef || !user || !firestore) {
-      console.warn('Cannot create entry: missing collection ref, user, or firestore');
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-
-    try {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
-      
-      const entryId = `${dateKey}-${hours}${minutes}${seconds}${milliseconds}`;
-      const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-
-      const data: Record<string, unknown> = {
-        content: initialContent,
-        date: dateKey,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      if (initialTitle) {
-        data.title = initialTitle;
-      }
-
-      await setDocumentNonBlocking(newDocRef, data, {});
-      hasInitializedRef.current = false;
-      setSelectedEntryId(entryId);
-      setContent(initialContent);
-      setTitle(initialTitle);
-      setLastSavedAt(now);
-    } catch (error) {
-      console.error('setDoc error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
-      setSaveError(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const saveEntry = async (newContent: string, newTitle: string) => {
-    if (!selectedEntryDocRef || !user) {
-      console.warn('Cannot save: missing entryDocRef or user', { 
-        entryDocRef: Boolean(selectedEntryDocRef), 
-        user: Boolean(user) 
-      });
-      setIsSaving(false);
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-    
-    try {
-      const data: Record<string, unknown> = {
-        content: newContent,
-        updatedAt: serverTimestamp(),
-      };
-
-      if (newTitle) {
-        data.title = newTitle;
-      }
-
-      await updateDocumentNonBlocking(selectedEntryDocRef, data);
-      setLastSavedAt(new Date());
-    } catch (error) {
-      console.error('updateDoc error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error saving entry';
-      setSaveError(errorMessage);
-      setLastSavedAt(null);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [selectedEntryData]);
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    setSaveError(null);
   };
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
-    setSaveError(null);
   };
 
   const handleSave = () => {
@@ -241,60 +105,34 @@ function JournalApp() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedEntryDocRef || !selectedEntryId || !entries) {
-      return;
-    }
-
-    if (!confirm(t('confirmDelete'))) {
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-
-    try {
-      await deleteDocumentNonBlocking(selectedEntryDocRef);
-      
-      const currentIndex = entries.findIndex(e => e.id === selectedEntryId);
-      const remainingEntries = entries.filter(e => e.id !== selectedEntryId);
-      
-      if (remainingEntries.length > 0) {
-        const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
-        setSelectedEntryId(remainingEntries[nextIndex].id);
-      } else {
-        setSelectedEntryId(null);
-        setContent('');
-        setTitle('');
-        setLastSavedAt(null);
-      }
-      
-      hasInitializedRef.current = false;
-    } catch (error) {
-      console.error('deleteDoc error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error deleting entry';
-      setSaveError(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleEntrySelect = (entryId: string) => {
     setSelectedEntryId(entryId);
-    hasInitializedRef.current = false;
     setIsSidebarOpen(false);
   };
 
-  const formatEntryTime = (entry: JournalEntryData & { id: string }) => {
+  const formatEntryTime = (entry: JournalEntryData & { id: string }): string => {
+    const createdAt = entry.createdAt;
     let date: Date;
-    if (entry.createdAt instanceof Timestamp) {
-      date = entry.createdAt.toDate();
-    } else if (typeof entry.createdAt === 'string') {
-      date = new Date(entry.createdAt);
+    
+    if (createdAt instanceof Date) {
+      date = createdAt;
+    } else if (typeof createdAt === 'string') {
+      date = new Date(createdAt);
     } else {
       return '';
     }
+    
     return format(date, 'HH:mm:ss');
+  };
+
+  const getEntryTitle = (
+    entry: (JournalEntryData & { id: string }) | undefined,
+    allEntries: (JournalEntryData & { id: string })[] | null
+  ): string => {
+    if (entry?.title) return entry.title;
+    if (entry) return formatEntryTime(entry);
+    if (allEntries?.[0]) return formatEntryTime(allEntries[0]);
+    return '';
   };
 
   if (authError) {
@@ -317,8 +155,6 @@ function JournalApp() {
       </main>
     );
   }
-
-  const selectedEntry = entries?.find(e => e.id === selectedEntryId);
 
   return (
     <main className="min-h-screen bg-background">
@@ -409,27 +245,35 @@ function JournalApp() {
               <span className="text-xl">☰</span>
             </button>
             <h2 className="text-lg font-headline font-semibold text-foreground">
-              {selectedEntry?.title || (selectedEntry ? formatEntryTime(selectedEntry) : entries?.[0] ? formatEntryTime(entries[0]) : '')}
+              {getEntryTitle(selectedEntry, entries)}
             </h2>
           </div>
           
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-              <div className="bg-card rounded-xl border border-border shadow-sm">
-                <JournalEntry
-                  date={selectedDate}
-                  content={content}
-                  title={title}
-                  onContentChange={handleContentChange}
-                  onTitleChange={handleTitleChange}
-                  onSave={handleSave}
-                  onDelete={handleDelete}
-                  isLoading={isSaving}
-                  isSaved={lastSavedAt !== null && !isSaving}
-                  error={saveError}
-                  hideDate={true}
-                  canDelete={!!selectedEntryId}
-                />
+              <div className="bg-card rounded-xl border border-border shadow-sm h-full min-h-[600px] flex flex-col">
+                {selectedEntryId ? (
+                  <JournalEntry
+                    date={selectedDate}
+                    content={content}
+                    title={title}
+                    onContentChange={handleContentChange}
+                    onTitleChange={handleTitleChange}
+                    onSave={handleSave}
+                    onDelete={handleDeleteFromHook}
+                    isLoading={isSaving}
+                    isSaved={lastSavedAt !== null && !isSaving}
+                    error={saveError}
+                    hideDate={true}
+                    canDelete={!!selectedEntryId}
+                    recentEntries={recentEntries}
+                  />
+                ) : (
+                  <JournalChat
+                    onSummarize={handleSummarizeConversation}
+                    isLoadingSummary={isGeneratingSummary}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -470,4 +314,3 @@ export default function HomePage() {
 
   return <JournalApp />;
 }
-

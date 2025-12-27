@@ -20,8 +20,13 @@ export async function initiateOAuthFlow(callbackUrl: string): Promise<void> {
     throw new TypeError(`Invalid callback URL: ${callbackUrl}`);
   }
 
-  if (!callbackUrl.startsWith('https://')) {
-    throw new TypeError('callbackUrl must be an HTTPS URL');
+  const url = new URL(callbackUrl);
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
+  const isHttps = url.protocol === 'https:';
+  const isHttpLocalhost = url.protocol === 'http:' && isLocalhost;
+
+  if (!isHttps && !isHttpLocalhost) {
+    throw new TypeError('callbackUrl must be an HTTPS URL (or http://localhost for local development)');
   }
 
   const pkce = await generatePKCEPair();

@@ -5,6 +5,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { isAppOfflineError } from './utils';
 
 export function initializeFirebase() {
   if (!getApps().length) {
@@ -23,9 +24,12 @@ export function getSdks(firebaseApp: FirebaseApp) {
   if (typeof window !== 'undefined') {
     try {
       analytics = getAnalytics(firebaseApp);
-    } catch {
-      // Analytics initialization failed (e.g., not supported in SSR environment)
-      // This is expected and handled gracefully
+    } catch (error) {
+      if (isAppOfflineError(error)) {
+        console.warn('Firebase Analytics initialization skipped: Application is offline. Analytics will be available when online.');
+      } else {
+        console.warn('Firebase Analytics initialization failed (this is expected in some environments):', error);
+      }
     }
   }
 

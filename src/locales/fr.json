@@ -61,6 +61,17 @@
   "or": "OU",
   "noAuthorizationCode": "Aucun code d'autorisation reçu",
   "verifyApiKey": "Vérifier la clé API",
-  "verifyingApiKey": "Vérification de la clé API..."
+  "verifyingApiKey": "Vérification de la clé API...",
+  "aiPromptSuggestion": "Invite d'écriture",
+  "generatingPrompt": "Génération de l'invite...",
+  "regenerate": "Nouvelle",
+  "useThisPrompt": "Utiliser cette invite",
+  "analyzingEntry": "Analyse de l'entrée...",
+  "entryAnalyzed": "Entrée analysée",
+  "chatInitializing": "Démarrage de la conversation...",
+  "typeMessage": "Tapez votre message...",
+  "summarizeConversation": "Résumer la Conversation",
+  "generatingSummary": "Génération du résumé...",
+  "chatError": "Échec de l'envoi du message"
 }
 
