@@ -38,11 +38,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <FirebaseClientProvider>
+          <FirebaseClientProvider>
               <OpenRouterApiKeyProvider>
-                {children}
+            {children}
               </OpenRouterApiKeyProvider>
-            </FirebaseClientProvider>
+          </FirebaseClientProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

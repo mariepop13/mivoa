@@ -38,6 +38,7 @@ jobs:
       timeout-minutes: 5
       env:
         CI: true
+        TEST_OPENROUTER_API_KEY: ${{ secrets.TEST_OPENROUTER_API_KEY }}
     
     - name: Build check
       run: npm run build
