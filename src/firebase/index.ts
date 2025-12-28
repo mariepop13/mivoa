@@ -2,12 +2,19 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 import { isAppOfflineError } from './utils';
 
-export function initializeFirebase() {
+interface FirebaseSdks {
+  firebaseApp: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+  analytics: Analytics | null;
+}
+
+export function initializeFirebase(): FirebaseSdks {
   if (!getApps().length) {
     const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
@@ -16,7 +23,7 @@ export function initializeFirebase() {
   return getSdks(getApp());
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
+export function getSdks(firebaseApp: FirebaseApp): FirebaseSdks {
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
   

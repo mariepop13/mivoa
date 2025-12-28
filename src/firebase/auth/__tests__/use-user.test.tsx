@@ -1,8 +1,9 @@
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useUser } from '../use-user';
 import { FirebaseProvider } from '@/firebase/provider';
-import type { User } from 'firebase/auth';
+import type { User, Auth, Unsubscribe, NextOrObserver, ErrorFn } from 'firebase/auth';
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn(),
@@ -18,11 +19,11 @@ interface MockAuth {
 
 describe('useUser', () => {
   const mockOnAuthStateChanged = vi.mocked(onAuthStateChanged);
-  let mockUnsubscribe: ReturnType<typeof vi.fn>;
+  let mockUnsubscribe: Unsubscribe;
   let mockAuth: MockAuth;
 
   beforeEach(() => {
-    mockUnsubscribe = vi.fn();
+    mockUnsubscribe = vi.fn() as unknown as Unsubscribe;
     mockAuth = {
       currentUser: null,
     };
@@ -50,9 +51,7 @@ describe('useUser', () => {
   };
 
   it('should return loading state initially', () => {
-    mockOnAuthStateChanged.mockImplementation(() => {
-      return mockUnsubscribe;
-    });
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, _nextOrObserver: NextOrObserver<User>, _error?: ErrorFn): Unsubscribe => mockUnsubscribe);
 
     const { result } = renderHook(() => useUser(), {
       wrapper: createWrapper(mockAuth),
@@ -69,8 +68,12 @@ describe('useUser', () => {
       email: 'test@example.com',
     } as User;
 
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      setTimeout(() => callback(mockUser), 0);
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, nextOrObserver: NextOrObserver<User>, _error?: ErrorFn): Unsubscribe => {
+      setTimeout(() => {
+        if (typeof nextOrObserver === 'function') {
+          nextOrObserver(mockUser);
+        }
+      }, 0);
       return mockUnsubscribe;
     });
 
@@ -88,8 +91,12 @@ describe('useUser', () => {
   });
 
   it('should return null user when not authenticated', async () => {
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      setTimeout(() => callback(null), 0);
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, nextOrObserver: NextOrObserver<User>, _error?: ErrorFn): Unsubscribe => {
+      setTimeout(() => {
+        if (typeof nextOrObserver === 'function') {
+          nextOrObserver(null);
+        }
+      }, 0);
       return mockUnsubscribe;
     });
 
@@ -110,9 +117,9 @@ describe('useUser', () => {
     const mockError = new Error('Auth state error');
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    let errorCallback: ((error: Error) => void) | undefined;
+    let errorCallback: ErrorFn | undefined;
 
-    mockOnAuthStateChanged.mockImplementation((auth, callback, errCallback) => {
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, _nextOrObserver: NextOrObserver<User>, errCallback?: ErrorFn): Unsubscribe => {
       errorCallback = errCallback;
       return mockUnsubscribe;
     });
@@ -145,9 +152,7 @@ describe('useUser', () => {
   });
 
   it('should unsubscribe on unmount', () => {
-    mockOnAuthStateChanged.mockImplementation(() => {
-      return mockUnsubscribe;
-    });
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, _nextOrObserver: NextOrObserver<User>, _error?: ErrorFn): Unsubscribe => mockUnsubscribe);
 
     const { unmount } = renderHook(() => useUser(), {
       wrapper: createWrapper(mockAuth),
@@ -161,8 +166,10 @@ describe('useUser', () => {
   it('should update when auth state changes', async () => {
     let authCallback: ((user: User | null) => void) | null = null;
 
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      authCallback = callback;
+    mockOnAuthStateChanged.mockImplementation((_auth: Auth, nextOrObserver: NextOrObserver<User>, _error?: ErrorFn): Unsubscribe => {
+      if (typeof nextOrObserver === 'function') {
+        authCallback = nextOrObserver;
+      }
       return mockUnsubscribe;
     });
 
