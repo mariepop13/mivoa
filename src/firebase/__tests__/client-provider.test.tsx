@@ -1,0 +1,76 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
+import { FirebaseClientProvider } from '../client-provider';
+import * as firebaseModule from '../index';
+
+vi.mock('../index', () => ({
+  FirebaseProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="firebase-provider">{children}</div>,
+  initializeFirebase: vi.fn(),
+}));
+
+describe('FirebaseClientProvider', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should render children when Firebase initializes successfully', () => {
+    const mockServices = {
+      firebaseApp: {} as any,
+      firestore: {} as any,
+      auth: {} as any,
+      analytics: null,
+    };
+
+    vi.mocked(firebaseModule.initializeFirebase).mockReturnValue(mockServices);
+
+    const { getByTestId, getByText } = render(
+      <FirebaseClientProvider>
+        <div>Test Content</div>
+      </FirebaseClientProvider>
+    );
+
+    expect(getByTestId('firebase-provider')).toBeInTheDocument();
+    expect(getByText('Test Content')).toBeInTheDocument();
+  });
+
+  it('should render children with unavailable services when initialization fails', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = new Error('Initialization failed');
+    
+    vi.mocked(firebaseModule.initializeFirebase).mockImplementation(() => {
+      throw error;
+    });
+
+    const { getByTestId, getByText } = render(
+      <FirebaseClientProvider>
+        <div>Test Content</div>
+      </FirebaseClientProvider>
+    );
+
+    expect(getByTestId('firebase-provider')).toBeInTheDocument();
+    expect(getByText('Test Content')).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should handle non-Error exceptions during initialization', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    vi.mocked(firebaseModule.initializeFirebase).mockImplementation(() => {
+      throw new Error('String error');
+    });
+
+    const { getByTestId } = render(
+      <FirebaseClientProvider>
+        <div>Test Content</div>
+      </FirebaseClientProvider>
+    );
+
+    expect(getByTestId('firebase-provider')).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+});
+
