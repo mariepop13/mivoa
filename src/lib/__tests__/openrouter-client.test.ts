@@ -62,31 +62,29 @@ describe('validateOpenRouterApiKey', () => {
     expect(result).toBe(false);
   });
 
-  it('should return true for valid API key with data.data structure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ valid: true }),
-    } as Response);
+  it('should return true for valid API key', async () => {
+    const testCases = [
+      { response: { valid: true }, description: 'with valid: true response' },
+      { response: { valid: true, data: { id: 'test-id' } }, description: 'with additional data fields' },
+    ];
 
-    const result = await validateOpenRouterApiKey('valid-key-1234567890');
-    expect(result).toBe(true);
-    expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.objectContaining({
-      method: 'POST',
-      headers: expect.objectContaining({
-        'Content-Type': 'application/json',
-      }),
-      body: expect.stringContaining('valid-key-1234567890'),
-    }));
-  });
+    for (const testCase of testCases) {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => testCase.response,
+      } as Response);
 
-  it('should return true for valid API key with data.id structure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ valid: true }),
-    } as Response);
-
-    const result = await validateOpenRouterApiKey('valid-key-1234567890');
-    expect(result).toBe(true);
+      const result = await validateOpenRouterApiKey('valid-key-1234567890');
+      expect(result).toBe(true);
+      expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+        body: expect.stringContaining('valid-key-1234567890'),
+      }));
+      vi.clearAllMocks();
+    }
   });
 
   it('should handle fetch errors', async () => {

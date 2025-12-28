@@ -23,7 +23,7 @@ function JournalApp(): React.JSX.Element {
     journalEntries.setContent('');
     journalEntries.setTitle('');
     journalEntries.setSelectedEntryId(null);
-  }, [selectedDate, journalEntries.setContent, journalEntries.setTitle, journalEntries.setSelectedEntryId]);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (journalEntries.selectedEntryData && journalEntries.selectedEntryData.content !== undefined) {

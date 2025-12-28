@@ -32,7 +32,6 @@ export function ChatMessagesList({ messages, isTyping, error }: ChatMessagesList
             {t('error')}: {error}
           </div>
         )}
-        <div id="messages-end" />
       </div>
     </div>
   );

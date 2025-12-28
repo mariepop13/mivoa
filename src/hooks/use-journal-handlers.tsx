@@ -8,7 +8,7 @@ interface UseJournalHandlersParams {
 
 interface UseJournalHandlersResult {
   handleContentChange: (newContent: string) => void;
-  handleSave: () => void;
+  handleSave: () => Promise<void>;
   handleEntrySelect: (entryId: string) => void;
   handleNewEntry: () => void;
 }
@@ -24,11 +24,17 @@ export function useJournalHandlers({
     [journalEntries]
   );
 
-  const handleSave = useCallback(() => {
-    if (journalEntries.selectedEntryId) {
-      journalEntries.saveEntry(journalEntries.content);
-    } else {
-      journalEntries.createNewEntry(journalEntries.content);
+  const handleSave = useCallback(async () => {
+    try {
+      if (journalEntries.selectedEntryId) {
+        await journalEntries.saveEntry(journalEntries.content);
+      } else {
+        await journalEntries.createNewEntry(journalEntries.content);
+      }
+    } catch (error) {
+      console.error('Error in handleSave:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save entry';
+      console.error('Save operation failed:', errorMessage);
     }
   }, [journalEntries]);
 

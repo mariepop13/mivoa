@@ -58,7 +58,8 @@ describe('FirebaseClientProvider', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     vi.mocked(firebaseModule.initializeFirebase).mockImplementation(() => {
-      throw new Error('String error');
+      // eslint-disable-next-line no-throw-literal
+      throw { message: 'String error' };
     });
 
     const { getByTestId } = render(

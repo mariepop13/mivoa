@@ -1,10 +1,23 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JournalMobileHeader } from '../journal-mobile-header';
+import { useTranslation } from '@/hooks/use-translation';
+
+vi.mock('@/hooks/use-translation');
 
 describe('JournalMobileHeader', () => {
   const mockOnSidebarToggle = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useTranslation).mockReturnValue({
+      t: (key: string) => key,
+      language: 'en',
+      isLoading: false,
+      error: null,
+    });
+  });
 
   it('should render the title', () => {
     render(<JournalMobileHeader title="Test Title" onSidebarToggle={mockOnSidebarToggle} isSidebarOpen={false} />);

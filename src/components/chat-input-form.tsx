@@ -26,8 +26,12 @@ export function ChatInputForm({
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return;
     const messageToSend = inputValue;
-    setInputValue('');
-    await onSend(messageToSend);
+    try {
+      await onSend(messageToSend);
+      setInputValue('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
