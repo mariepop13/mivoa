@@ -15,7 +15,7 @@ interface OpenRouterApiKeyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function OpenRouterApiKeyDialog({ open, onOpenChange }: OpenRouterApiKeyDialogProps) {
+export function OpenRouterApiKeyDialog({ open, onOpenChange }: OpenRouterApiKeyDialogProps): React.JSX.Element {
   const { t } = useTranslation();
 
   const handleCompletion = () => {

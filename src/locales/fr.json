@@ -70,8 +70,25 @@
   "entryAnalyzed": "Entrée analysée",
   "chatInitializing": "Démarrage de la conversation...",
   "typeMessage": "Tapez votre message...",
-  "summarizeConversation": "Résumer la Conversation",
+  "summarizeConversation": "Résumer la conversation",
   "generatingSummary": "Génération du résumé...",
-  "chatError": "Échec de l'envoi du message"
+  "chatError": "Échec de l'envoi du message",
+  "aiModel": "Modèle IA",
+  "selectModel": "Sélectionner un modèle",
+  "selectModelDescription": "Choisissez un modèle IA pour vos entrées de journal",
+  "modelSelected": "Modèle sélectionné",
+  "modelNotSelected": "Aucun modèle sélectionné",
+  "searchModels": "Rechercher des modèles...",
+  "modelPricing": "Tarification",
+  "modelContextLength": "Contexte",
+  "perTokenPrompt": "Prompt",
+  "perTokenCompletion": "Complétion",
+  "per1KTokens": "par 1K tokens",
+  "loadingModels": "Chargement des modèles...",
+  "errorLoadingModels": "Échec du chargement des modèles",
+  "defaultModel": "Par défaut",
+  "noModelsFound": "Aucun modèle trouvé",
+  "close": "Fermer",
+  "toggleSidebar": "Basculer la barre latérale"
 }
 

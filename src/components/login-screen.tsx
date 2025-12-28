@@ -5,7 +5,7 @@ import { useAuth } from '@/firebase';
 import { signInWithGoogle, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { useTranslation } from '@/hooks/use-translation';
 
-export function LoginScreen() {
+export function LoginScreen(): React.JSX.Element {
   const auth = useAuth();
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
