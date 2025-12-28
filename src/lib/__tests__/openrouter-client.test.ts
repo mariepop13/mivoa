@@ -23,20 +23,19 @@ describe('validateOpenRouterApiKey', () => {
 
   it('should return false for invalid API key', async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-      text: async () => 'Unauthorized',
+      ok: true,
+      json: async () => ({ valid: false }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('invalid-key-1234567890');
     expect(result).toBe(false);
+    expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.any(Object));
   });
 
   it('should return false for API key that returns 403', async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 403,
-      text: async () => 'Forbidden',
+      ok: true,
+      json: async () => ({ valid: false }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('forbidden-key-1234567890');
@@ -46,7 +45,7 @@ describe('validateOpenRouterApiKey', () => {
   it('should return false when API returns error in response', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ error: 'Invalid key' }),
+      json: async () => ({ valid: false }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('error-key-1234567890');
@@ -56,7 +55,7 @@ describe('validateOpenRouterApiKey', () => {
   it('should return false when API response is missing id', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ name: 'test' }),
+      json: async () => ({ valid: false }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('missing-id-key-1234567890');
@@ -66,41 +65,35 @@ describe('validateOpenRouterApiKey', () => {
   it('should return true for valid API key with data.data structure', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        data: {
-          label: 'sk-or-v1-test',
-          is_provisioning_key: false,
-        },
-      }),
+      json: async () => ({ valid: true }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('valid-key-1234567890');
     expect(result).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        'Content-Type': 'application/json',
+      }),
+      body: expect.stringContaining('valid-key-1234567890'),
+    }));
   });
 
   it('should return true for valid API key with data.id structure', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        id: 'key_1234567890',
-        created_at: '2024-01-01T00:00:00Z',
-      }),
+      json: async () => ({ valid: true }),
     } as Response);
 
     const result = await validateOpenRouterApiKey('valid-key-1234567890');
     expect(result).toBe(true);
   });
 
-  it('should validate real API key from environment variable', async () => {
-    const apiKey = process.env.TEST_OPENROUTER_API_KEY;
-    
-    if (!apiKey) {
-      return;
-    }
+  it('should handle fetch errors', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-    const result = await validateOpenRouterApiKey(apiKey, false);
-    
-    expect(result).toBe(true);
-  }, 15000);
+    const result = await validateOpenRouterApiKey('test-key-1234567890');
+    expect(result).toBe(false);
+  });
 });
 

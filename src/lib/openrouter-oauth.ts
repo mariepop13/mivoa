@@ -3,6 +3,7 @@ import { generatePKCEPair, type PKCEPair } from './pkce';
 const OPENROUTER_AUTH_BASE_URL = 'https://openrouter.ai';
 const STORAGE_KEY_PKCE = 'openrouter_oauth_pkce';
 const STORAGE_KEY_STATE = 'openrouter_oauth_state';
+const STATE_BYTE_LENGTH = 16;
 
 export interface ExchangeResponse {
   key: string;
@@ -40,7 +41,7 @@ export async function initiateOAuthFlow(callbackUrl: string): Promise<void> {
       callback_url: callbackUrl,
       code_challenge: pkce.codeChallenge,
       code_challenge_method: pkce.codeChallengeMethod,
-      state: state,
+      state,
     });
 
     const authUrl = `${OPENROUTER_AUTH_BASE_URL}/auth?${params.toString()}`;
@@ -50,7 +51,7 @@ export async function initiateOAuthFlow(callbackUrl: string): Promise<void> {
       error,
       callbackUrl,
       state,
-      hasPkce: !!pkce,
+      hasPkce: Boolean(pkce),
     });
     throw error;
   }
@@ -109,15 +110,15 @@ export async function exchangeAuthCodeForApiKey(
   } catch (error) {
     console.error('Failed to exchange auth code:', {
       error,
-      code: code.substring(0, 10) + '...',
-      hasState: !!state,
+      code: `${code.substring(0, 10)}...`,
+      hasState: Boolean(state),
     });
     throw error;
   }
 }
 
 function generateRandomState(): string {
-  const array = new Uint8Array(16);
+  const array = new Uint8Array(STATE_BYTE_LENGTH);
   crypto.getRandomValues(array);
   return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

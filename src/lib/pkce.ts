@@ -13,9 +13,7 @@ export function generateCodeVerifier(): string {
 export function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
-  return crypto.subtle.digest('SHA-256', data).then((hash) => {
-    return base64URLEncode(new Uint8Array(hash));
-  });
+  return crypto.subtle.digest('SHA-256', data).then((hash) => base64URLEncode(new Uint8Array(hash)));
 }
 
 export async function generatePKCEPair(): Promise<PKCEPair> {
