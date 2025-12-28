@@ -30,7 +30,8 @@ function parseSummaryResponse(response: string): ConversationSummary {
 export async function generateConversationSummary(
   conversationHistory: ChatMessage[],
   apiKey: string,
-  language: 'en' | 'fr'
+  language: 'en' | 'fr',
+  model?: string
 ): Promise<ConversationSummary> {
   if (conversationHistory.length === 0) {
     throw new Error('Cannot generate summary from empty conversation');
@@ -40,9 +41,13 @@ export async function generateConversationSummary(
     .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
     .join('\n\n');
 
-  const systemPrompt = language === 'fr'
-    ? `Tu es un assistant qui génère des résumés de conversations de journal intime. Crée un résumé cohérent et réfléchi de la conversation sous forme d'entrée de journal. Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`
-    : `You are an assistant that generates journal entry summaries from conversations. Create a coherent and thoughtful summary of the conversation as a journal entry. Respond ONLY with a valid JSON object, no additional text.`;
+  const systemPromptFr = `Tu es un assistant qui génère des résumés de conversations de journal 
+    intime. Crée un résumé cohérent et réfléchi de la conversation sous forme d'entrée de journal. 
+    Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
+  const systemPromptEn = `You are an assistant that generates journal entry summaries from 
+    conversations. Create a coherent and thoughtful summary of the conversation as a journal entry. 
+    Respond ONLY with a valid JSON object, no additional text.`;
+  const systemPrompt = language === 'fr' ? systemPromptFr : systemPromptEn;
 
   const jsonSchemaFr = `{
   "title": "titre suggéré pour l'entrée (1-2 phrases courtes)",
@@ -56,9 +61,13 @@ export async function generateConversationSummary(
   "insights": ["key points or main insights (max 3-5, short phrases)"]
 }`;
 
-  const userPrompt = language === 'fr'
-    ? `Analyse cette conversation de journal intime et génère un résumé sous forme d'entrée de journal au format JSON:\n\n${jsonSchemaFr}\n\nConversation:\n${conversationText}\n\nRéponds uniquement avec le JSON, rien d'autre.`
-    : `Analyze this journaling conversation and generate a summary as a journal entry in JSON format:\n\n${jsonSchemaEn}\n\nConversation:\n${conversationText}\n\nRespond only with JSON, nothing else.`;
+  const userPromptFr = `Analyse cette conversation de journal intime et génère un résumé sous 
+    forme d'entrée de journal au format JSON:\n\n${jsonSchemaFr}\n\nConversation:\n${conversationText}\n\n
+    Réponds uniquement avec le JSON, rien d'autre.`;
+  const userPromptEn = `Analyze this journaling conversation and generate a summary as a journal 
+    entry in JSON format:\n\n${jsonSchemaEn}\n\nConversation:\n${conversationText}\n\n
+    Respond only with JSON, nothing else.`;
+  const userPrompt = language === 'fr' ? userPromptFr : userPromptEn;
 
 
   const response = await generateChatCompletion(
@@ -68,6 +77,7 @@ export async function generateConversationSummary(
     ],
     apiKey,
     {
+      model,
       temperature: 0.5,
       max_tokens: MAX_SUMMARY_TOKENS,
     }

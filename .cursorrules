@@ -1,74 +1,31 @@
-Expert developer. Code and communication in English.
+Expert developer. English only.
 
-# Code Style (Clean Code)
-- No comments unless necessary. Self-explanatory code.
-- Naming: Clear, intention-revealing. Functions=verbs, variables=nouns. No abbreviations.
-- Functions: Single responsibility, 20-40 lines. Max 3-4 params (use objects).
-- Control Flow: Early returns, nesting ≤2. Avoid deep else-chains.
-- Types: Explicit public APIs. Validate at boundaries (fail fast). Prefer immutability.
-- Errors: Never swallow. Log actionable context.
+# Cursor Efficiency (Token Optimization)
+- Search: Use `grep` for exact matches/symbols, `codebase_search` for semantic queries only. Always specify `target_directories` to limit scope.
+- Read files in parallel batches when possible. Read only necessary sections (offset/limit), not entire files.
+- Be direct: Ask specific questions. Avoid exploratory searches. Use file paths from context when available.
+- Tool selection: Prefer faster tools (grep > glob > codebase_search). Read files only when editing or critical.
 
-# Git Workflow (Gitflow)
-- Protected: `main`, `develop` (PRs required).
-- Features: `feature/description` (from `develop` → `develop`).
-- Bugfixes: `bugfix/description` (from `develop` → `develop`).
-- Hotfixes: `hotfix/description` (from `main` → `main` AND `develop`).
-- Releases: `release/vX.Y.Z` (from `develop` → `main` AND `develop`).
-- CRITICAL: Verify branch. If on `develop`/`main`, create new branch first.
-
-# Commit Messages (Gitmoji)
-Format: `<gitmoji> <intent>: <message>`
-✨ Feat, 🐛 Fix, ♻️ Refactor, 💄 UI/Style, 🎨 Structure, ⚡ Performance, 🔥 Remove, 📝 Docs, 🚀 Deploy, 🔒 Security, 🚧 WIP, 📦 Dependencies
-
-Commit message structure:
-```
-<gitmoji> <intent>: <short description>
-
-- First change or improvement
-- Second change or improvement
-- Third change or improvement
-```
-
-Example:
-```
-♻️ refactor: extract OAuth callback logic and improve component structure
-
-- Extracted OAuth callback handling logic into custom hook useOAuthCallback
-- Created presentational components for better separation of concerns
-- Reduced component size from ~100 lines to ~23 lines
-- Added explicit button type and focus styles for improved accessibility
-```
+# Code Style
+- No comments, no docs. Self-explanatory code only. Functions=verbs, variables=nouns. No abbreviations. Never create README/docs files unless explicitly requested.
+- Functions: Single responsibility, 20-40 lines. Max 3-4 params (use objects). Early returns, nesting ≤2.
+- Types: Explicit public APIs. Validate at boundaries. Prefer immutability. Never swallow errors.
 
 # Architecture
-- File size: 200-400 lines (split if >400).
-- Single responsibility per file. No "God files".
-- Exports: 1-3 related entities per file.
-- Layers: Separate UI (components), domain (services/flows), data/infrastructure.
+- Files: 200-400 lines (split if >400). Single responsibility. Exports: 1-3 related entities.
+- Layers: UI (components) → domain (services/flows) → data/infrastructure.
 - Imports: Standard → Third-party → Internal (@/*).
 
-# Testing (Vitest)
-- Run `npm run test:ci` after changes, before commits, when fixing bugs.
-- Test non-trivial logic. Arrange/Act/Assert pattern.
-- Fast, deterministic, isolated tests.
-- Before commit: `npm run test:ci` (lint + typecheck + tests).
-- Before review: `npm run test:ci` + `coderabbit --prompt-only -t uncommitted`.
-- Features: Write tests alongside (TDD when possible).
-- Bugs: Add test reproducing bug, then fix.
-- Refactoring: Run tests before/after.
-- Coverage: Meaningful business logic + edge cases.
-- Quick: `npm run test:run` for dev, `npm run test:ci` before commit.
+# Git
+- Workflow: `feature/`, `bugfix/`, `hotfix/`, `release/vX.Y.Z`. Protected: `main`, `develop` (PRs required). CRITICAL: Verify branch first.
+- Commits: `<gitmoji> <intent>: <description>` + bullet points. ✨🐛♻️💄🎨⚡🔥📝🚀🔒🚧📦
 
-# Tech Stack
-- Framework: Next.js 15 (App Router)
-- Language: TypeScript
-- Styling: Tailwind CSS + Shadcn UI (Radix)
-- Backend: Firebase (Auth, Firestore)
-- AI: OpenRouter
-- State: React Context, Hooks
+# Testing (Vitest)
+- Run `npm run test:ci` before commits. Test non-trivial logic (Arrange/Act/Assert). Fast, isolated.
+- Before review: `npm run test:ci` + `coderabbit --prompt-only -t uncommitted`.
+
+# Stack
+Next.js 15 (App Router), TypeScript, Tailwind + Shadcn UI, Firebase (Auth/Firestore), OpenRouter, React Context/Hooks
 
 # CodeRabbit
-- CLI available. Run: `coderabbit --prompt-only -t uncommitted`
-- Use `--prompt-only` for token-efficient output.
-- Use `-t uncommitted` for uncommitted changes only.
-- Max 3 runs per change set.
-- Help: `cr -h` or `coderabbit --help`
+`coderabbit --prompt-only -t uncommitted` (max 3 runs). Help: `cr -h`

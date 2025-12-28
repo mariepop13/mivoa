@@ -6,11 +6,13 @@ import { format } from 'date-fns';
 export async function generateDailyPrompt(
   apiKey: string,
   recentEntries: RecentEntry[],
-  language: 'en' | 'fr'
+  language: 'en' | 'fr',
+  model?: string
 ): Promise<JournalPrompt> {
   const prompt = buildDailyPromptPrompt(recentEntries, language);
   
   const response = await generateTextCompletion(prompt, apiKey, {
+    model,
     temperature: 0.8,
     max_tokens: 200,
   });
@@ -27,11 +29,13 @@ export async function generateDailyPrompt(
 export async function generateContextualPrompt(
   entryContent: string,
   apiKey: string,
-  language: 'en' | 'fr'
+  language: 'en' | 'fr',
+  model?: string
 ): Promise<string> {
   const prompt = buildContextualPromptPrompt(entryContent, language);
   
   const response = await generateTextCompletion(prompt, apiKey, {
+    model,
     temperature: 0.7,
     max_tokens: 150,
   });

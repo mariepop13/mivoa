@@ -1,289 +1,90 @@
 'use client';
 
 import { useState, useEffect, useContext } from 'react';
-import { JournalEntry } from '@/components/journal-entry';
-import { JournalChat } from '@/components/journal-chat';
-import { SettingsMenu } from '@/components/settings-menu';
-import { useUser } from '@/firebase/auth/use-user';
-import { useAuth, FirebaseContext } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { isAppOfflineError } from '@/firebase/utils';
-import { format } from 'date-fns';
-import { enUS, fr } from 'date-fns/locale';
+import { JournalSidebar } from '@/components/journal-sidebar';
+import { JournalMainContent } from '@/components/journal-main-content';
+import { JournalAuthError } from '@/components/journal-auth-error';
+import { JournalLoadingState } from '@/components/journal-loading-state';
+import { FirebaseContext } from '@/firebase';
 import { useTranslation } from '@/hooks/use-translation';
-import { LanguageContext } from '@/context/LanguageContext';
-import { useJournalEntries, type JournalEntryData } from '@/hooks/use-journal-entries';
+import { useJournalEntries } from '@/hooks/use-journal-entries';
+import { useJournalAuth } from '@/hooks/use-journal-auth';
+import { useJournalHandlers } from '@/hooks/use-journal-handlers';
+import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
 
-function JournalApp() {
-  const auth = useAuth();
-  const { user, isLoading: authLoading } = useUser();
-  const { language } = useContext(LanguageContext);
-  const { t } = useTranslation();
-  
-  const dateLocale = language === 'fr' ? fr : enUS;
-  
+function JournalApp(): React.JSX.Element {
+  const authState = useJournalAuth();
   const [selectedDate] = useState(new Date());
-  const [authError, setAuthError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const {
-    entries,
-    selectedEntry,
-    selectedEntryData,
-    entriesLoading,
-    selectedEntryId,
-    setSelectedEntryId,
-    content,
-    setContent,
-    title,
-    setTitle,
-    isSaving,
-    lastSavedAt,
-    saveError,
-    createNewEntry,
-    saveEntry,
-    handleDelete: handleDeleteFromHook,
-    handleSummarizeConversation,
-    isGeneratingSummary,
-    recentEntries,
-  } = useJournalEntries({ selectedDate });
+  const journalEntries = useJournalEntries({ selectedDate });
 
   useEffect(() => {
-    let mounted = true;
-    
-    if (!authLoading && !user && auth) {
-      initiateAnonymousSignIn(auth).catch((error) => {
-        if (mounted) {
-          if (isAppOfflineError(error)) {
-            console.warn('Authentication failed: Application is offline. Please check your internet connection.');
-            setAuthError('Application is offline. Please check your internet connection and try again.');
-          } else {
-            console.error('Failed to sign in anonymously:', error);
-            setAuthError('Authentication failed. Please check your Firebase configuration.');
-          }
-        }
-      });
-    }
-    
-    return () => {
-      mounted = false;
-    };
-  }, [auth, authLoading, user]);
+    journalEntries.setContent('');
+    journalEntries.setTitle('');
+    journalEntries.setSelectedEntryId(null);
+  }, [selectedDate]);
 
   useEffect(() => {
-    setContent('');
-    setTitle('');
-    setSelectedEntryId(null);
-  }, [selectedDate, setContent, setTitle, setSelectedEntryId]);
-
-  useEffect(() => {
-    if (entries && entries.length > 0 && !selectedEntryId) {
-      setSelectedEntryId(entries[0].id);
+    if (journalEntries.selectedEntryData && journalEntries.selectedEntryData.content !== undefined) {
+      journalEntries.setContent(journalEntries.selectedEntryData.content || '');
+      journalEntries.setTitle(journalEntries.selectedEntryData.title || '');
     }
-  }, [entries, selectedEntryId]);
+  }, [journalEntries.selectedEntryData, journalEntries.setContent, journalEntries.setTitle]);
 
-  useEffect(() => {
-    if (selectedEntryData && selectedEntryData.content !== undefined) {
-      setContent(selectedEntryData.content || '');
-      setTitle(selectedEntryData.title || '');
-    }
-  }, [selectedEntryData]);
+  const handlers = useJournalHandlers({
+    journalEntries,
+    setIsSidebarOpen,
+  });
 
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent);
-  };
-
-  const handleTitleChange = (newTitle: string) => {
-    setTitle(newTitle);
-  };
-
-  const handleSave = () => {
-    if (selectedEntryId) {
-      saveEntry(content, title);
-    } else {
-      createNewEntry(content, title);
-    }
-  };
-
-  const handleEntrySelect = (entryId: string) => {
-    setSelectedEntryId(entryId);
-    setIsSidebarOpen(false);
-  };
-
-  const formatEntryTime = (entry: JournalEntryData & { id: string }): string => {
-    const createdAt = entry.createdAt;
-    let date: Date;
-    
-    if (createdAt instanceof Date) {
-      date = createdAt;
-    } else if (typeof createdAt === 'string') {
-      date = new Date(createdAt);
-    } else {
-      return '';
-    }
-    
-    return format(date, 'HH:mm:ss');
-  };
-
-  const getEntryTitle = (
-    entry: (JournalEntryData & { id: string }) | undefined,
-    allEntries: (JournalEntryData & { id: string })[] | null
-  ): string => {
-    if (entry?.title) return entry.title;
-    if (entry) return formatEntryTime(entry);
-    if (allEntries?.[0]) return formatEntryTime(allEntries[0]);
-    return '';
-  };
-
-  if (authError) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <div className="text-center max-w-md px-4">
-          <h1 className="text-2xl font-headline font-bold mb-4 text-destructive">
-            {t('authenticationError')}
-          </h1>
-          <p className="text-muted-foreground mb-4">{authError}</p>
-        </div>
-      </main>
-    );
+  if (authState.authError) {
+    return <JournalAuthError error={authState.authError} />;
   }
 
-  if (authLoading || entriesLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <div className="text-muted-foreground">{t('loading')}</div>
-      </main>
-    );
+  if (authState.authLoading || journalEntries.entriesLoading) {
+    return <JournalLoadingState />;
   }
 
   return (
     <main className="min-h-screen bg-background">
       <div className="flex h-screen relative">
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        
-        <div className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          w-80 border-r border-border bg-card flex flex-col
-          transform transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
-          <div className="p-4 sm:p-6 border-b border-border">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-xl sm:text-2xl font-headline font-bold text-foreground">
-                {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
-              </h1>
-              <div className="flex items-center gap-2">
-                <SettingsMenu />
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-                >
-                  <span className="text-2xl">×</span>
-                </button>
-              </div>
-            </div>
-            {entries && entries.length > 0 && (
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
-              </p>
-            )}
-          </div>
-          
-          <div className="p-4 sm:p-6 border-b border-border">
-            <button
-              onClick={() => {
-                createNewEntry('');
-                setIsSidebarOpen(false);
-              }}
-              disabled={isSaving}
-              className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              <span>+</span>
-              <span>{t('newEntry')}</span>
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {entries && entries.length > 0 ? (
-              <div className="space-y-2">
-                {entries.map((entry) => (
-                  <button
-                    key={entry.id}
-                    onClick={() => handleEntrySelect(entry.id)}
-                    className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      selectedEntryId === entry.id
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground border border-transparent'
-                    }`}
-                  >
-                    <div className="font-medium">{entry.title || formatEntryTime(entry)}</div>
-                    {entry.title && (
-                      <div className="text-xs text-muted-foreground mt-1">{formatEntryTime(entry)}</div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                {t('noEntriesYet')}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 flex flex-col bg-background">
-          <div className="lg:hidden p-4 border-b border-border bg-card flex items-center justify-between">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 hover:bg-accent rounded-lg transition-colors"
-            >
-              <span className="text-xl">☰</span>
-            </button>
-            <h2 className="text-lg font-headline font-semibold text-foreground">
-              {getEntryTitle(selectedEntry, entries)}
-            </h2>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-              <div className="bg-card rounded-xl border border-border shadow-sm h-full min-h-[600px] flex flex-col">
-                {selectedEntryId ? (
-                  <JournalEntry
-                    date={selectedDate}
-                    content={content}
-                    title={title}
-                    onContentChange={handleContentChange}
-                    onTitleChange={handleTitleChange}
-                    onSave={handleSave}
-                    onDelete={handleDeleteFromHook}
-                    isLoading={isSaving}
-                    isSaved={lastSavedAt !== null && !isSaving}
-                    error={saveError}
-                    hideDate={true}
-                    canDelete={!!selectedEntryId}
-                    recentEntries={recentEntries}
-                  />
-                ) : (
-                  <JournalChat
-                    onSummarize={handleSummarizeConversation}
-                    isLoadingSummary={isGeneratingSummary}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <JournalSidebar
+          selectedDate={selectedDate}
+          entries={journalEntries.entries}
+          selectedEntryId={journalEntries.selectedEntryId}
+          isSidebarOpen={isSidebarOpen}
+          isSaving={journalEntries.isSaving}
+          onClose={() => setIsSidebarOpen(false)}
+          onNewEntry={handlers.handleNewEntry}
+          onEntrySelect={handlers.handleEntrySelect}
+          formatEntryTime={formatEntryTime}
+        />
+        <JournalMainContent
+          selectedDate={selectedDate}
+          selectedEntryId={journalEntries.selectedEntryId}
+          selectedEntry={journalEntries.selectedEntry}
+          entries={journalEntries.entries}
+          content={journalEntries.content}
+          title={journalEntries.title}
+          isSaving={journalEntries.isSaving}
+          lastSavedAt={journalEntries.lastSavedAt}
+          saveError={journalEntries.saveError}
+          isGeneratingSummary={journalEntries.isGeneratingSummary}
+          recentEntries={journalEntries.recentEntries}
+          onContentChange={handlers.handleContentChange}
+          onSave={handlers.handleSave}
+          onDelete={journalEntries.handleDelete}
+          onSummarize={journalEntries.handleSummarizeConversation}
+          getEntryTitle={getEntryTitle}
+          onSidebarToggle={() => setIsSidebarOpen(true)}
+          isSidebarOpen={isSidebarOpen}
+        />
       </div>
     </main>
   );
 }
 
-export default function HomePage() {
+export default function HomePage(): React.JSX.Element {
   const firebaseContext = useContext(FirebaseContext);
   const { t } = useTranslation();
   

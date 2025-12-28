@@ -1,6 +1,7 @@
 import { useState, useCallback, useContext } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
+import { useModel } from '@/context/ModelContext';
 import { analyzeEntry } from '@/ai/services/entry-analysis-service';
 import type { EntryAnalysis } from '@/ai/types/journal';
 
@@ -13,6 +14,7 @@ export interface UseEntryAnalysisResult {
 export function useEntryAnalysis(): UseEntryAnalysisResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
+  const { selectedModel } = useModel();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,7 @@ export function useEntryAnalysis(): UseEntryAnalysisResult {
     setError(null);
 
     try {
-      const analysis = await analyzeEntry(entryContent, apiKey, lang);
+      const analysis = await analyzeEntry(entryContent, apiKey, lang, selectedModel);
       return analysis;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to analyze entry';
@@ -42,7 +44,7 @@ export function useEntryAnalysis(): UseEntryAnalysisResult {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [apiKey, lang]);
+  }, [apiKey, lang, selectedModel]);
 
   return {
     analyze,

@@ -26,12 +26,67 @@ interface OpenRouterResponse {
   };
 }
 
-const DEFAULT_MODEL = 'anthropic/claude-3.5-sonnet';
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_RETRY_DELAY_MS = 1000;
+const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildRequestHeaders(apiKey: string): Record<string, string> {
+  return {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
+    'X-Title': 'Mivoa Journal',
+  };
+}
+
+function buildRequestBody(
+  messages: OpenRouterMessage[],
+  options: OpenRouterCompletionOptions
+): Record<string, unknown> {
+  const model = options.model || DEFAULT_MODEL;
+  return {
+    model,
+    messages,
+    temperature: options.temperature ?? 0.7,
+    max_tokens: options.max_tokens ?? 4000,
+    top_p: options.top_p ?? 1,
+  };
+}
+
+function parseApiResponse(data: OpenRouterResponse): string {
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error('No choices in OpenRouter response');
+  }
+
+  const content = data.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No content in OpenRouter response');
+  }
+
+  return content;
+}
+
+async function makeApiRequest(
+  url: string,
+  headers: Record<string, string>,
+  body: Record<string, unknown>
+): Promise<OpenRouterResponse> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
 }
 
 async function callOpenRouterAPI(
@@ -39,49 +94,16 @@ async function callOpenRouterAPI(
   apiKey: string,
   options: OpenRouterCompletionOptions = {}
 ): Promise<string> {
-  const model = options.model || DEFAULT_MODEL;
   const url = 'https://openrouter.ai/api/v1/chat/completions';
-
-  const requestBody = {
-    model,
-    messages,
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.max_tokens ?? 4000,
-    top_p: options.top_p ?? 1,
-  };
+  const headers = buildRequestHeaders(apiKey);
+  const requestBody = buildRequestBody(messages, options);
 
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt < DEFAULT_MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-          'X-Title': 'Mivoa Journal',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
-      }
-
-      const data: OpenRouterResponse = await response.json();
-
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error('No choices in OpenRouter response');
-      }
-
-      const content = data.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('No content in OpenRouter response');
-      }
-
-      return content;
+      const data = await makeApiRequest(url, headers, requestBody);
+      return parseApiResponse(data);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       

@@ -91,11 +91,8 @@ type MemoFirebase <T extends object> = T & {__memo?: boolean};
 
 export function applyMemoMarker<T extends object>(value: T): MemoFirebase<T> {
   if (typeof value === 'object' && value !== null) {
-    // Return a shallow clone with the __memo property to avoid mutating the original object
-    return {
-      ...value,
-      __memo: true,
-    } as MemoFirebase<T>;
+    (value as MemoFirebase<T>).__memo = true;
+    return value as MemoFirebase<T>;
   }
   return value as MemoFirebase<T>;
 }

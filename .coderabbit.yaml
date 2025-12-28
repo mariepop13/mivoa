@@ -17,7 +17,7 @@ reviews:
   high_level_summary_in_walkthrough: false
   auto_title_placeholder: "@coderabbitai"
   auto_title_instructions: "Generate concise titles that follow Gitmoji conventions. Include the type of change (✨ for features, 🐛 for bugs, ♻️ for refactors, etc.) and a brief description of what changed."
-  review_status: true
+  review_status: false
   commit_status: true
   fail_commit_status: false
   collapse_walkthrough: false
@@ -71,7 +71,7 @@ reviews:
     - path: "src/context/**"
       instructions: "Context providers should handle loading and error states properly, and provide clear TypeScript types for the context value. Follow clean code: small focused providers, clear state management, and explicit error handling."
     - path: "src/lib/**"
-      instructions: "Utility functions should be pure when possible, well-typed, and include JSDoc comments. Handle edge cases and validate inputs. Follow clean code: small focused functions (20-40 lines), single responsibility, early returns, clear naming, avoid magic numbers, and prefer immutability."
+      instructions: "Utility functions should be pure when possible, well-typed. Handle edge cases and validate inputs. Follow clean code: small focused functions (20-40 lines), single responsibility, early returns, clear naming, avoid magic numbers, and prefer immutability."
   
   abort_on_close: true
   disable_cache: false
@@ -79,7 +79,7 @@ reviews:
   # Auto review
   auto_review:
     enabled: true
-    auto_incremental_review: true
+    auto_incremental_review: false
     ignore_title_keywords:
       - "wip"
       - "draft"
@@ -104,7 +104,7 @@ reviews:
       mode: "warning"
       requirements: "Title should be concise and descriptive, ideally under 50 characters, and follow Gitmoji conventions."
     description:
-      mode: "warning"
+      mode: "off"
     issue_assessment:
       mode: "warning"
     custom_checks:

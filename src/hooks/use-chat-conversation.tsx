@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
+import { useModel } from '@/context/ModelContext';
 import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
 import type { ChatMessage } from '@/ai/types/chat';
 
@@ -15,6 +16,7 @@ interface UseChatConversationResult {
 export function useChatConversation(): UseChatConversationResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
+  const { selectedModel } = useModel();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +58,13 @@ export function useChatConversation(): UseChatConversationResult {
     setError(null);
 
     try {
-      const response = await sendChatMessage(
-        updatedMessages.filter((msg) => msg.timestamp < userMessage.timestamp),
-        userMessage.content,
+      const response = await sendChatMessage({
+        conversationHistory: updatedMessages.filter((msg) => msg.timestamp < userMessage.timestamp),
+        userMessage: userMessage.content,
         apiKey,
-        lang
-      );
+        language: lang,
+        model: selectedModel,
+      });
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
@@ -77,7 +80,7 @@ export function useChatConversation(): UseChatConversationResult {
     } finally {
       setIsTyping(false);
     }
-  }, [apiKey, messages, lang]);
+  }, [apiKey, messages, lang, selectedModel]);
 
   const resetConversation = useCallback((): void => {
     setMessages([]);

@@ -72,6 +72,23 @@
   "typeMessage": "Type your message...",
   "summarizeConversation": "Summarize Conversation",
   "generatingSummary": "Generating summary...",
-  "chatError": "Failed to send message"
+  "chatError": "Failed to send message",
+  "aiModel": "AI Model",
+  "selectModel": "Select Model",
+  "selectModelDescription": "Choose an AI model for your journal entries",
+  "modelSelected": "Model selected",
+  "modelNotSelected": "No model selected",
+  "searchModels": "Search models...",
+  "modelPricing": "Pricing",
+  "modelContextLength": "Context",
+  "perTokenPrompt": "Prompt",
+  "perTokenCompletion": "Completion",
+  "per1KTokens": "per 1K tokens",
+  "loadingModels": "Loading models...",
+  "errorLoadingModels": "Failed to load models",
+  "defaultModel": "Default",
+  "noModelsFound": "No models found",
+  "close": "Close",
+  "toggleSidebar": "Toggle sidebar"
 }
 

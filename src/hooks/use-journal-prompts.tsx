@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
+import { useModel } from '@/context/ModelContext';
 import { generateDailyPrompt } from '@/ai/services/journal-prompt-service';
 import type { JournalPrompt, RecentEntry } from '@/ai/types/journal';
 import { format } from 'date-fns';
@@ -44,6 +45,7 @@ function setCachedPrompt(prompt: JournalPrompt): void {
 export function useJournalPrompts(recentEntries: RecentEntry[] = []): UseJournalPromptsResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
+  const { selectedModel } = useModel();
   const [prompt, setPrompt] = useState<JournalPrompt | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function useJournalPrompts(recentEntries: RecentEntry[] = []): UseJournal
     setError(null);
 
     try {
-      const generated = await generateDailyPrompt(apiKey, recentEntries, lang);
+      const generated = await generateDailyPrompt(apiKey, recentEntries, lang, selectedModel);
       setPrompt(generated);
       setCachedPrompt(generated);
     } catch (err) {
@@ -71,17 +73,19 @@ export function useJournalPrompts(recentEntries: RecentEntry[] = []): UseJournal
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, recentEntries, lang]);
+  }, [apiKey, recentEntries, lang, selectedModel]);
 
   useEffect(() => {
     if (!apiKey) {
       setPrompt(null);
+      setError('API key not configured');
       return;
     }
 
     const cached = getCachedPrompt(dateKey);
     if (cached && cached.dateKey === dateKey) {
       setPrompt(cached);
+      setError(null);
     } else {
       generatePrompt();
     }
