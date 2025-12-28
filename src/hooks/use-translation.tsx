@@ -45,9 +45,7 @@ export function useTranslation(): UseTranslationResult {
     loadTranslations();
   }, [language]);
 
-  const t = useCallback((key: string, fallback?: string): string => {
-    return translations[key] || fallback || key;
-  }, [translations]);
+  const t = useCallback((key: string, fallback?: string): string => translations[key] || fallback || key, [translations]);
 
   return { t, language, isLoading, error };
 }
