@@ -28,16 +28,21 @@ function buildConversationMessages(
   return messages;
 }
 
-export async function sendChatMessage(
-  conversationHistory: ChatMessage[],
-  userMessage: string,
-  apiKey: string,
-  language: 'en' | 'fr'
-): Promise<string> {
+interface SendChatMessageOptions {
+  conversationHistory: ChatMessage[];
+  userMessage: string;
+  apiKey: string;
+  language: 'en' | 'fr';
+  model?: string;
+}
+
+export async function sendChatMessage(options: SendChatMessageOptions): Promise<string> {
+  const { conversationHistory, userMessage, apiKey, language, model } = options;
   const messages = buildConversationMessages(conversationHistory, language);
   messages.push({ role: 'user', content: userMessage });
 
   const response = await generateChatCompletion(messages, apiKey, {
+    model,
     temperature: CHAT_TEMPERATURE,
     max_tokens: CHAT_MAX_TOKENS,
   });
