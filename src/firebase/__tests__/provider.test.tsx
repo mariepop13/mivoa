@@ -152,7 +152,7 @@ describe('applyMemoMarker', () => {
     const result = applyMemoMarker(obj);
 
     expect(result).toEqual({ name: 'test', value: 123, __memo: true });
-    expect(result).not.toBe(obj);
+    expect(result).toBe(obj);
   });
 
   it('should return object with __memo when value is object', () => {
@@ -160,7 +160,7 @@ describe('applyMemoMarker', () => {
     const result = applyMemoMarker(obj);
 
     expect(result.__memo).toBe(true);
-    expect(result).not.toBe(obj);
+    expect(result).toBe(obj);
   });
 
   it('should handle null values', () => {

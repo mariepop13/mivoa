@@ -58,7 +58,7 @@ describe('openrouter-client', () => {
 
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(callArgs[1]?.body as string);
-      expect(body.model).toBe('anthropic/claude-3.5-sonnet');
+      expect(body.model).toBe('google/gemini-3-flash-preview');
     });
 
     it('should use custom model when specified', async () => {

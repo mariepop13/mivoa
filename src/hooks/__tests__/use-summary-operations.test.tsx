@@ -56,7 +56,7 @@ describe('useSummaryOperations', () => {
           >
             <ModelContext.Provider
               value={{
-                selectedModel: selectedModel || 'anthropic/claude-3.5-sonnet',
+                selectedModel: selectedModel || 'google/gemini-3-flash-preview',
                 setSelectedModel: vi.fn(),
                 isLoading: false,
               }}
