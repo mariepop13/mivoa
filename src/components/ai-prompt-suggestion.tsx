@@ -11,7 +11,7 @@ interface AiPromptSuggestionProps {
   onPromptSelected?: (prompt: string) => void;
 }
 
-export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiPromptSuggestionProps) {
+export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiPromptSuggestionProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { prompt, isLoading, error, regenerate } = useJournalPrompts(recentEntries);
 
@@ -53,32 +53,53 @@ export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiP
             </Button>
           </div>
           
-          {isLoading && !prompt ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <span>{t('generatingPrompt')}</span>
-            </div>
-          ) : prompt ? (
-            <>
-              <p className="text-sm text-foreground mb-3 leading-relaxed">
-                {prompt}
-              </p>
-              {onPromptSelected && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUsePrompt}
-                  className="text-xs"
-                >
-                  {t('useThisPrompt')}
-                </Button>
-              )}
-            </>
-          ) : null}
+          {renderPromptContent({ prompt, isLoading, onPromptSelected, handleUsePrompt, t })}
         </div>
       </div>
     </div>
   );
+}
+
+interface RenderPromptContentOptions {
+  prompt: string | null;
+  isLoading: boolean;
+  onPromptSelected: ((prompt: string) => void) | undefined;
+  handleUsePrompt: () => void;
+  t: (key: string) => string;
+}
+
+function renderPromptContent(options: RenderPromptContentOptions): React.ReactNode {
+  const { prompt, isLoading, onPromptSelected, handleUsePrompt, t } = options;
+  if (isLoading && !prompt) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <span>{t('generatingPrompt')}</span>
+      </div>
+    );
+  }
+  
+  if (prompt) {
+    return (
+      <>
+        <p className="text-sm text-foreground mb-3 leading-relaxed">
+          {prompt}
+        </p>
+        {onPromptSelected && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleUsePrompt}
+            className="text-xs"
+          >
+            {t('useThisPrompt')}
+          </Button>
+        )}
+      </>
+    );
+  }
+  
+  return null;
 }
 

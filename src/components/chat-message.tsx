@@ -1,21 +1,24 @@
 'use client';
 
-import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
-import { Timestamp } from 'firebase/firestore';
+import { useContext, memo } from 'react';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
-import { useContext } from 'react';
-import React from 'react';
+import { Timestamp } from 'firebase/firestore';
+import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 import { LanguageContext } from '@/context/LanguageContext';
 
 interface ChatMessageProps {
   message: ChatMessageType;
 }
 
-export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
+const MAX_MESSAGE_WIDTH_PERCENT = 80;
+
+function ChatMessageComponent({ message }: ChatMessageProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const dateLocale = language === 'fr' ? fr : enUS;
-  const timestampDate = message.timestamp instanceof Timestamp ? message.timestamp.toDate() : message.timestamp;
+  const timestampDate = message.timestamp instanceof Timestamp 
+    ? message.timestamp.toDate() 
+    : message.timestamp;
   const formattedTime = format(timestampDate, 'HH:mm:ss', { locale: dateLocale });
 
   const isUser = message.role === 'user';
@@ -23,7 +26,8 @@ export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div
-        className={`max-w-[80%] rounded-lg px-4 py-3 ${
+        style={{ maxWidth: `${MAX_MESSAGE_WIDTH_PERCENT}%` }}
+        className={`rounded-lg px-4 py-3 ${
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted text-foreground border border-border'
@@ -41,4 +45,6 @@ export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
     </div>
   );
 }
+
+export const ChatMessage = memo(ChatMessageComponent);
 
