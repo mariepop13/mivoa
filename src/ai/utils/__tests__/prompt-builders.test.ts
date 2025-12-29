@@ -119,10 +119,11 @@ describe('prompt-builders', () => {
 
       expect(result).toContain('You are an assistant that analyzes journal entries');
       expect(result).toContain(entryContent);
-      expect(result).toContain('"mood"');
+      expect(result).toContain('"moods"');
       expect(result).toContain('"emotions"');
       expect(result).toContain('"themes"');
       expect(result).toContain('"keyTakeaways"');
+      expect(result).toContain('"characters"');
     });
 
     it('should build analysis prompt in French', () => {
@@ -131,10 +132,10 @@ describe('prompt-builders', () => {
 
       expect(result).toContain("Tu es un assistant qui analyse des entrées de journal");
       expect(result).toContain(entryContent);
-      expect(result).toContain('"mood"');
+      expect(result).toContain('"moods"');
       expect(result).toContain('"emotions"');
       expect(result).toContain('"themes"');
-      expect(result).toContain('humeur dominante');
+      expect(result).toContain('"characters"');
     });
   });
 });

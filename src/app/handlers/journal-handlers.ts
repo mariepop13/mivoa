@@ -17,7 +17,16 @@ interface TriggerAnalysisParams {
   entryId: string;
   firestore: Firestore;
   user: { uid: string };
-  analyze: (content: string) => Promise<{ mood?: string; themes?: string[]; keyTakeaways?: string[] } | null>;
+  analyze: (content: string) => Promise<{
+    moods?: string[];
+    moodEmojis?: Record<string, string>;
+    subjectEmoji?: string;
+    themes?: string[];
+    themeEmojis?: Record<string, string>;
+    keyTakeaways?: string[];
+    places?: string[];
+    characters?: string[];
+  } | null>;
 }
 
 export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
@@ -29,9 +38,14 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
     if (!analysis) return;
 
     const analysisData: Record<string, unknown> = {
-      mood: analysis.mood,
+      moods: analysis.moods,
+      moodEmojis: analysis.moodEmojis,
+      subjectEmoji: analysis.subjectEmoji,
       themes: analysis.themes,
+      themeEmojis: analysis.themeEmojis,
       keyTakeaways: analysis.keyTakeaways,
+      places: analysis.places,
+      characters: analysis.characters,
       aiProcessedAt: serverTimestamp(),
     };
     const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);

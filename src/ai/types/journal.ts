@@ -14,17 +14,27 @@ export interface JournalPrompt {
 }
 
 export interface EntryAnalysis {
-  mood?: string;
+  moods?: string[];
+  moodEmojis?: Record<string, string>;
+  subjectEmoji?: string;
   emotions?: string[];
   themes?: string[];
+  themeEmojis?: Record<string, string>;
   keyTakeaways?: string[];
+  places?: string[];
+  characters?: string[];
   processedAt: Date;
 }
 
 export interface EntryMetadata {
-  mood?: string;
+  moods?: string[];
+  moodEmojis?: Record<string, string>;
+  subjectEmoji?: string;
   themes?: string[];
+  themeEmojis?: Record<string, string>;
   keyTakeaways?: string[];
+  places?: string[];
+  characters?: string[];
   aiProcessedAt?: Timestamp;
 }
 

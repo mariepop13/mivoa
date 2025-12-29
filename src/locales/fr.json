@@ -93,6 +93,10 @@
   "login": "Se connecter",
   "logout": "Se déconnecter",
   "auth.loginError": "Échec de la connexion",
-  "auth.logoutError": "Échec de la déconnexion"
+  "auth.logoutError": "Échec de la déconnexion",
+  "places": "Lieux",
+  "characters": "Personnes",
+  "themes": "Thèmes",
+  "moods": "Humeurs"
 }
 

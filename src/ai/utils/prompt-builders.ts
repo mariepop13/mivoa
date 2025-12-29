@@ -63,17 +63,27 @@ export function buildAnalysisPrompt(
 
   const userPrompt = language === 'fr'
     ? `Analyse cette entrée de journal et extrais les informations suivantes au format JSON:\n\n{
-  "mood": "humeur dominante en un mot (ex: heureux, anxieux, reconnaissant, neutre)",
+  "moods": ["liste des humeurs détectées (ex: heureux, anxieux, reconnaissant, neutre, max 5)"],
+  "moodEmojis": {"humeur1": "emoji1", "humeur2": "emoji2", ...},
+  "subjectEmoji": "emoji représentant le sujet/titre principal de l'entrée",
   "emotions": ["liste des émotions détectées (max 5)"],
   "themes": ["liste des thèmes principaux (ex: travail, relations, santé, croissance personnelle, max 5)"],
-  "keyTakeaways": ["points clés ou insights principaux (max 3, phrases courtes)"]
-}\n\nEntrée:\n${entryContent}\n\nRéponds uniquement avec le JSON, rien d'autre.`
+  "themeEmojis": {"thème1": "emoji1", "thème2": "emoji2", ...},
+  "keyTakeaways": ["points clés ou insights principaux (max 3, phrases courtes)"],
+  "places": ["liste des lieux mentionnés (villes, pays, lieux spécifiques, max 10)"],
+  "characters": ["liste des personnes mentionnées (noms, max 10)"]
+}\n\nPour moodEmojis, analyse chaque humeur détectée et associe l'emoji le plus approprié et significatif qui représente le mieux cette humeur. Choisis des emojis pertinents et évocateurs. Si une humeur est déjà un emoji, utilise-le tel quel. Si aucun emoji approprié n'existe pour une humeur, omets-la de moodEmojis (ne mets pas d'emoji générique).\n\nPour subjectEmoji, choisis l'emoji qui représente le mieux le sujet/titre principal de l'entrée. C'est l'emoji qui sera affiché à côté du titre dans la liste. Si aucun emoji approprié n'existe, omets subjectEmoji.\n\nPour themeEmojis, analyse chaque thème et associe l'emoji le plus approprié et significatif qui représente le mieux ce thème. Choisis des emojis pertinents et évocateurs. Si un thème est déjà un emoji, utilise-le tel quel. Si aucun emoji approprié n'existe pour un thème, omets-le de themeEmojis (ne mets pas d'emoji générique comme 🏷️). Réponds uniquement avec le JSON, rien d'autre.\n\nEntrée:\n${entryContent}\n\nRéponds uniquement avec le JSON, rien d'autre.`
     : `Analyze this journal entry and extract the following information as JSON:\n\n{
-  "mood": "dominant mood in one word (e.g., happy, anxious, grateful, neutral)",
+  "moods": ["list of detected moods (e.g., happy, anxious, grateful, neutral, max 5)"],
+  "moodEmojis": {"mood1": "emoji1", "mood2": "emoji2", ...},
+  "subjectEmoji": "emoji representing the entry's main subject/title",
   "emotions": ["list of detected emotions (max 5)"],
   "themes": ["list of main themes (e.g., work, relationships, health, personal growth, max 5)"],
-  "keyTakeaways": ["key points or main insights (max 3, short phrases)"]
-}\n\nEntry:\n${entryContent}\n\nRespond only with JSON, nothing else.`;
+  "themeEmojis": {"theme1": "emoji1", "theme2": "emoji2", ...},
+  "keyTakeaways": ["key points or main insights (max 3, short phrases)"],
+  "places": ["list of mentioned places (cities, countries, specific locations, max 10)"],
+  "characters": ["list of mentioned people (names, max 10)"]
+}\n\nFor moodEmojis, analyze each detected mood and assign the most appropriate and meaningful emoji that best represents that mood. Choose relevant and evocative emojis. If a mood is already an emoji, use it as is. If no appropriate emoji exists for a mood, omit it from moodEmojis (do not use generic emojis).\n\nFor subjectEmoji, choose the emoji that best represents the entry's main subject/title. This is the emoji that will be displayed next to the title in the list. If no appropriate emoji exists, omit subjectEmoji.\n\nFor themeEmojis, analyze each theme and assign the most appropriate and meaningful emoji that best represents that theme. Choose relevant and evocative emojis. If a theme is already an emoji, use it as is. If no appropriate emoji exists for a theme, omit it from themeEmojis (do not use generic emojis like 🏷️). Respond only with JSON, nothing else.\n\nEntry:\n${entryContent}\n\nRespond only with JSON, nothing else.`;
 
   return `${systemPrompt}\n\n${userPrompt}`;
 }
