@@ -1,6 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface JournalEntryActionsProps {
   onSave: () => void;
@@ -11,6 +23,7 @@ interface JournalEntryActionsProps {
 
 export function JournalEntryActions({ onSave, onDelete, isLoading, canDelete }: JournalEntryActionsProps): React.JSX.Element {
   const { t } = useTranslation();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const deleteButtonClasses = [
     'flex-1 sm:flex-none px-4 py-2.5 text-muted-foreground',
@@ -27,17 +40,41 @@ export function JournalEntryActions({ onSave, onDelete, isLoading, canDelete }: 
     'active:scale-[0.98]',
   ].join(' ');
 
+  const handleDeleteConfirm = () => {
+    onDelete?.();
+  };
+
   return (
     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
       {canDelete && onDelete && (
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={isLoading}
-          className={deleteButtonClasses}
-        >
-          {t('delete')}
-        </button>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              disabled={isLoading}
+              className={deleteButtonClasses}
+            >
+              {t('delete')}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('confirmDelete')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {t('delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
       <button
         type="button"
