@@ -36,7 +36,8 @@ export function useSummaryOperations({
   const { analyze } = useEntryAnalysis();
 
   const handleSummarizeConversation = useCallback(async (
-    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
+    draftId?: string | null
   ) => {
     if (!apiKey || !user || !firestore) {
       setSaveError('API key not configured or services unavailable');
@@ -55,7 +56,7 @@ export function useSummaryOperations({
       }));
 
       const summary = await generateConversationSummary(chatMessages, apiKey, lang, selectedModel);
-      const entryId = generateEntryId(dateKey);
+      const entryId = draftId || generateEntryId(dateKey);
 
       await saveSummaryAsEntry({
         entryId,
@@ -64,6 +65,7 @@ export function useSummaryOperations({
         conversationHistory,
         firestore,
         user,
+        draftId,
       });
       
       updateEntryState(entryId, summary.content, summary.title);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JournalEntryActions } from '../journal-entry-actions';
 import { useTranslation } from '@/hooks/use-translation';
@@ -87,7 +87,7 @@ describe('JournalEntryActions', () => {
     expect(screen.queryByText('delete')).not.toBeInTheDocument();
   });
 
-  it('should call onDelete when delete button is clicked', async () => {
+  it('should open confirmation dialog when delete button is clicked', async () => {
     const user = userEvent.setup();
     render(
       <JournalEntryActions
@@ -101,7 +101,56 @@ describe('JournalEntryActions', () => {
     const deleteButton = screen.getByText('delete');
     await user.click(deleteButton);
 
+    expect(screen.getByText('confirmDelete')).toBeInTheDocument();
+    expect(screen.getByText('cancel')).toBeInTheDocument();
+    expect(mockOnDelete).not.toHaveBeenCalled();
+  });
+
+  it('should call onDelete when delete is confirmed in dialog', async () => {
+    const user = userEvent.setup();
+    render(
+      <JournalEntryActions
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+        isLoading={false}
+        canDelete={true}
+      />
+    );
+
+    const deleteButton = screen.getByText('delete');
+    await user.click(deleteButton);
+
+    const dialog = await waitFor(() => {
+      return screen.getByRole('alertdialog');
+    });
+
+    const confirmButton = dialog.querySelector('button[class*="bg-destructive"]') as HTMLButtonElement;
+    
+    expect(confirmButton).toBeInTheDocument();
+    expect(confirmButton?.textContent).toBe('delete');
+    
+    await user.click(confirmButton);
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not call onDelete when cancel is clicked in dialog', async () => {
+    const user = userEvent.setup();
+    render(
+      <JournalEntryActions
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+        isLoading={false}
+        canDelete={true}
+      />
+    );
+
+    const deleteButton = screen.getByText('delete');
+    await user.click(deleteButton);
+
+    const cancelButton = screen.getByText('cancel');
+    await user.click(cancelButton);
+
+    expect(mockOnDelete).not.toHaveBeenCalled();
   });
 
   it('should disable buttons when isLoading is true', () => {

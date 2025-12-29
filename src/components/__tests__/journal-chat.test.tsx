@@ -40,7 +40,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
   });
 
@@ -55,7 +57,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -70,7 +74,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -92,7 +98,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -113,7 +121,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -131,7 +141,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: 'Test error',
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -144,7 +156,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -157,7 +171,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -175,7 +191,7 @@ describe('JournalChat', () => {
         content: 'User message',
         timestamp: expect.any(Date),
       },
-    ]);
+    ], null);
   });
 
   it('disables input when typing', () => {
@@ -184,7 +200,9 @@ describe('JournalChat', () => {
       isTyping: true,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext();
@@ -198,7 +216,9 @@ describe('JournalChat', () => {
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn(),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
+      draftId: null,
     });
 
     renderWithContext({ isLoadingSummary: true });

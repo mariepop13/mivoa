@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useContext } from 'react';
+import { format } from 'date-fns';
 import { JournalSidebar } from '@/components/journal-sidebar';
 import { JournalMainContent } from '@/components/journal-main-content';
 import { JournalAuthError } from '@/components/journal-auth-error';
@@ -23,7 +24,7 @@ function JournalApp(): React.JSX.Element {
     journalEntries.setContent('');
     journalEntries.setTitle('');
     journalEntries.setSelectedEntryId(null);
-  }, [selectedDate]);
+  }, [selectedDate, journalEntries.setContent, journalEntries.setTitle, journalEntries.setSelectedEntryId]);
 
   useEffect(() => {
     if (journalEntries.selectedEntryData && journalEntries.selectedEntryData.content !== undefined) {
@@ -78,6 +79,11 @@ function JournalApp(): React.JSX.Element {
           getEntryTitle={getEntryTitle}
           onSidebarToggle={() => setIsSidebarOpen(true)}
           isSidebarOpen={isSidebarOpen}
+          dateKey={format(selectedDate, 'yyyy-MM-dd')}
+          handleSaveDraft={journalEntries.handleSaveDraft}
+          handleDeleteDraft={journalEntries.handleDeleteDraft}
+          draftForDate={journalEntries.draftForDate}
+          conversationEntryForDate={journalEntries.conversationEntryForDate}
         />
       </div>
     </main>

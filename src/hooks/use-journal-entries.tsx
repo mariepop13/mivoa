@@ -5,6 +5,8 @@ import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
+import { saveConversationDraft, deleteDraft, updateConversationEntry } from '@/app/handlers/journal-handlers';
+import type { ChatMessage } from '@/ai/types/chat';
 
 const DAYS_TO_LOOK_BACK = 7;
 const MAX_RECENT_ENTRIES = 7;
@@ -41,6 +43,7 @@ export interface JournalEntryData extends Record<string, unknown> {
   }>;
   summaryGeneratedAt?: Timestamp;
   conversationMode?: boolean;
+  isDraft?: boolean;
 }
 
 interface UseJournalEntriesParams {
@@ -66,10 +69,15 @@ interface UseJournalEntriesResult {
   saveEntry: (newContent: string) => Promise<void>;
   handleDelete: () => Promise<void>;
   handleSummarizeConversation: (
-    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
+    draftId?: string | null
   ) => Promise<void>;
   isGeneratingSummary: boolean;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
+  draftForDate: (JournalEntryData & { id: string }) | null;
+  handleSaveDraft: (messages: ChatMessage[], draftId: string | null, entryId?: string | null) => Promise<string | null>;
+  handleDeleteDraft: (draftId: string) => Promise<void>;
+  conversationEntryForDate: (JournalEntryData & { id: string }) | null;
 }
 
 export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): UseJournalEntriesResult {
@@ -190,6 +198,73 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
 
   const selectedEntry = entries?.find(e => e.id === selectedEntryId);
 
+  const draftForDate = useMemo(() => {
+    if (!entries) return null;
+    return entries.find(e => e.isDraft === true) || null;
+  }, [entries]);
+
+  const conversationEntryForDate = useMemo(() => {
+    if (!entries) return null;
+    return entries.find(e => e.conversationMode === true && e.isDraft !== true) || null;
+  }, [entries]);
+
+  const handleSaveDraft = useCallback(async (
+    messages: ChatMessage[],
+    currentDraftId: string | null,
+    entryId?: string | null
+  ): Promise<string | null> => {
+    if (!firestore || !user || !messages.length) {
+      return null;
+    }
+
+    try {
+      const conversationHistory = messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
+      }));
+
+      if (entryId && !currentDraftId) {
+        await updateConversationEntry({
+          entryId,
+          conversationHistory,
+          firestore,
+          user,
+        });
+        return entryId;
+      }
+
+      const savedDraftId = await saveConversationDraft({
+        draftId: currentDraftId,
+        entryDateKey: dateKey,
+        conversationHistory,
+        firestore,
+        user,
+      });
+
+      return savedDraftId;
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      return null;
+    }
+  }, [firestore, user, dateKey]);
+
+  const handleDeleteDraft = useCallback(async (draftIdToDelete: string): Promise<void> => {
+    if (!firestore || !user) {
+      return;
+    }
+
+    try {
+      await deleteDraft({
+        draftId: draftIdToDelete,
+        firestore,
+        user,
+      });
+    } catch (error) {
+      console.error('Failed to delete draft:', error);
+    }
+  }, [firestore, user]);
+
   return {
     entries,
     selectedEntry,
@@ -211,6 +286,10 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     handleSummarizeConversation,
     isGeneratingSummary,
     recentEntries,
+    draftForDate,
+    handleSaveDraft,
+    handleDeleteDraft,
+    conversationEntryForDate,
   };
 }
 

@@ -1,5 +1,5 @@
 import { doc, serverTimestamp, Timestamp, type Firestore } from 'firebase/firestore';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
 const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
 
@@ -97,28 +97,107 @@ interface SaveSummaryParams {
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
   firestore: Firestore;
   user: { uid: string };
+  draftId?: string | null;
 }
 
 export function saveSummaryAsEntry(params: SaveSummaryParams): Promise<void> {
-  const { entryId, entryDateKey, summary, conversationHistory, firestore, user } = params;
-  const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+  const { entryId, entryDateKey, summary, conversationHistory, firestore, user, draftId } = params;
+  const finalEntryId = draftId || entryId;
+  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${finalEntryId}`);
   const conversationHistoryForStorage = conversationHistory.map((msg) => ({
     role: msg.role,
     content: msg.content,
     timestamp: Timestamp.fromDate(msg.timestamp),
   }));
+  
   const data: Record<string, unknown> = {
     content: summary.content,
     title: summary.title,
     date: entryDateKey,
-    createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     conversationMode: true,
     conversationHistory: conversationHistoryForStorage,
     summaryGeneratedAt: serverTimestamp(),
     keyTakeaways: summary.insights,
+    isDraft: false,
   };
-  return setDocumentNonBlocking(newDocRef, data, {});
+
+  if (!draftId) {
+    data.createdAt = serverTimestamp();
+  }
+
+  return setDocumentNonBlocking(entryDocRef, data, {});
+}
+
+interface SaveConversationDraftParams {
+  draftId: string | null;
+  entryDateKey: string;
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function saveConversationDraft(params: SaveConversationDraftParams): Promise<string> {
+  const { draftId, entryDateKey, conversationHistory, firestore, user } = params;
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: Timestamp.fromDate(msg.timestamp),
+  }));
+
+  const finalDraftId = draftId || generateEntryId(entryDateKey);
+  const draftDocRef = doc(firestore, `users/${user.uid}/entries/${finalDraftId}`);
+  
+  const data: Record<string, unknown> = {
+    content: '',
+    date: entryDateKey,
+    conversationMode: true,
+    isDraft: true,
+    conversationHistory: conversationHistoryForStorage,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (!draftId) {
+    data.createdAt = serverTimestamp();
+  }
+
+  return setDocumentNonBlocking(draftDocRef, data, {}).then(() => finalDraftId);
+}
+
+interface DeleteDraftParams {
+  draftId: string;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function deleteDraft(params: DeleteDraftParams): Promise<void> {
+  const { draftId, firestore, user } = params;
+  const draftDocRef = doc(firestore, `users/${user.uid}/entries/${draftId}`);
+  return deleteDocumentNonBlocking(draftDocRef);
+}
+
+interface UpdateConversationEntryParams {
+  entryId: string;
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function updateConversationEntry(params: UpdateConversationEntryParams): Promise<void> {
+  const { entryId, conversationHistory, firestore, user } = params;
+  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: Timestamp.fromDate(msg.timestamp),
+  }));
+  
+  const data: Record<string, unknown> = {
+    conversationHistory: conversationHistoryForStorage,
+    updatedAt: serverTimestamp(),
+  };
+
+  return updateDocumentNonBlocking(entryDocRef, data);
 }
 
 
