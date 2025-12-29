@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JournalEntry } from '../journal-entry';
 
@@ -55,10 +55,9 @@ describe('JournalEntry', () => {
       return screen.getByRole('alertdialog');
     });
 
-    const confirmButton = dialog.querySelector('button[class*="bg-destructive"]') as HTMLButtonElement;
+    const confirmButton = within(dialog).getByRole('button', { name: /delete/i });
     
     expect(confirmButton).toBeInTheDocument();
-    expect(confirmButton?.textContent?.toLowerCase()).toContain('delete');
     
     await user.click(confirmButton);
     expect(mockProps.onDelete).toHaveBeenCalled();

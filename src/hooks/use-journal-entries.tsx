@@ -227,7 +227,6 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
       if (entryId && !currentDraftId) {
         await updateConversationEntry({
           entryId,
-          entryDateKey: dateKey,
           conversationHistory,
           firestore,
           user,

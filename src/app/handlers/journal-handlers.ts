@@ -178,7 +178,6 @@ export function deleteDraft(params: DeleteDraftParams): Promise<void> {
 
 interface UpdateConversationEntryParams {
   entryId: string;
-  entryDateKey: string;
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
   firestore: Firestore;
   user: { uid: string };
