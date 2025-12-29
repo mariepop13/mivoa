@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import { useContext } from 'react';
 import { SettingsMenu } from '@/components/settings-menu';
+import { UserMenu } from '@/components/user-menu';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/use-translation';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
@@ -55,6 +56,7 @@ export function JournalSidebar({
               {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
             </h1>
             <div className="flex items-center gap-2">
+              <UserMenu />
               <SettingsMenu />
               <button
                 onClick={onClose}
