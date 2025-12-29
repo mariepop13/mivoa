@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Settings2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
+import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { OpenRouterApiKeyDialog } from '@/components/openrouter-api-key-dialog';
 import { ModelSelectionDialog } from '@/components/model-selection-dialog';
 import { SettingsThemeSection } from '@/components/settings-theme-section';
@@ -19,6 +20,7 @@ import { SettingsApiKeySection } from '@/components/settings-api-key-section';
 
 export function SettingsMenu(): React.JSX.Element {
   const { t } = useTranslation();
+  const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
   const [mounted, setMounted] = useState(false);
   const [isOpenRouterDialogOpen, setIsOpenRouterDialogOpen] = useState(false);
   const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
@@ -40,8 +42,14 @@ export function SettingsMenu(): React.JSX.Element {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="relative">
           <Settings2 className="h-[1.2rem] w-[1.2rem]" />
+          {!isApiKeyLoading && !apiKey && (
+            <span className="absolute top-2 right-2 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+            </span>
+          )}
           <span className="sr-only">{t('settings')}</span>
         </Button>
       </DropdownMenuTrigger>
