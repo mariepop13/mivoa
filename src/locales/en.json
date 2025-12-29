@@ -93,6 +93,10 @@
   "login": "Log In",
   "logout": "Log Out",
   "auth.loginError": "Login failed",
-  "auth.logoutError": "Logout failed"
+  "auth.logoutError": "Logout failed",
+  "places": "Places",
+  "characters": "Characters",
+  "themes": "Themes",
+  "moods": "Moods"
 }
 
