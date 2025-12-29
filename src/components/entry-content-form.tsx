@@ -2,6 +2,7 @@
 
 import { AiPromptSuggestion } from '@/components/ai-prompt-suggestion';
 import { useTranslation } from '@/hooks/use-translation';
+import ReactMarkdown from 'react-markdown';
 import type { RecentEntry } from '@/ai/types/journal';
 
 interface EntryContentFormProps {
@@ -24,7 +25,15 @@ export function EntryContentForm({
       {title && (
         <div className="pt-4 sm:pt-6 pb-4 sm:pb-6 border-b border-border/50">
           <h2 className="text-lg sm:text-xl font-headline font-semibold text-foreground">
-            {title}
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <span>{children}</span>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+              }}
+            >
+              {title}
+            </ReactMarkdown>
           </h2>
         </div>
       )}

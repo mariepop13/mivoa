@@ -104,6 +104,11 @@ export function JournalSidebar({
                         <span className="flex-shrink-0" aria-hidden="true">{entry.subjectEmoji}</span>
                       )}
                       <span className="truncate">{entry.title || formatEntryTime(entry)}</span>
+                      {entry.isDraft && (
+                        <span className="flex-shrink-0 text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded border border-border">
+                          {t('draft')}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {entry.title && (
