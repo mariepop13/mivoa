@@ -34,6 +34,7 @@ export interface EntryMetadata {
   themeEmojis?: Record<string, string>;
   keyTakeaways?: string[];
   places?: string[];
+  characters?: string[];
   aiProcessedAt?: Timestamp;
 }
 

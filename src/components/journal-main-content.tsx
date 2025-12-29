@@ -76,9 +76,9 @@ export function JournalMainContent({
                 places={selectedEntry?.places}
                 characters={selectedEntry?.characters}
                 themes={selectedEntry?.themes}
-                themeEmojis={selectedEntry?.themeEmojis as Record<string, string> | undefined}
-                moods={selectedEntry?.moods as string[] | undefined}
-                moodEmojis={selectedEntry?.moodEmojis as Record<string, string> | undefined}
+                themeEmojis={selectedEntry?.themeEmojis}
+                moods={selectedEntry?.moods}
+                moodEmojis={selectedEntry?.moodEmojis}
               />
             ) : (
               <JournalChat

@@ -76,7 +76,9 @@ function parseSimpleArray(array: unknown, maxCount: number): string[] {
   if (!Array.isArray(array)) {
     return [];
   }
-  return array.slice(0, maxCount);
+  return array
+    .filter((item): item is string => typeof item === 'string')
+    .slice(0, maxCount);
 }
 
 function parseAnalysisResponse(response: string): AnalysisResult {

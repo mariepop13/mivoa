@@ -101,7 +101,7 @@ export function JournalSidebar({
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-medium flex-1 min-w-0 truncate flex items-center gap-1.5">
                       {entry.subjectEmoji && (
-                        <span className="flex-shrink-0" aria-hidden="true">{entry.subjectEmoji as string}</span>
+                        <span className="flex-shrink-0" aria-hidden="true">{entry.subjectEmoji}</span>
                       )}
                       <span className="truncate">{entry.title || formatEntryTime(entry)}</span>
                     </div>
