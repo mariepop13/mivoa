@@ -159,16 +159,19 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     setSaveError,
   });
 
+  const DAYS_TO_LOOK_BACK = 7;
+  const MAX_RECENT_ENTRIES = 7;
+
   const recentEntries = useMemo(() => {
     if (!entries) return [];
     
     const sevenDaysAgo = new Date(selectedDate);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DAYS_TO_LOOK_BACK);
     const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
     
     return entries
       .filter((entry) => entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId)
-      .slice(0, 7)
+      .slice(0, MAX_RECENT_ENTRIES)
       .map((entry) => ({
         content: entry.content,
         title: entry.title,

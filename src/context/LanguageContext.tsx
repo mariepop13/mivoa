@@ -12,7 +12,7 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 
 const LANGUAGE_STORAGE_KEY = 'mivoa-language';
 
-interface LanguageContextType {
+export interface LanguageContextType {
   language: SupportedLanguage;
   setLanguage: (language: SupportedLanguage) => void;
   supportedLanguages: readonly SupportedLanguage[];
