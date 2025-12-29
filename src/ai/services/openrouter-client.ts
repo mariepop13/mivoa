@@ -39,7 +39,7 @@ function buildRequestHeaders(apiKey: string): Record<string, string> {
     'Authorization': `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
     'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-    'X-Title': 'Mivoa Journal',
+    'X-Title': 'mivoa',
   };
 }
 

@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
 
+const DAYS_TO_LOOK_BACK = 7;
+const MAX_RECENT_ENTRIES = 7;
+
 function getTimestampMillis(value: string | Timestamp | unknown): number {
   if (value instanceof Timestamp) {
     return value.toMillis();
@@ -119,10 +122,14 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
   useEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
       if (selectedEntryData?.content !== undefined) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setContent(selectedEntryData.content || '');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTitle(selectedEntryData.title || '');
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setContent('');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTitle('');
       }
       hasInitializedRef.current = true;
@@ -163,12 +170,12 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     if (!entries) return [];
     
     const sevenDaysAgo = new Date(selectedDate);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DAYS_TO_LOOK_BACK);
     const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
     
     return entries
       .filter((entry) => entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId)
-      .slice(0, 7)
+      .slice(0, MAX_RECENT_ENTRIES)
       .map((entry) => ({
         content: entry.content,
         title: entry.title,

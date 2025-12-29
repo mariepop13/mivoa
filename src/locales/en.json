@@ -89,6 +89,10 @@
   "defaultModel": "Default",
   "noModelsFound": "No models found",
   "close": "Close",
-  "toggleSidebar": "Toggle sidebar"
+  "toggleSidebar": "Toggle sidebar",
+  "login": "Log In",
+  "logout": "Log Out",
+  "auth.loginError": "Login failed",
+  "auth.logoutError": "Logout failed"
 }
 

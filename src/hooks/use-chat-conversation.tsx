@@ -25,7 +25,7 @@ export function useChatConversation(): UseChatConversationResult {
   const lang = (language || 'en') as 'en' | 'fr';
 
   useEffect(() => {
-    if (!hasInitializedRef.current && apiKey) {
+    if (!hasInitializedRef.current) {
       const initialMessage: ChatMessage = {
         role: 'assistant',
         content: generateInitialMessage(lang),
@@ -34,7 +34,7 @@ export function useChatConversation(): UseChatConversationResult {
       setMessages([initialMessage]);
       hasInitializedRef.current = true;
     }
-  }, [apiKey, lang]);
+  }, [lang]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!apiKey) {

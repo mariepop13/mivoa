@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
+import { useToast } from '@/hooks/use-toast';
+import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 
 interface ChatInputFormProps {
   onSend: (message: string) => Promise<void>;
@@ -22,9 +24,21 @@ export function ChatInputForm({
 }: ChatInputFormProps): React.JSX.Element {
   const [inputValue, setInputValue] = useState('');
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return;
+    
+    if (!isApiKeyLoading && !apiKey) {
+      toast({
+        variant: 'destructive',
+        title: t('openRouterApiKeyRequired'),
+        description: t('openRouterApiKeyRequiredDescription'),
+      });
+      return;
+    }
+    
     const messageToSend = inputValue;
     try {
       await onSend(messageToSend);

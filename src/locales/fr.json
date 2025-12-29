@@ -89,6 +89,10 @@
   "defaultModel": "Par défaut",
   "noModelsFound": "Aucun modèle trouvé",
   "close": "Fermer",
-  "toggleSidebar": "Basculer la barre latérale"
+  "toggleSidebar": "Basculer la barre latérale",
+  "login": "Se connecter",
+  "logout": "Se déconnecter",
+  "auth.loginError": "Échec de la connexion",
+  "auth.logoutError": "Échec de la déconnexion"
 }
 
