@@ -28,9 +28,10 @@ describe('useEntryAnalysis', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(entryAnalysisService.analyzeEntry).mockResolvedValue({
-      mood: 'happy',
+      moods: ['happy'],
       themes: ['work', 'family'],
       keyTakeaways: ['Important insight'],
+      characters: ['Marie', 'John'],
       processedAt: new Date(),
     });
   });
@@ -41,9 +42,10 @@ describe('useEntryAnalysis', () => {
     const analysis = await result.current.analyze('Test entry content');
 
     expect(analysis).toEqual({
-      mood: 'happy',
+      moods: ['happy'],
       themes: ['work', 'family'],
       keyTakeaways: ['Important insight'],
+      characters: ['Marie', 'John'],
       processedAt: expect.any(Date),
     });
     expect(entryAnalysisService.analyzeEntry).toHaveBeenCalledWith(
@@ -114,9 +116,10 @@ describe('useEntryAnalysis', () => {
     });
 
     resolveAnalysis!({
-      mood: 'happy',
+      moods: ['happy'],
       themes: [],
       keyTakeaways: [],
+      characters: [],
       processedAt: new Date(),
     });
 

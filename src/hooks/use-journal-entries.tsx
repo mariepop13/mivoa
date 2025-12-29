@@ -25,9 +25,14 @@ export interface JournalEntryData extends Record<string, unknown> {
   date: string;
   createdAt: string | Timestamp;
   updatedAt: string | Timestamp;
-  mood?: string;
+  moods?: string[];
+  moodEmojis?: Record<string, string>;
+  subjectEmoji?: string;
   themes?: string[];
+  themeEmojis?: Record<string, string>;
   keyTakeaways?: string[];
+  characters?: string[];
+  places?: string[];
   aiProcessedAt?: Timestamp;
   conversationHistory?: Array<{
     role: 'user' | 'assistant';

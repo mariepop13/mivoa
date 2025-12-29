@@ -73,6 +73,12 @@ export function JournalMainContent({
                 hideDate={true}
                 canDelete={Boolean(selectedEntryId)}
                 recentEntries={recentEntries}
+                places={selectedEntry?.places}
+                characters={selectedEntry?.characters}
+                themes={selectedEntry?.themes}
+                themeEmojis={selectedEntry?.themeEmojis as Record<string, string> | undefined}
+                moods={selectedEntry?.moods as string[] | undefined}
+                moodEmojis={selectedEntry?.moodEmojis as Record<string, string> | undefined}
               />
             ) : (
               <JournalChat

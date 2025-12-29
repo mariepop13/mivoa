@@ -5,6 +5,7 @@ import { JournalEntryStatus } from '@/components/journal-entry-status';
 import { JournalEntryActions } from '@/components/journal-entry-actions';
 import { EntryDateHeader } from '@/components/entry-date-header';
 import { EntryContentForm } from '@/components/entry-content-form';
+import { EntryDetections } from '@/components/entry-detections';
 import type { RecentEntry } from '@/ai/types/journal';
 
 interface JournalEntryProps {
@@ -20,6 +21,12 @@ interface JournalEntryProps {
   hideDate?: boolean;
   canDelete?: boolean;
   recentEntries?: RecentEntry[];
+  places?: string[];
+  characters?: string[];
+  themes?: string[];
+  themeEmojis?: Record<string, string>;
+  moods?: string[];
+  moodEmojis?: Record<string, string>;
 }
 
 function JournalEntryComponent({
@@ -35,6 +42,12 @@ function JournalEntryComponent({
   hideDate = false,
   canDelete = false,
   recentEntries = [],
+  places,
+  characters,
+  themes,
+  themeEmojis,
+  moods,
+  moodEmojis,
 }: JournalEntryProps): React.JSX.Element {
   const [localContent, setLocalContent] = useState(content);
 
@@ -56,6 +69,7 @@ function JournalEntryComponent({
         recentEntries={recentEntries}
         onContentChange={handleContentChange}
       />
+      <EntryDetections places={places} characters={characters} themes={themes} themeEmojis={themeEmojis} moods={moods} moodEmojis={moodEmojis} />
       <div className="mt-4 sm:mt-6 px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t 
         border-border/50 bg-muted/30 flex flex-col sm:flex-row items-start sm:items-center 
         justify-between gap-3">

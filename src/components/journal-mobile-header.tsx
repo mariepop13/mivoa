@@ -1,8 +1,6 @@
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
-import { UserMenu } from '@/components/user-menu';
-import { SettingsMenu } from '@/components/settings-menu';
 
 interface JournalMobileHeaderProps {
   title: string;
@@ -26,10 +24,6 @@ export function JournalMobileHeader({ title, onSidebarToggle, isSidebarOpen }: J
       <h2 className="text-lg font-headline font-semibold text-foreground">
         {title}
       </h2>
-      <div className="flex items-center gap-2">
-        <UserMenu />
-        <SettingsMenu />
-      </div>
     </div>
   );
 }
