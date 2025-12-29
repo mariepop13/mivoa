@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { JournalEntry } from '../journal-entry';
 
 const mockProps = {
@@ -43,12 +44,23 @@ describe('JournalEntry', () => {
     expect(mockProps.onSave).toHaveBeenCalled();
   });
 
-  it('calls onDelete when delete button is clicked', () => {
+  it('calls onDelete when delete button is clicked', async () => {
+    const user = userEvent.setup();
     render(<JournalEntry {...mockProps} />);
     
     const deleteButton = screen.getByText(/delete/i);
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
     
+    const dialog = await waitFor(() => {
+      return screen.getByRole('alertdialog');
+    });
+
+    const confirmButton = dialog.querySelector('button[class*="bg-destructive"]') as HTMLButtonElement;
+    
+    expect(confirmButton).toBeInTheDocument();
+    expect(confirmButton?.textContent?.toLowerCase()).toContain('delete');
+    
+    await user.click(confirmButton);
     expect(mockProps.onDelete).toHaveBeenCalled();
   });
 
