@@ -123,6 +123,8 @@ export const reducer = (state: State, action: Action): State => {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
       }
+    default:
+      return state
   }
 }
 
@@ -139,7 +141,13 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+interface ToastReturn {
+  id: string;
+  dismiss: () => void;
+  update: (props: ToasterToast) => void;
+}
+
+function toast({ ...props }: Toast): ToastReturn {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -168,7 +176,13 @@ function toast({ ...props }: Toast) {
   }
 }
 
-function useToast() {
+interface UseToastReturn {
+  toasts: ToasterToast[];
+  toast: typeof toast;
+  dismiss: (toastId?: string) => void;
+}
+
+function useToast(): UseToastReturn {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {

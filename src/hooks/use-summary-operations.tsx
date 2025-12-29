@@ -16,6 +16,12 @@ interface UseSummaryOperationsParams {
   setSaveError: (error: string | null) => void;
 }
 
+interface UseSummaryOperationsResult {
+  handleSummarizeConversation: (
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
+  ) => Promise<void>;
+}
+
 export function useSummaryOperations({
   dateKey,
   updateEntryState,
@@ -90,6 +96,6 @@ export function useSummaryOperations({
 
   return {
     handleSummarizeConversation,
-  };
+  } satisfies UseSummaryOperationsResult;
 }
 

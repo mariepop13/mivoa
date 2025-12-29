@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsLanguageSection } from '../settings-language-section';
-import { LanguageContext, SUPPORTED_LANGUAGES, LANGUAGE_LABELS } from '@/context/LanguageContext';
+import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   DropdownMenu,

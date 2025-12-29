@@ -119,10 +119,14 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
   useEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
       if (selectedEntryData?.content !== undefined) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setContent(selectedEntryData.content || '');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTitle(selectedEntryData.title || '');
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setContent('');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTitle('');
       }
       hasInitializedRef.current = true;

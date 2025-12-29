@@ -4,9 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { OpenRouterApiKeySetup } from '../openrouter-api-key-setup';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { useTranslation } from '@/hooks/use-translation';
-import { ApiKeyForm } from '../api-key-form';
-import { OAuthConnectButton } from '../oauth-connect-button';
-import { ApiKeyStatus } from '../api-key-status';
 
 vi.mock('@/hooks/use-translation');
 vi.mock('../api-key-form', () => ({

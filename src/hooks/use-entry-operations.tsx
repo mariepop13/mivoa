@@ -21,6 +21,12 @@ interface UseEntryOperationsParams {
   hasInitializedRef: React.MutableRefObject<boolean>;
 }
 
+interface UseEntryOperationsResult {
+  createNewEntry: (initialContent?: string, initialTitle?: string) => Promise<void>;
+  saveEntry: (newContent: string) => Promise<void>;
+  handleDelete: () => Promise<void>;
+}
+
 export function useEntryOperations({
   dateKey,
   selectedEntryDocRef,
@@ -135,7 +141,7 @@ export function useEntryOperations({
     createNewEntry,
     saveEntry,
     handleDelete,
-  };
+  } satisfies UseEntryOperationsResult;
 }
 
 
