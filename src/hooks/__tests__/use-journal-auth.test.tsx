@@ -63,5 +63,20 @@ describe('useJournalAuth', () => {
     expect(result.current.authLoading).toBe(true);
     expect(result.current.authError).toBeNull();
   });
+
+  it('should return authError message when error exists', () => {
+    const mockError = new Error('Authentication failed');
+    vi.mocked(useUser).mockReturnValue({
+      user: null,
+      isLoading: false,
+      error: mockError,
+    });
+
+    const { result } = renderHook(() => useJournalAuth());
+
+    expect(result.current.authError).toBe('Authentication failed');
+    expect(result.current.authLoading).toBe(false);
+    expect(result.current.user).toBeNull();
+  });
 });
 

@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
 
+const DAYS_TO_LOOK_BACK = 7;
+const MAX_RECENT_ENTRIES = 7;
+
 function getTimestampMillis(value: string | Timestamp | unknown): number {
   if (value instanceof Timestamp) {
     return value.toMillis();
@@ -162,9 +165,6 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     setIsGeneratingSummary,
     setSaveError,
   });
-
-  const DAYS_TO_LOOK_BACK = 7;
-  const MAX_RECENT_ENTRIES = 7;
 
   const recentEntries = useMemo(() => {
     if (!entries) return [];

@@ -23,7 +23,7 @@ export function ChatMessagesList({ messages, isTyping, error }: ChatMessagesList
     <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
       <div className="max-w-3xl mx-auto space-y-4">
         {!isApiKeyLoading && !apiKey && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg px-4 py-3 text-sm">
+          <div role="status" aria-live="polite" className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg px-4 py-3 text-sm">
             <p className="font-medium mb-1">{t('openRouterApiKeyRequired')}</p>
             <p className="text-xs opacity-90">{t('openRouterApiKeyRequiredDescription')}</p>
           </div>

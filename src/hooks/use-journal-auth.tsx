@@ -1,16 +1,16 @@
 import { useUser } from '@/firebase/auth/use-user';
 
 interface UseJournalAuthResult {
-  authError: null;
+  authError: string | null;
   authLoading: boolean;
   user: ReturnType<typeof useUser>['user'];
 }
 
 export function useJournalAuth(): UseJournalAuthResult {
-  const { user, isLoading: authLoading } = useUser();
+  const { user, isLoading: authLoading, error } = useUser();
 
   return {
-    authError: null,
+    authError: error ? error.message : null,
     authLoading,
     user,
   };
