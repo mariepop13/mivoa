@@ -65,6 +65,7 @@ describe('useEntryOperations', () => {
     vi.mocked(journalHandlers.generateEntryId).mockReturnValue('new-entry-id');
     vi.mocked(journalHandlers.createEntryDocument).mockResolvedValue(undefined);
     vi.mocked(journalHandlers.triggerEntryAnalysis).mockResolvedValue(undefined);
+    vi.mocked(journalHandlers.changeEntryDate).mockResolvedValue(undefined);
     vi.mocked(updateDocumentNonBlocking).mockResolvedValue(undefined);
     vi.mocked(deleteDocumentNonBlocking).mockResolvedValue(undefined);
   });
@@ -269,6 +270,162 @@ describe('useEntryOperations', () => {
 
       expect(mockSetSaveError).toHaveBeenCalledWith('Delete failed');
       expect(mockSetIsSaving).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe('changeEntryDate', () => {
+    const mockNewDate = new Date(2024, 0, 20);
+    const mockOnDateChange = vi.fn();
+
+    it('should change entry date successfully', async () => {
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(mockSetIsSaving).toHaveBeenCalledWith(true);
+      expect(mockSetSaveError).toHaveBeenCalledWith(null);
+      expect(journalHandlers.changeEntryDate).toHaveBeenCalledWith({
+        entryId: 'entry-1',
+        newDate: mockNewDate,
+        firestore: mockFirestore,
+        user: mockUser,
+      });
+      expect(mockOnDateChange).toHaveBeenCalledWith(mockNewDate);
+      expect(mockSetIsSaving).toHaveBeenCalledWith(false);
+    });
+
+    it('should not call onDateChange when not provided', async () => {
+      const { result } = renderHook(() => useEntryOperations(defaultParams));
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).toHaveBeenCalled();
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it('should not change date when docRef is missing', async () => {
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          selectedEntryDocRef: null,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it('should not change date when entryId is missing', async () => {
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          selectedEntryId: null,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it('should not change date when user is missing', async () => {
+      vi.mocked(useUser).mockReturnValue({
+        user: null,
+        isLoading: false,
+        error: null,
+      });
+
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it('should not change date when firestore is missing', async () => {
+      vi.mocked(useFirestore).mockReturnValue(null as any);
+
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors when changing date', async () => {
+      const error = new Error('Change date failed');
+      vi.mocked(journalHandlers.changeEntryDate).mockRejectedValue(error);
+
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(mockNewDate);
+      });
+
+      expect(mockSetSaveError).toHaveBeenCalledWith('Change date failed');
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+      expect(mockSetIsSaving).toHaveBeenCalledWith(false);
+    });
+
+    it('should handle different dates correctly', async () => {
+      const differentDate = new Date(2024, 11, 31);
+      const { result } = renderHook(() =>
+        useEntryOperations({
+          ...defaultParams,
+          onDateChange: mockOnDateChange,
+        })
+      );
+
+      await act(async () => {
+        await result.current.changeEntryDate(differentDate);
+      });
+
+      expect(journalHandlers.changeEntryDate).toHaveBeenCalledWith({
+        entryId: 'entry-1',
+        newDate: differentDate,
+        firestore: mockFirestore,
+        user: mockUser,
+      });
+      expect(mockOnDateChange).toHaveBeenCalledWith(differentDate);
     });
   });
 });

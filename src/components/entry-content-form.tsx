@@ -1,9 +1,12 @@
 'use client';
 
 import { AiPromptSuggestion } from '@/components/ai-prompt-suggestion';
+import { WordCountBadge } from '@/components/word-count-badge';
 import { useTranslation } from '@/hooks/use-translation';
 import ReactMarkdown from 'react-markdown';
 import type { RecentEntry } from '@/ai/types/journal';
+
+const TEXTAREA_MIN_HEIGHT = '400px';
 
 interface EntryContentFormProps {
   content: string;
@@ -55,8 +58,11 @@ export function EntryContentForm({
           className="flex-1 w-full resize-none bg-transparent text-foreground 
             placeholder:text-muted-foreground/60 focus:outline-none text-base sm:text-lg
             leading-relaxed font-body py-2"
-          style={{ minHeight: '400px' }}
+          style={{ minHeight: TEXTAREA_MIN_HEIGHT }}
         />
+        <div className="mt-2">
+          <WordCountBadge content={content} />
+        </div>
       </div>
     </div>
   );

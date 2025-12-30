@@ -38,6 +38,7 @@ describe('journal-utils', () => {
     it('should return empty string for invalid date', () => {
       const entry = {
         id: 'entry-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         createdAt: null as any,
         updatedAt: new Date(),
         content: 'Test',

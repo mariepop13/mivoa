@@ -16,14 +16,16 @@ import { useTemplateConversation } from '@/hooks/use-template-conversation';
 import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
+const DATE_KEY_FORMAT = 'yyyy-MM-dd';
+
 function JournalApp(): React.JSX.Element {
   const authState = useJournalAuth();
-  const [selectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EntryTemplate | null>(null);
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
 
-  const journalEntries = useJournalEntries({ selectedDate });
+  const journalEntries = useJournalEntries({ selectedDate, onDateChange: setSelectedDate });
 
   const { createConversationFromPrompt } = useTemplateConversation({
     selectedDate,
@@ -89,6 +91,7 @@ function JournalApp(): React.JSX.Element {
           onEntrySelect={handlers.handleEntrySelect}
           formatEntryTime={formatEntryTime}
           onTemplateSelect={handleTemplateSelect}
+          onDateChange={setSelectedDate}
         />
         <JournalMainContent
           selectedDate={selectedDate}
@@ -109,11 +112,12 @@ function JournalApp(): React.JSX.Element {
           getEntryTitle={getEntryTitle}
           onSidebarToggle={() => setIsSidebarOpen(true)}
           isSidebarOpen={isSidebarOpen}
-          dateKey={format(selectedDate, 'yyyy-MM-dd')}
+          dateKey={format(selectedDate, DATE_KEY_FORMAT)}
           handleSaveDraft={journalEntries.handleSaveDraft}
           handleDeleteDraft={journalEntries.handleDeleteDraft}
           draftForDate={journalEntries.draftForDate}
           conversationEntryForDate={journalEntries.conversationEntryForDate}
+          onChangeDate={journalEntries.changeEntryDate}
         />
       </div>
       <TemplatePromptDialog

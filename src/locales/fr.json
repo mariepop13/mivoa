@@ -128,6 +128,15 @@
   "templateReflectionDescription": "Qu'est-ce qui s'est passé aujourd'hui ? Comment vous êtes-vous senti(e) ? Qu'avez-vous appris ?",
   "templateDailyDescription": "Comment s'est passée votre journée ? Qu'avez-vous fait le matin, l'après-midi et le soir ?",
   "templateGoalsDescription": "Quels sont vos objectifs pour aujourd'hui ? Quels progrès avez-vous réalisés ?",
-  "generatedPrompt": "Prompt généré :"
+  "generatedPrompt": "Prompt généré :",
+  "selectDate": "Sélectionner une date",
+  "changeDate": "Changer la date",
+  "changeEntryDate": "Changer la date",
+  "datesWithEntries": "Dates avec entrées",
+  "confirmChangeDate": "Changer la date de l'entrée ?",
+  "word": "mot",
+  "words": "mots",
+  "character": "caractère",
+  "charactersCount": "caractères"
 }
 
