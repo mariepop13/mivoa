@@ -22,12 +22,22 @@ interface UseSummaryOperationsResult {
   ) => Promise<void>;
 }
 
+function convertToChatMessages(
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
+): ChatMessage[] {
+  return conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp,
+  }));
+}
+
 export function useSummaryOperations({
   dateKey,
   updateEntryState,
   setIsGeneratingSummary,
   setSaveError,
-}: UseSummaryOperationsParams) {
+}: UseSummaryOperationsParams): UseSummaryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
   const { language } = useContext(LanguageContext);
@@ -43,61 +53,26 @@ export function useSummaryOperations({
       setSaveError('API key not configured or services unavailable');
       return;
     }
-
     setIsGeneratingSummary(true);
     setSaveError(null);
-
     try {
       const lang = (language || 'en') as 'en' | 'fr';
-      const chatMessages: ChatMessage[] = conversationHistory.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp,
-      }));
-
+      const chatMessages = convertToChatMessages(conversationHistory);
       const summary = await generateConversationSummary(chatMessages, apiKey, lang, selectedModel);
       const entryId = draftId || generateEntryId(dateKey);
-
       await saveSummaryAsEntry({
-        entryId,
-        entryDateKey: dateKey,
-        summary,
-        conversationHistory,
-        firestore,
-        user,
-        draftId,
+        entryId, entryDateKey: dateKey, summary, conversationHistory, firestore, user, draftId,
       });
-      
       updateEntryState(entryId, summary.content, summary.title);
-      triggerEntryAnalysis({
-        content: summary.content,
-        entryId,
-        firestore,
-        user,
-        analyze,
-      });
+      triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
     } catch (error) {
       console.error('Failed to generate summary:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error generating summary';
-      setSaveError(errorMessage);
+      setSaveError(error instanceof Error ? error.message : 'Error generating summary');
     } finally {
       setIsGeneratingSummary(false);
     }
-  }, [
-    apiKey,
-    user,
-    firestore,
-    language,
-    dateKey,
-    updateEntryState,
-    analyze,
-    selectedModel,
-    setIsGeneratingSummary,
-    setSaveError,
-  ]);
+  }, [apiKey, user, firestore, language, dateKey, updateEntryState, analyze, selectedModel, setIsGeneratingSummary, setSaveError]);
 
-  return {
-    handleSummarizeConversation,
-  } satisfies UseSummaryOperationsResult;
+  return { handleSummarizeConversation } satisfies UseSummaryOperationsResult;
 }
 

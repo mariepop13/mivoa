@@ -70,9 +70,9 @@ function JournalEntryComponent({
         onContentChange={handleContentChange}
       />
       <EntryDetections places={places} characters={characters} themes={themes} themeEmojis={themeEmojis} moods={moods} moodEmojis={moodEmojis} />
-      <div className="mt-4 sm:mt-6 px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t 
-        border-border/50 bg-muted/30 flex flex-col sm:flex-row items-start sm:items-center 
-        justify-between gap-3">
+      <div className="mt-5 sm:mt-6 lg:mt-8 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-5 lg:pb-6 pt-4 sm:pt-5 lg:pt-6 border-t 
+        border-border/60 bg-muted/40 backdrop-blur-sm flex flex-col sm:flex-row items-start sm:items-center 
+        justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2 text-xs sm:text-sm">
           <JournalEntryStatus isLoading={isLoading} isSaved={isSaved} error={error} />
         </div>

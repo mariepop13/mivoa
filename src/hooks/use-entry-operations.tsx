@@ -40,7 +40,7 @@ export function useEntryOperations({
   setContent,
   setTitle,
   hasInitializedRef,
-}: UseEntryOperationsParams) {
+}: UseEntryOperationsParams): UseEntryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
   const { analyze } = useEntryAnalysis();
@@ -135,7 +135,18 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [selectedEntryDocRef, selectedEntryId, entries, setSelectedEntryId, setContent, setTitle, setLastSavedAt, setIsSaving, setSaveError, hasInitializedRef]);
+  }, [
+    selectedEntryDocRef,
+    selectedEntryId,
+    entries,
+    setSelectedEntryId,
+    setContent,
+    setTitle,
+    setLastSavedAt,
+    setIsSaving,
+    setSaveError,
+    hasInitializedRef,
+  ]);
 
   return {
     createNewEntry,

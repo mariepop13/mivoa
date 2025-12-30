@@ -56,23 +56,23 @@ export function ChatInputForm({
   };
 
   return (
-    <div className="border-t border-border bg-card px-4 sm:px-6 py-4">
-      <div className="max-w-3xl mx-auto space-y-3">
+    <div className="border-t border-border/60 bg-card/50 backdrop-blur-sm px-4 sm:px-6 py-4 sm:py-5">
+      <div className="max-w-3xl mx-auto space-y-4">
         {canSummarize && (
-          <div className="flex justify-center">
+          <div className="flex justify-center pb-1">
             <Button
               type="button"
               variant="outline"
               onClick={onSummarize}
               disabled={isLoadingSummary}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto shadow-sm"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {isLoadingSummary ? t('generatingSummary') : t('summarizeConversation')}
             </Button>
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
