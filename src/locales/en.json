@@ -101,6 +101,11 @@
   "places": "Places",
   "characters": "Characters",
   "themes": "Themes",
-  "moods": "Moods"
+  "moods": "Moods",
+  "selectDate": "Select date",
+  "changeDate": "Change date",
+  "changeEntryDate": "Change date",
+  "datesWithEntries": "Dates with entries",
+  "confirmChangeDate": "Change entry date?"
 }
 
