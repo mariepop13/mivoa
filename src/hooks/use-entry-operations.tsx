@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { serverTimestamp } from 'firebase/firestore';
-import { generateEntryId, createEntryDocument, triggerEntryAnalysis } from '@/app/handlers/journal-handlers';
+import { generateEntryId, createEntryDocument, triggerEntryAnalysis, changeEntryDate } from '@/app/handlers/journal-handlers';
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { JournalEntryData } from './use-journal-entries';
 
@@ -19,12 +19,14 @@ interface UseEntryOperationsParams {
   setContent: (content: string) => void;
   setTitle: (title: string) => void;
   hasInitializedRef: React.MutableRefObject<boolean>;
+  onDateChange?: (date: Date) => void;
 }
 
 interface UseEntryOperationsResult {
   createNewEntry: (initialContent?: string, initialTitle?: string) => Promise<void>;
   saveEntry: (newContent: string) => Promise<void>;
   handleDelete: () => Promise<void>;
+  changeEntryDate: (newDate: Date) => Promise<void>;
 }
 
 export function useEntryOperations({
@@ -40,6 +42,7 @@ export function useEntryOperations({
   setContent,
   setTitle,
   hasInitializedRef,
+  onDateChange,
 }: UseEntryOperationsParams): UseEntryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -148,10 +151,40 @@ export function useEntryOperations({
     hasInitializedRef,
   ]);
 
+  const changeEntryDateHandler = useCallback(async (newDate: Date) => {
+    if (!selectedEntryDocRef || !selectedEntryId || !user || !firestore) {
+      console.warn('Cannot change date: missing entryDocRef, entryId, user, or firestore');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await changeEntryDate({
+        entryId: selectedEntryId,
+        newDate,
+        firestore,
+        user,
+      });
+
+      if (onDateChange) {
+        onDateChange(newDate);
+      }
+    } catch (error) {
+      console.error('changeEntryDate error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error changing entry date';
+      setSaveError(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedEntryDocRef, selectedEntryId, user, firestore, setIsSaving, setSaveError, onDateChange]);
+
   return {
     createNewEntry,
     saveEntry,
     handleDelete,
+    changeEntryDate: changeEntryDateHandler,
   } satisfies UseEntryOperationsResult;
 }
 

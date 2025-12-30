@@ -15,6 +15,7 @@ interface JournalEntryProps {
   onContentChange: (content: string) => void;
   onSave: () => void;
   onDelete?: () => void;
+  onChangeDate?: (date: Date) => void;
   isLoading?: boolean;
   isSaved?: boolean;
   error?: string | null;
@@ -36,6 +37,7 @@ function JournalEntryComponent({
   onContentChange,
   onSave,
   onDelete,
+  onChangeDate,
   isLoading = false,
   isSaved = false,
   error = null,
@@ -79,8 +81,10 @@ function JournalEntryComponent({
         <JournalEntryActions 
           onSave={onSave} 
           onDelete={onDelete} 
+          onChangeDate={onChangeDate}
           isLoading={isLoading} 
-          canDelete={canDelete} 
+          canDelete={canDelete}
+          currentDate={date}
         />
       </div>
     </div>

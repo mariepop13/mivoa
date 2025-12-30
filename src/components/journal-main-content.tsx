@@ -37,6 +37,7 @@ interface JournalMainContentProps {
   handleDeleteDraft: (draftId: string) => Promise<void>;
   draftForDate: (JournalEntryData & { id: string }) | null;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
+  onChangeDate?: (date: Date) => Promise<void>;
 }
 
 export function JournalMainContent({
@@ -62,6 +63,7 @@ export function JournalMainContent({
   handleSaveDraft,
   handleDeleteDraft,
   draftForDate,
+  onChangeDate,
 }: JournalMainContentProps): React.JSX.Element {
   const [viewMode, setViewMode] = useState<'chat' | 'summary'>('chat');
   const previousEntryIdRef = useRef<string | null>(null);
@@ -176,10 +178,11 @@ export function JournalMainContent({
                   onContentChange={onContentChange}
                   onSave={onSave}
                   onDelete={onDelete}
+                  onChangeDate={onChangeDate}
                   isLoading={isSaving}
                   isSaved={lastSavedAt !== null && !isSaving}
                   error={saveError}
-                  hideDate={true}
+                  hideDate={false}
                   canDelete={Boolean(selectedEntryId)}
                   recentEntries={recentEntries}
                   places={selectedEntry?.places}

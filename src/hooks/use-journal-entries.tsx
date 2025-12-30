@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useFirestore, useCollection, useDoc, applyMemoMarker } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
@@ -48,6 +48,7 @@ export interface JournalEntryData extends Record<string, unknown> {
 
 interface UseJournalEntriesParams {
   selectedDate: Date;
+  onDateChange?: (date: Date) => void;
 }
 
 interface UseJournalEntriesResult {
@@ -78,9 +79,10 @@ interface UseJournalEntriesResult {
   handleSaveDraft: (messages: ChatMessage[], draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
+  changeEntryDate: (newDate: Date) => Promise<void>;
 }
 
-export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): UseJournalEntriesResult {
+export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntriesParams): UseJournalEntriesResult {
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -128,22 +130,27 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
 
   const { data: selectedEntryData, isLoading: selectedEntryLoading } = useDoc<JournalEntryData>(selectedEntryDocRef);
 
+  const prevEntryIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    hasInitializedRef.current = false;
+    if (prevEntryIdRef.current !== selectedEntryId) {
+      hasInitializedRef.current = false;
+      prevEntryIdRef.current = selectedEntryId;
+    }
   }, [selectedEntryId]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
-      if (selectedEntryData?.content !== undefined) {
-        setContent(selectedEntryData.content || '');
-        setTitle(selectedEntryData.title || '');
-      } else {
-        setContent('');
-        setTitle('');
+      const newContent = selectedEntryData?.content !== undefined ? selectedEntryData.content || '' : '';
+      const newTitle = selectedEntryData?.title !== undefined ? selectedEntryData.title || '' : '';
+      
+      if (content !== newContent || title !== newTitle) {
+        setContent(newContent);
+        setTitle(newTitle);
       }
       hasInitializedRef.current = true;
     }
-  }, [selectedEntryData, selectedEntryLoading]);
+  }, [selectedEntryData, selectedEntryLoading, content, title]);
 
   const updateEntryState = useCallback((entryId: string, newContent: string, newTitle: string): void => {
     hasInitializedRef.current = false;
@@ -153,7 +160,7 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     setLastSavedAt(new Date());
   }, []);
 
-  const { createNewEntry, saveEntry, handleDelete } = useEntryOperations({
+  const { createNewEntry, saveEntry, handleDelete, changeEntryDate } = useEntryOperations({
     dateKey,
     selectedEntryDocRef,
     selectedEntryId,
@@ -166,6 +173,7 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     setContent,
     setTitle,
     hasInitializedRef,
+    onDateChange,
   });
 
   const { handleSummarizeConversation } = useSummaryOperations({
@@ -286,6 +294,7 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     handleSaveDraft,
     handleDeleteDraft,
     conversationEntryForDate,
+    changeEntryDate,
   };
 }
 
