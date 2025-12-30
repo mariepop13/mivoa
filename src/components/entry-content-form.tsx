@@ -21,10 +21,10 @@ export function EntryContentForm({
   const { t } = useTranslation();
 
   return (
-    <div className="flex-1 flex flex-col px-4 sm:px-6">
+    <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8">
       {title && (
-        <div className="pt-4 sm:pt-6 pb-4 sm:pb-6 border-b border-border/50">
-          <h2 className="text-lg sm:text-xl font-headline font-semibold text-foreground">
+        <div className="pt-5 sm:pt-6 lg:pt-8 pb-5 sm:pb-6 lg:pb-8 border-b border-border/60">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-headline font-semibold text-foreground">
             <ReactMarkdown
               components={{
                 p: ({ children }) => <span>{children}</span>,
@@ -37,9 +37,9 @@ export function EntryContentForm({
           </h2>
         </div>
       )}
-      <div className="flex-1 pt-4 sm:pt-6">
+      <div className="flex-1 pt-5 sm:pt-6 lg:pt-8">
         {!content.trim() && (
-          <div className="mb-4">
+          <div className="mb-5 sm:mb-6">
             <AiPromptSuggestion
               recentEntries={recentEntries}
               onPromptSelected={(prompt) => {
@@ -53,8 +53,8 @@ export function EntryContentForm({
           onChange={(e) => onContentChange(e.target.value)}
           placeholder={t('writeYourThoughts')}
           className="flex-1 w-full resize-none bg-transparent text-foreground 
-            placeholder:text-muted-foreground/60 focus:outline-none text-base 
-            leading-relaxed font-body py-4"
+            placeholder:text-muted-foreground/60 focus:outline-none text-base sm:text-lg
+            leading-relaxed font-body py-2"
           style={{ minHeight: '400px' }}
         />
       </div>
