@@ -29,24 +29,6 @@ export function JournalViewTabs({
       <button
         type="button"
         role="tab"
-        id="chat-tab"
-        aria-selected={viewMode === 'chat'}
-        aria-controls="chat-panel"
-        onClick={() => onViewModeChange('chat')}
-        className={cn(
-          "flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-initial",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          viewMode === 'chat'
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-        )}
-      >
-        <MessageSquare className="h-4 w-4 shrink-0" />
-        <span className="whitespace-nowrap">{t('conversation')}</span>
-      </button>
-      <button
-        type="button"
-        role="tab"
         id="summary-tab"
         aria-selected={viewMode === 'summary'}
         aria-controls="summary-panel"
@@ -61,6 +43,24 @@ export function JournalViewTabs({
       >
         <FileText className="h-4 w-4 shrink-0" />
         <span className="whitespace-nowrap">{t('summary')}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="chat-tab"
+        aria-selected={viewMode === 'chat'}
+        aria-controls="chat-panel"
+        onClick={() => onViewModeChange('chat')}
+        className={cn(
+          "flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-initial",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          viewMode === 'chat'
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+        )}
+      >
+        <MessageSquare className="h-4 w-4 shrink-0" />
+        <span className="whitespace-nowrap">{t('conversation')}</span>
       </button>
     </div>
   );
