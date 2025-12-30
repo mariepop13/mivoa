@@ -28,8 +28,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="This is a test content" />);
 
-    expect(screen.getByText(/5/)).toBeInTheDocument();
-    expect(screen.getByText(/25/)).toBeInTheDocument();
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('5 words · 25 charactersCount');
   });
 
   it('should use singular form for 1 word', () => {
@@ -86,8 +86,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="Large content" />);
 
-    expect(screen.getByText(/1\.5k/)).toBeInTheDocument();
-    expect(screen.getByText(/8\.0k/)).toBeInTheDocument();
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('1.5k words · 8.0k charactersCount');
   });
 
   it('should handle empty content', () => {
@@ -98,7 +98,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="" />);
 
-    expect(screen.getByText(/0/)).toBeInTheDocument();
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('0 words · 0 charactersCount');
     expect(mockT).toHaveBeenCalledWith('words');
     expect(mockT).toHaveBeenCalledWith('charactersCount');
   });
