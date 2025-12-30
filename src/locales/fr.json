@@ -127,6 +127,7 @@
   "templateGratitudeDescription": "De quoi êtes-vous reconnaissant(e) aujourd'hui ?",
   "templateReflectionDescription": "Qu'est-ce qui s'est passé aujourd'hui ? Comment vous êtes-vous senti(e) ? Qu'avez-vous appris ?",
   "templateDailyDescription": "Comment s'est passée votre journée ? Qu'avez-vous fait le matin, l'après-midi et le soir ?",
-  "templateGoalsDescription": "Quels sont vos objectifs pour aujourd'hui ? Quels progrès avez-vous réalisés ?"
+  "templateGoalsDescription": "Quels sont vos objectifs pour aujourd'hui ? Quels progrès avez-vous réalisés ?",
+  "generatedPrompt": "Prompt généré :"
 }
 

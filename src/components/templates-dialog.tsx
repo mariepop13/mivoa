@@ -11,7 +11,8 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { useEntryTemplates, type EntryTemplate } from '@/hooks/use-entry-templates';
 import { getTemplateDescription } from '@/utils/template-utils';
-import { FileText } from 'lucide-react';
+import { FileText, Heart, Brain, Calendar, Target } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface TemplatesDialogProps {
   open: boolean;
@@ -33,6 +34,16 @@ export function TemplatesDialog({ open, onOpenChange, onTemplateSelect }: Templa
     [t]
   );
 
+  const getTemplateIcon = (templateId: string): LucideIcon => {
+    const icons: Record<string, LucideIcon> = {
+      gratitude: Heart,
+      reflection: Brain,
+      daily: Calendar,
+      goals: Target,
+    };
+    return icons[templateId] || FileText;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
@@ -44,16 +55,18 @@ export function TemplatesDialog({ open, onOpenChange, onTemplateSelect }: Templa
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-          {templates.map((template) => (
-            <button
-              key={template.id}
-              onClick={() => handleSelectTemplate(template)}
-              className="w-full text-left p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all duration-200 group"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <FileText className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
+          {templates.map((template) => {
+            const Icon = getTemplateIcon(template.id);
+            return (
+              <button
+                key={template.id}
+                onClick={() => handleSelectTemplate(template)}
+                className="w-full text-left p-4 rounded-lg border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all duration-200 group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <Icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground mb-1.5 group-hover:text-primary transition-colors">
                     {template.name}
@@ -64,7 +77,8 @@ export function TemplatesDialog({ open, onOpenChange, onTemplateSelect }: Templa
                 </div>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

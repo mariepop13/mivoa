@@ -127,6 +127,7 @@
   "templateGratitudeDescription": "What are you grateful for today?",
   "templateReflectionDescription": "What happened today? How did you feel? What did you learn?",
   "templateDailyDescription": "How was your day? What did you do in the morning, afternoon, and evening?",
-  "templateGoalsDescription": "What are your goals for today? What progress have you made?"
+  "templateGoalsDescription": "What are your goals for today? What progress have you made?",
+  "generatedPrompt": "Generated prompt:"
 }
 

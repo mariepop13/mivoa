@@ -66,12 +66,12 @@ describe('TemplatePromptDialog', () => {
   };
 
   it('should not render when template is null', () => {
-    const { container } = renderWithContext(true, null, 'test-key');
-    expect(container.firstChild).toBeNull();
+    renderWithContext(true, null, 'test-key');
+    expect(screen.queryByText('templatePromptTitle')).not.toBeInTheDocument();
   });
 
   it('should not render when dialog is closed', () => {
-    const { container } = renderWithContext(false, mockTemplate, 'test-key');
+    renderWithContext(false, mockTemplate, 'test-key');
     expect(screen.queryByText('templatePromptTitle')).not.toBeInTheDocument();
   });
 
@@ -144,6 +144,116 @@ describe('TemplatePromptDialog', () => {
     await waitFor(() => {
       expect(screen.getByText('Generation failed')).toBeInTheDocument();
     });
+  });
+
+  it('should handle non-Error exception during generation', async () => {
+    mockGenerateTemplatePrompt.mockRejectedValue('String error');
+    renderWithContext(true, mockTemplate, 'test-key');
+
+    await waitFor(() => {
+      expect(screen.getByText('error')).toBeInTheDocument();
+    });
+  });
+
+  it('should disable use button when prompt is empty', async () => {
+    renderWithContext(true, mockTemplate, 'test-key');
+
+    await waitFor(() => {
+      const useButton = screen.getByText('useThisPrompt');
+      expect(useButton).toBeDisabled();
+    });
+
+    await waitFor(() => {
+      const useButton = screen.getByText('useThisPrompt');
+      expect(useButton).not.toBeDisabled();
+    });
+  });
+
+  it('should regenerate prompt when dialog is reopened after closing', async () => {
+    const { rerender } = renderWithContext(true, mockTemplate, 'test-key');
+
+    await waitFor(() => {
+      expect(mockGenerateTemplatePrompt).toHaveBeenCalledTimes(1);
+    });
+
+    vi.clearAllMocks();
+
+    rerender(
+      <OpenRouterApiKeyContext.Provider
+        value={{
+          apiKey: 'test-key',
+          setApiKey: vi.fn(),
+          resetApiKey: vi.fn(),
+          isLoading: false,
+        }}
+      >
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+          <TemplatePromptDialog
+            open={false}
+            onOpenChange={mockOnOpenChange}
+            template={mockTemplate}
+            onUsePrompt={mockOnUsePrompt}
+          />
+        </LanguageContext.Provider>
+      </OpenRouterApiKeyContext.Provider>
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    rerender(
+      <OpenRouterApiKeyContext.Provider
+        value={{
+          apiKey: 'test-key',
+          setApiKey: vi.fn(),
+          resetApiKey: vi.fn(),
+          isLoading: false,
+        }}
+      >
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+          <TemplatePromptDialog
+            open={true}
+            onOpenChange={mockOnOpenChange}
+            template={mockTemplate}
+            onUsePrompt={mockOnUsePrompt}
+          />
+        </LanguageContext.Provider>
+      </OpenRouterApiKeyContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(mockGenerateTemplatePrompt).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should handle early return when template becomes null during generation', async () => {
+    mockGenerateTemplatePrompt.mockImplementation(() => new Promise(() => {}));
+    const { rerender } = renderWithContext(true, mockTemplate, 'test-key');
+
+    await waitFor(() => {
+      expect(screen.getByText('generatingTemplatePrompt')).toBeInTheDocument();
+    });
+
+    rerender(
+      <OpenRouterApiKeyContext.Provider
+        value={{
+          apiKey: 'test-key',
+          setApiKey: vi.fn(),
+          resetApiKey: vi.fn(),
+          isLoading: false,
+        }}
+      >
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+          <TemplatePromptDialog
+            open={true}
+            onOpenChange={mockOnOpenChange}
+            template={null}
+            onUsePrompt={mockOnUsePrompt}
+          />
+        </LanguageContext.Provider>
+      </OpenRouterApiKeyContext.Provider>
+    );
+
+    expect(screen.queryByText('templatePromptTitle')).not.toBeInTheDocument();
   });
 });
 

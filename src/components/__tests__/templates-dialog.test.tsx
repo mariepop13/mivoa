@@ -116,5 +116,42 @@ describe('TemplatesDialog', () => {
     expect(screen.getByText('What are you grateful for?')).toBeInTheDocument();
     expect(screen.getByText('What happened today?')).toBeInTheDocument();
   });
+
+  it('should use FileText icon for unknown template ID', () => {
+    const unknownTemplate: EntryTemplate = {
+      id: 'unknown',
+      name: 'Unknown',
+      title: 'Unknown Template',
+      content: 'Unknown content',
+    };
+
+    vi.mocked(useEntryTemplates).mockReturnValue([unknownTemplate]);
+
+    render(
+      <TemplatesDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onTemplateSelect={mockOnTemplateSelect}
+      />
+    );
+
+    const button = screen.getByText('Unknown').closest('button');
+    expect(button).toBeInTheDocument();
+  });
+
+  it('should handle empty templates array', () => {
+    vi.mocked(useEntryTemplates).mockReturnValue([]);
+
+    render(
+      <TemplatesDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onTemplateSelect={mockOnTemplateSelect}
+      />
+    );
+
+    expect(screen.getByText('selectTemplate')).toBeInTheDocument();
+    expect(screen.queryByText('Gratitude')).not.toBeInTheDocument();
+  });
 });
 
