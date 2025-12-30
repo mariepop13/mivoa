@@ -1,0 +1,8 @@
+{
+  "setup-worktree": [
+    "npm install"
+  ],
+  "paths": {
+    "base": "~/.cursor/worktrees/mivoa"
+  }
+}

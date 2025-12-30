@@ -55,3 +55,7 @@ next-env.d.ts
 !.vscode/tasks.json
 .idea
 
+# Cursor - ignore local files, keep rules
+.cursor/*
+!.cursor/rules/
+
