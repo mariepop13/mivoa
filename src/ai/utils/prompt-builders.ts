@@ -1,6 +1,10 @@
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 import type { RecentEntry } from '../types/journal';
+import type { EntryTemplate } from '@/hooks/use-entry-templates';
+
+const MAX_RECENT_ENTRIES_FOR_CONTEXT = 5;
+const MAX_ENTRY_PREVIEW_LENGTH = 200;
 
 export function buildDailyPromptPrompt(
   recentEntries: RecentEntry[],
@@ -18,12 +22,14 @@ export function buildDailyPromptPrompt(
       ? `\n\nVoici les entrées récentes de l'utilisateur pour contexte (ne mentionne pas ces entrées directement dans l'invite) :\n\n`
       : `\n\nHere are the user's recent entries for context (don't mention these entries directly in the prompt):\n\n`;
     
-    recentEntries.slice(0, 5).forEach((entry, index) => {
+    recentEntries.slice(0, MAX_RECENT_ENTRIES_FOR_CONTEXT).forEach((entry, index) => {
       prompt += `Entry ${index + 1} (${entry.date}):\n`;
       if (entry.title) {
         prompt += `Title: ${entry.title}\n`;
       }
-      prompt += `Content: ${entry.content.substring(0, 200)}${entry.content.length > 200 ? '...' : ''}\n\n`;
+      const truncatedContent = entry.content.substring(0, MAX_ENTRY_PREVIEW_LENGTH);
+      const hasMore = entry.content.length > MAX_ENTRY_PREVIEW_LENGTH;
+      prompt += `Content: ${truncatedContent}${hasMore ? '...' : ''}\n\n`;
     });
 
     prompt += language === 'fr'
@@ -86,5 +92,31 @@ export function buildAnalysisPrompt(
 }\n\nFor moodEmojis, analyze each detected mood and assign the most appropriate and meaningful emoji that best represents that mood. Choose relevant and evocative emojis. If a mood is already an emoji, use it as is. If no appropriate emoji exists for a mood, omit it from moodEmojis (do not use generic emojis).\n\nFor subjectEmoji, choose the emoji that best represents the entry's main subject/title. This is the emoji that will be displayed next to the title in the list. If no appropriate emoji exists, omit subjectEmoji.\n\nFor themeEmojis, analyze each theme and assign the most appropriate and meaningful emoji that best represents that theme. Choose relevant and evocative emojis. If a theme is already an emoji, use it as is. If no appropriate emoji exists for a theme, omit it from themeEmojis (do not use generic emojis like 🏷️). Respond only with JSON, nothing else.\n\nEntry:\n${entryContent}\n\nRespond only with JSON, nothing else.`;
 
   return `${systemPrompt}\n\n${userPrompt}`;
+}
+
+export function buildTemplatePromptPrompt(
+  template: EntryTemplate,
+  language: 'en' | 'fr',
+  previousPrompt?: string
+): string {
+  const dateLocale = language === 'fr' ? fr : enUS;
+  const today = format(new Date(), 'EEEE, MMMM d, yyyy', { locale: dateLocale });
+  
+  let variationInstruction = '';
+  if (previousPrompt) {
+    variationInstruction = language === 'fr'
+      ? `\n\nIMPORTANT: L'utilisateur a déjà vu cette suggestion précédente:\n"${previousPrompt}"\n\nGénère une NOUVELLE variation COMPLÈTEMENT DIFFÉRENTE et créative. Utilise un angle, un ton, ou une approche totalement différent. Ne répète pas les mêmes idées ou formulations.`
+      : `\n\nIMPORTANT: The user has already seen this previous suggestion:\n"${previousPrompt}"\n\nGenerate a NEW COMPLETELY DIFFERENT and creative variation. Use a totally different angle, tone, or approach. Do not repeat the same ideas or formulations.`;
+  }
+  
+  const prompt = language === 'fr'
+    ? `L'utilisateur a sélectionné le template "${template.name}" pour son journal intime. Ce template a la structure suivante:\n\nTitre: ${template.title}\n\nStructure du contenu:\n${template.content}\n\nGénère une invite d'écriture personnalisée et engageante basée sur ce template pour aujourd'hui (${today}). L'invite doit encourager l'utilisateur à réfléchir et à écrire en suivant l'esprit et la structure du template, mais de manière personnalisée et adaptée à sa journée.${variationInstruction}`
+    : `The user has selected the "${template.name}" template for their journal. This template has the following structure:\n\nTitle: ${template.title}\n\nContent structure:\n${template.content}\n\nGenerate a personalized and engaging writing prompt based on this template for today (${today}). The prompt should encourage the user to reflect and write following the spirit and structure of the template, but in a personalized way adapted to their day.${variationInstruction}`;
+
+  const ending = language === 'fr'
+    ? `\n\nRéponds uniquement avec l'invite elle-même, sans explications supplémentaires. L'invite doit être concise (1-2 phrases maximum), personnelle, réfléchie et adaptée au type de template.`
+    : `\n\nRespond only with the prompt itself, no additional explanations. The prompt should be concise (1-2 sentences maximum), personal, thoughtful, and adapted to the template type.`;
+
+  return prompt + ending;
 }
 
