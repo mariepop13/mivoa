@@ -27,7 +27,7 @@ export function useSummaryOperations({
   updateEntryState,
   setIsGeneratingSummary,
   setSaveError,
-}: UseSummaryOperationsParams) {
+}: UseSummaryOperationsParams): UseSummaryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
   const { language } = useContext(LanguageContext);
