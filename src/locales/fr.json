@@ -106,6 +106,10 @@
   "changeDate": "Changer la date",
   "changeEntryDate": "Changer la date",
   "datesWithEntries": "Dates avec entrées",
-  "confirmChangeDate": "Changer la date de l'entrée ?"
+  "confirmChangeDate": "Changer la date de l'entrée ?",
+  "word": "mot",
+  "words": "mots",
+  "character": "caractère",
+  "charactersCount": "caractères"
 }
 
