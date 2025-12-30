@@ -1,11 +1,8 @@
 'use client';
 
-import { format } from 'date-fns';
-import { enUS, fr } from 'date-fns/locale';
-import { useContext } from 'react';
+import { DatePicker } from '@/components/date-picker';
 import { SettingsMenu } from '@/components/settings-menu';
 import { UserMenu } from '@/components/user-menu';
-import { LanguageContext } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/use-translation';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
@@ -19,6 +16,7 @@ interface JournalSidebarProps {
   onNewEntry: () => void;
   onEntrySelect: (entryId: string) => void;
   formatEntryTime: (entry: JournalEntryData & { id: string }) => string;
+  onDateChange: (date: Date) => void;
 }
 
 export function JournalSidebar({
@@ -31,10 +29,9 @@ export function JournalSidebar({
   onNewEntry,
   onEntrySelect,
   formatEntryTime,
+  onDateChange,
 }: JournalSidebarProps): React.JSX.Element {
-  const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
-  const dateLocale = language === 'fr' ? fr : enUS;
 
   return (
     <>
@@ -51,11 +48,11 @@ export function JournalSidebar({
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="p-4 sm:p-6 border-b border-border">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl sm:text-2xl font-headline font-bold text-foreground">
-              {format(selectedDate, "EEEE, MMMM d, yyyy", { locale: dateLocale })}
-            </h1>
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
+            <div className="flex-1 min-w-0 max-w-full">
+              <DatePicker value={selectedDate} onChange={onDateChange} />
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
               <UserMenu />
               <SettingsMenu />
               <button

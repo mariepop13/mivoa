@@ -21,6 +21,7 @@ interface UseChatConversationResult {
   draftId: string | null;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function useChatConversation(params?: UseChatConversationParams): UseChatConversationResult {
   const { dateKey, onDraftSave, onDraftDelete } = params || {};
   const { apiKey } = useContext(OpenRouterApiKeyContext);
@@ -46,6 +47,27 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
       hasInitializedRef.current = true;
     }
   }, [lang]);
+
+  const scheduleDraftSave = useCallback((finalMessages: ChatMessage[]) => {
+    if (!onDraftSave || !dateKey || finalMessages.length === 0) {
+      return;
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const savedDraftId = await onDraftSave(finalMessages, draftId);
+        if (savedDraftId) {
+          setDraftId(savedDraftId);
+        }
+      } catch (err) {
+        console.error('Failed to save draft:', err);
+      }
+    }, 500);
+  }, [onDraftSave, dateKey, draftId]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!apiKey) {
@@ -85,22 +107,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
-
-      if (onDraftSave && dateKey && finalMessages.length > 0) {
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
-        saveTimeoutRef.current = setTimeout(async () => {
-          try {
-            const savedDraftId = await onDraftSave(finalMessages, draftId);
-            if (savedDraftId) {
-              setDraftId(savedDraftId);
-            }
-          } catch (err) {
-            console.error('Failed to save draft:', err);
-          }
-        }, 500);
-      }
+      scheduleDraftSave(finalMessages);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
@@ -108,7 +115,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     } finally {
       setIsTyping(false);
     }
-  }, [apiKey, messages, lang, selectedModel, onDraftSave, dateKey, draftId]);
+  }, [apiKey, messages, lang, selectedModel, scheduleDraftSave]);
 
   const resetConversation = useCallback(async (): Promise<void> => {
     if (saveTimeoutRef.current) {
@@ -132,12 +139,10 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     }
   }, [draftId, onDraftDelete]);
 
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
+  useEffect(() => () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
   }, []);
 
   const loadConversation = useCallback((loadedMessages: ChatMessage[], loadedDraftId?: string | null): void => {

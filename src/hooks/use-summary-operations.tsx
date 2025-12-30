@@ -61,7 +61,13 @@ export function useSummaryOperations({
       const summary = await generateConversationSummary(chatMessages, apiKey, lang, selectedModel);
       const entryId = draftId || generateEntryId(dateKey);
       await saveSummaryAsEntry({
-        entryId, entryDateKey: dateKey, summary, conversationHistory, firestore, user, draftId,
+        entryId,
+        entryDateKey: dateKey,
+        summary,
+        conversationHistory,
+        firestore,
+        user,
+        draftId,
       });
       updateEntryState(entryId, summary.content, summary.title);
       triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });

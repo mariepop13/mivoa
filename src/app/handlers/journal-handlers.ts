@@ -1,4 +1,5 @@
 import { doc, serverTimestamp, Timestamp, type Firestore } from 'firebase/firestore';
+import { format } from 'date-fns';
 import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
 const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
@@ -194,6 +195,26 @@ export function updateConversationEntry(params: UpdateConversationEntryParams): 
   
   const data: Record<string, unknown> = {
     conversationHistory: conversationHistoryForStorage,
+    updatedAt: serverTimestamp(),
+  };
+
+  return updateDocumentNonBlocking(entryDocRef, data);
+}
+
+interface ChangeEntryDateParams {
+  entryId: string;
+  newDate: Date;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function changeEntryDate(params: ChangeEntryDateParams): Promise<void> {
+  const { entryId, newDate, firestore, user } = params;
+  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
+  const newDateKey = format(newDate, 'yyyy-MM-dd');
+  
+  const data: Record<string, unknown> = {
+    date: newDateKey,
     updatedAt: serverTimestamp(),
   };
 

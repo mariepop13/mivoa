@@ -2,9 +2,24 @@ import { useCallback } from 'react';
 import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { serverTimestamp } from 'firebase/firestore';
-import { generateEntryId, createEntryDocument, triggerEntryAnalysis } from '@/app/handlers/journal-handlers';
+import { generateEntryId, createEntryDocument, triggerEntryAnalysis, changeEntryDate } from '@/app/handlers/journal-handlers';
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { JournalEntryData } from './use-journal-entries';
+
+function getNextEntryId(
+  entries: (JournalEntryData & { id: string })[],
+  currentEntryId: string
+): string | null {
+  const currentIndex = entries.findIndex(e => e.id === currentEntryId);
+  const remainingEntries = entries.filter(e => e.id !== currentEntryId);
+  
+  if (remainingEntries.length === 0) {
+    return null;
+  }
+  
+  const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
+  return remainingEntries[nextIndex].id;
+}
 
 interface UseEntryOperationsParams {
   dateKey: string;
@@ -19,14 +34,17 @@ interface UseEntryOperationsParams {
   setContent: (content: string) => void;
   setTitle: (title: string) => void;
   hasInitializedRef: React.MutableRefObject<boolean>;
+  onDateChange?: (date: Date) => void;
 }
 
 interface UseEntryOperationsResult {
   createNewEntry: (initialContent?: string, initialTitle?: string) => Promise<void>;
   saveEntry: (newContent: string) => Promise<void>;
   handleDelete: () => Promise<void>;
+  changeEntryDate: (newDate: Date) => Promise<void>;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function useEntryOperations({
   dateKey,
   selectedEntryDocRef,
@@ -40,6 +58,7 @@ export function useEntryOperations({
   setContent,
   setTitle,
   hasInitializedRef,
+  onDateChange,
 }: UseEntryOperationsParams): UseEntryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -114,12 +133,10 @@ export function useEntryOperations({
     try {
       await deleteDocumentNonBlocking(selectedEntryDocRef);
       
-      const currentIndex = entries.findIndex(e => e.id === selectedEntryId);
-      const remainingEntries = entries.filter(e => e.id !== selectedEntryId);
+      const nextEntryId = getNextEntryId(entries, selectedEntryId);
       
-      if (remainingEntries.length > 0) {
-        const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
-        setSelectedEntryId(remainingEntries[nextIndex].id);
+      if (nextEntryId) {
+        setSelectedEntryId(nextEntryId);
       } else {
         setSelectedEntryId(null);
         setContent('');
@@ -148,10 +165,40 @@ export function useEntryOperations({
     hasInitializedRef,
   ]);
 
+  const changeEntryDateHandler = useCallback(async (newDate: Date) => {
+    if (!selectedEntryDocRef || !selectedEntryId || !user || !firestore) {
+      console.warn('Cannot change date: missing entryDocRef, entryId, user, or firestore');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await changeEntryDate({
+        entryId: selectedEntryId,
+        newDate,
+        firestore,
+        user,
+      });
+
+      if (onDateChange) {
+        onDateChange(newDate);
+      }
+    } catch (error) {
+      console.error('changeEntryDate error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error changing entry date';
+      setSaveError(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedEntryDocRef, selectedEntryId, user, firestore, setIsSaving, setSaveError, onDateChange]);
+
   return {
     createNewEntry,
     saveEntry,
     handleDelete,
+    changeEntryDate: changeEntryDateHandler,
   } satisfies UseEntryOperationsResult;
 }
 

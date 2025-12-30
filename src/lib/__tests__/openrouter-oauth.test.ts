@@ -18,6 +18,7 @@ const mockWindowLocation = {
   origin: 'https://example.com',
 };
 
+// eslint-disable-next-line max-lines-per-function
 describe('openrouter-oauth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,6 +43,7 @@ describe('openrouter-oauth', () => {
 
   describe('initiateOAuthFlow', () => {
     it('should validate callbackUrl is a string', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(initiateOAuthFlow('' as any)).rejects.toThrow('non-empty string');
     });
 
@@ -134,6 +136,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should accept matching state parameter', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
@@ -160,6 +163,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should call OpenRouter API with correct parameters', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
@@ -184,6 +188,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should return API key on successful exchange', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
@@ -195,6 +200,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should remove PKCE and state from sessionStorage after success', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
@@ -207,6 +213,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should handle API errors', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 400,

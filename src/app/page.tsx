@@ -13,12 +13,14 @@ import { useJournalAuth } from '@/hooks/use-journal-auth';
 import { useJournalHandlers } from '@/hooks/use-journal-handlers';
 import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
 
+const DATE_KEY_FORMAT = 'yyyy-MM-dd';
+
 function JournalApp(): React.JSX.Element {
   const authState = useJournalAuth();
-  const [selectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const journalEntries = useJournalEntries({ selectedDate });
+  const journalEntries = useJournalEntries({ selectedDate, onDateChange: setSelectedDate });
 
   useEffect(() => {
     journalEntries.setContent('');
@@ -59,6 +61,7 @@ function JournalApp(): React.JSX.Element {
           onNewEntry={handlers.handleNewEntry}
           onEntrySelect={handlers.handleEntrySelect}
           formatEntryTime={formatEntryTime}
+          onDateChange={setSelectedDate}
         />
         <JournalMainContent
           selectedDate={selectedDate}
@@ -79,11 +82,12 @@ function JournalApp(): React.JSX.Element {
           getEntryTitle={getEntryTitle}
           onSidebarToggle={() => setIsSidebarOpen(true)}
           isSidebarOpen={isSidebarOpen}
-          dateKey={format(selectedDate, 'yyyy-MM-dd')}
+          dateKey={format(selectedDate, DATE_KEY_FORMAT)}
           handleSaveDraft={journalEntries.handleSaveDraft}
           handleDeleteDraft={journalEntries.handleDeleteDraft}
           draftForDate={journalEntries.draftForDate}
           conversationEntryForDate={journalEntries.conversationEntryForDate}
+          onChangeDate={journalEntries.changeEntryDate}
         />
       </div>
     </main>
