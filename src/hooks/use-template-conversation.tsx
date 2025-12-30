@@ -12,6 +12,8 @@ import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-serv
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
 import { convertTimestampToDate } from '@/utils/journal-utils';
 import type { ChatMessage } from '@/ai/types/chat';
+import type { Firestore } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 
 const MAX_PROMPT_LENGTH = 2000;
 const MIN_PROMPT_LENGTH = 1;
@@ -29,6 +31,52 @@ function validatePrompt(prompt: string): { isValid: boolean; error?: string } {
     return { isValid: false, error: 'Prompt is too long' };
   }
   return { isValid: true };
+}
+
+function validateDependencies(
+  firestore: Firestore | null,
+  user: User | null,
+  apiKey: string | null
+): { isValid: boolean; error?: Error } {
+  if (!firestore || !user || !apiKey) {
+    const error = new Error('Cannot create conversation: missing firestore, user, or API key');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(error.message);
+    }
+    return { isValid: false, error };
+  }
+  return { isValid: true };
+}
+
+function buildConversationMessages(
+  sanitizedPrompt: string,
+  lang: 'en' | 'fr'
+): { initialAssistantMessage: ChatMessage; userMessage: ChatMessage } {
+  const initialAssistantMessage: ChatMessage = {
+    role: 'assistant',
+    content: generateInitialMessage(lang),
+    timestamp: new Date(),
+  };
+
+  const userMessage: ChatMessage = {
+    role: 'user',
+    content: sanitizedPrompt,
+    timestamp: new Date(),
+  };
+
+  return { initialAssistantMessage, userMessage };
+}
+
+function prepareMessagesForStorage(messages: ChatMessage[]): Array<{
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}> {
+  return messages.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: convertTimestampToDate(msg.timestamp),
+  }));
 }
 
 interface UseTemplateConversationParams {
@@ -50,46 +98,31 @@ export function useTemplateConversation({
 
   const createConversationFromPrompt = useCallback(
     async (prompt: string) => {
-      if (!firestore || !user || !apiKey) {
-        const error = new Error('Cannot create conversation: missing firestore, user, or API key');
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(error.message);
-        }
-        onError?.(error);
+      const dependencyValidation = validateDependencies(firestore, user, apiKey);
+      if (!dependencyValidation.isValid) {
+        onError?.(dependencyValidation.error!);
         return;
       }
 
-      const validation = validatePrompt(prompt);
-      if (!validation.isValid) {
-        const error = new Error(validation.error || 'Invalid prompt');
+      const promptValidation = validatePrompt(prompt);
+      if (!promptValidation.isValid) {
+        const error = new Error(promptValidation.error || 'Invalid prompt');
         onError?.(error);
         return;
       }
 
       const sanitizedPrompt = sanitizePrompt(prompt);
+      const dateKey = format(selectedDate, 'yyyy-MM-dd');
+      const lang = (language || 'en') as 'en' | 'fr';
+
+      const { initialAssistantMessage, userMessage } = buildConversationMessages(sanitizedPrompt, lang);
+      const conversationHistory: ChatMessage[] = [initialAssistantMessage];
 
       try {
-        const dateKey = format(selectedDate, 'yyyy-MM-dd');
-        const lang = (language || 'en') as 'en' | 'fr';
-
-        const initialAssistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: generateInitialMessage(lang),
-          timestamp: new Date(),
-        };
-
-        const userMessage: ChatMessage = {
-          role: 'user',
-          content: sanitizedPrompt,
-          timestamp: new Date(),
-        };
-
-        const conversationHistory: ChatMessage[] = [initialAssistantMessage];
-
         const aiResponse = await sendChatMessage({
           conversationHistory,
           userMessage: userMessage.content,
-          apiKey,
+          apiKey: apiKey!,
           language: lang,
           model: selectedModel,
         });
@@ -106,18 +139,14 @@ export function useTemplateConversation({
           assistantResponse,
         ];
 
-        const conversationHistoryForStorage = fullConversationHistory.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: convertTimestampToDate(msg.timestamp),
-        }));
+        const conversationHistoryForStorage = prepareMessagesForStorage(fullConversationHistory);
 
         const draftId = await saveConversationDraft({
           draftId: null,
           entryDateKey: dateKey,
           conversationHistory: conversationHistoryForStorage,
-          firestore,
-          user,
+          firestore: firestore!,
+          user: user!,
         });
 
         onSuccess(draftId);

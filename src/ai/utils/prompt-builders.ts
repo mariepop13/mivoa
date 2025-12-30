@@ -5,6 +5,18 @@ import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
 const MAX_RECENT_ENTRIES_FOR_CONTEXT = 5;
 const MAX_ENTRY_PREVIEW_LENGTH = 200;
+const MAX_PREVIOUS_PROMPT_LENGTH = 500;
+
+function sanitizePreviousPrompt(prompt: string): string {
+  let sanitized = prompt.trim();
+  
+  sanitized = sanitized.replace(/\\/g, '\\\\');
+  sanitized = sanitized.replace(/"/g, '\\"');
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n');
+  sanitized = sanitized.slice(0, MAX_PREVIOUS_PROMPT_LENGTH);
+  
+  return sanitized;
+}
 
 export function buildDailyPromptPrompt(
   recentEntries: RecentEntry[],
@@ -104,9 +116,10 @@ export function buildTemplatePromptPrompt(
   
   let variationInstruction = '';
   if (previousPrompt) {
+    const sanitizedPrompt = sanitizePreviousPrompt(previousPrompt);
     variationInstruction = language === 'fr'
-      ? `\n\nIMPORTANT: L'utilisateur a déjà vu cette suggestion précédente:\n"${previousPrompt}"\n\nGénère une NOUVELLE variation COMPLÈTEMENT DIFFÉRENTE et créative. Utilise un angle, un ton, ou une approche totalement différent. Ne répète pas les mêmes idées ou formulations.`
-      : `\n\nIMPORTANT: The user has already seen this previous suggestion:\n"${previousPrompt}"\n\nGenerate a NEW COMPLETELY DIFFERENT and creative variation. Use a totally different angle, tone, or approach. Do not repeat the same ideas or formulations.`;
+      ? `\n\nIMPORTANT: L'utilisateur a déjà vu cette suggestion précédente:\n"${sanitizedPrompt}"\n\nGénère une NOUVELLE variation COMPLÈTEMENT DIFFÉRENTE et créative. Utilise un angle, un ton, ou une approche totalement différent. Ne répète pas les mêmes idées ou formulations.`
+      : `\n\nIMPORTANT: The user has already seen this previous suggestion:\n"${sanitizedPrompt}"\n\nGenerate a NEW COMPLETELY DIFFERENT and creative variation. Use a totally different angle, tone, or approach. Do not repeat the same ideas or formulations.`;
   }
   
   const prompt = language === 'fr'
