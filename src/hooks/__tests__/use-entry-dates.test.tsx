@@ -1,10 +1,9 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useEntryDates } from '../use-entry-dates';
 import { useFirestore, useCollection } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
-import { collection, query } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 
 vi.mock('@/firebase');

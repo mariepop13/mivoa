@@ -5,7 +5,7 @@ import { DatePicker } from '../date-picker';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useEntryDates } from '@/hooks/use-entry-dates';
 import { useTranslation } from '@/hooks/use-translation';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 
 vi.mock('@/hooks/use-entry-dates');
@@ -35,7 +35,7 @@ vi.mock('date-fns', async () => {
       }
       return 'Monday, January 15, 2024';
     }),
-    parse: vi.fn((dateString: string, formatStr: string, referenceDate: Date) => {
+    parse: vi.fn((dateString: string) => {
       const [year, month, day] = dateString.split('-').map(Number);
       return new Date(year, month - 1, day);
     }),

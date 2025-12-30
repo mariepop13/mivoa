@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JournalEntryActions } from '../journal-entry-actions';
 import { useTranslation } from '@/hooks/use-translation';
-import { DatePicker } from '../date-picker';
 import { LanguageContext } from '@/context/LanguageContext';
 
 vi.mock('@/hooks/use-translation');

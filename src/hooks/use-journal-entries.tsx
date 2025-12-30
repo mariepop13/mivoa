@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
 import { useFirestore, useCollection, useDoc, applyMemoMarker } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
@@ -82,6 +82,7 @@ interface UseJournalEntriesResult {
   changeEntryDate: (newDate: Date) => Promise<void>;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntriesParams): UseJournalEntriesResult {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -139,18 +140,31 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
     }
   }, [selectedEntryId]);
 
+  const initialContent = useMemo(() => {
+    if (selectedEntryData?.content !== undefined) {
+      return selectedEntryData.content || '';
+    }
+    return '';
+  }, [selectedEntryData]);
+
+  const initialTitle = useMemo(() => {
+    if (selectedEntryData?.title !== undefined) {
+      return selectedEntryData.title || '';
+    }
+    return '';
+  }, [selectedEntryData]);
+
   useEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
-      const newContent = selectedEntryData?.content !== undefined ? selectedEntryData.content || '' : '';
-      const newTitle = selectedEntryData?.title !== undefined ? selectedEntryData.title || '' : '';
-      
-      if (content !== newContent || title !== newTitle) {
-        setContent(newContent);
-        setTitle(newTitle);
+      if (content !== initialContent || title !== initialTitle) {
+        startTransition(() => {
+          setContent(initialContent);
+          setTitle(initialTitle);
+        });
       }
       hasInitializedRef.current = true;
     }
-  }, [selectedEntryData, selectedEntryLoading, content, title]);
+  }, [selectedEntryData, selectedEntryLoading, content, title, initialContent, initialTitle]);
 
   const updateEntryState = useCallback((entryId: string, newContent: string, newTitle: string): void => {
     hasInitializedRef.current = false;

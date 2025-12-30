@@ -6,6 +6,21 @@ import { generateEntryId, createEntryDocument, triggerEntryAnalysis, changeEntry
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { JournalEntryData } from './use-journal-entries';
 
+function getNextEntryId(
+  entries: (JournalEntryData & { id: string })[],
+  currentEntryId: string
+): string | null {
+  const currentIndex = entries.findIndex(e => e.id === currentEntryId);
+  const remainingEntries = entries.filter(e => e.id !== currentEntryId);
+  
+  if (remainingEntries.length === 0) {
+    return null;
+  }
+  
+  const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
+  return remainingEntries[nextIndex].id;
+}
+
 interface UseEntryOperationsParams {
   dateKey: string;
   selectedEntryDocRef: ReturnType<typeof import('firebase/firestore').doc> | null;
@@ -29,6 +44,7 @@ interface UseEntryOperationsResult {
   changeEntryDate: (newDate: Date) => Promise<void>;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function useEntryOperations({
   dateKey,
   selectedEntryDocRef,
@@ -117,12 +133,10 @@ export function useEntryOperations({
     try {
       await deleteDocumentNonBlocking(selectedEntryDocRef);
       
-      const currentIndex = entries.findIndex(e => e.id === selectedEntryId);
-      const remainingEntries = entries.filter(e => e.id !== selectedEntryId);
+      const nextEntryId = getNextEntryId(entries, selectedEntryId);
       
-      if (remainingEntries.length > 0) {
-        const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
-        setSelectedEntryId(remainingEntries[nextIndex].id);
+      if (nextEntryId) {
+        setSelectedEntryId(nextEntryId);
       } else {
         setSelectedEntryId(null);
         setContent('');

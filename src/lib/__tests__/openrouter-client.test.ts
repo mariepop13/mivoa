@@ -12,6 +12,7 @@ describe('validateOpenRouterApiKey', () => {
   });
 
   it('should return false for non-string input', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await validateOpenRouterApiKey(null as any);
     expect(result).toBe(false);
   });

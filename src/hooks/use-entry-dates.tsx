@@ -36,9 +36,7 @@ export function useEntryDates(): UseEntryDatesResult {
       }
     });
     
-    return Array.from(uniqueDates).sort((a, b) => {
-      return b.localeCompare(a);
-    });
+    return Array.from(uniqueDates).sort((a, b) => b.localeCompare(a));
   }, [entriesRaw]);
 
   return {
