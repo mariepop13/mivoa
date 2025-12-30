@@ -2,12 +2,15 @@
 
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
+import { FileText } from 'lucide-react';
 import { SettingsMenu } from '@/components/settings-menu';
 import { UserMenu } from '@/components/user-menu';
+import { TemplatesDialog } from '@/components/templates-dialog';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useTranslation } from '@/hooks/use-translation';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
 interface JournalSidebarProps {
   selectedDate: Date;
@@ -19,6 +22,7 @@ interface JournalSidebarProps {
   onNewEntry: () => void;
   onEntrySelect: (entryId: string) => void;
   formatEntryTime: (entry: JournalEntryData & { id: string }) => string;
+  onTemplateSelect?: (template: EntryTemplate) => void;
 }
 
 export function JournalSidebar({
@@ -31,10 +35,12 @@ export function JournalSidebar({
   onNewEntry,
   onEntrySelect,
   formatEntryTime,
+  onTemplateSelect,
 }: JournalSidebarProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
   const dateLocale = language === 'fr' ? fr : enUS;
+  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
 
   return (
     <>
@@ -74,7 +80,7 @@ export function JournalSidebar({
           )}
         </div>
         
-        <div className="p-4 sm:p-6 border-b border-border">
+        <div className="p-4 sm:p-6 border-b border-border space-y-2">
           <button
             onClick={onNewEntry}
             disabled={isSaving}
@@ -83,6 +89,16 @@ export function JournalSidebar({
             <span>+</span>
             <span>{t('newEntry')}</span>
           </button>
+          {onTemplateSelect && (
+            <button
+              onClick={() => setIsTemplatesDialogOpen(true)}
+              disabled={isSaving}
+              className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium border border-border flex items-center justify-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              <span>{t('templates')}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -124,6 +140,13 @@ export function JournalSidebar({
           )}
         </div>
       </div>
+      {onTemplateSelect && (
+        <TemplatesDialog
+          open={isTemplatesDialogOpen}
+          onOpenChange={setIsTemplatesDialogOpen}
+          onTemplateSelect={onTemplateSelect}
+        />
+      )}
     </>
   );
 }
