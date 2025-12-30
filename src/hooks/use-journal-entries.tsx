@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
 import { useFirestore, useCollection, useDoc, applyMemoMarker } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
@@ -132,7 +132,7 @@ export function useJournalEntries({ selectedDate }: UseJournalEntriesParams): Us
     hasInitializedRef.current = false;
   }, [selectedEntryId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!hasInitializedRef.current && selectedEntryData !== undefined && !selectedEntryLoading) {
       if (selectedEntryData?.content !== undefined) {
         setContent(selectedEntryData.content || '');

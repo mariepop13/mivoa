@@ -8,7 +8,6 @@ import { JournalViewTabs } from '@/components/journal-view-tabs';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
-import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 interface JournalMainContentProps {
@@ -64,7 +63,6 @@ export function JournalMainContent({
   handleDeleteDraft,
   draftForDate,
 }: JournalMainContentProps): React.JSX.Element {
-  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'chat' | 'summary'>('chat');
   const previousEntryIdRef = useRef<string | null>(null);
   

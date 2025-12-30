@@ -144,6 +144,16 @@ export default tseslint.config(
       'no-return-await': 'off',
       'yoda': 'error',
     },
+  },
+  {
+    files: ['**/__tests__/**', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    rules: {
+      'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'max-lines': ['warn', { max: 800, skipBlankLines: true, skipComments: true }],
+      'max-params': ['warn', { max: 6 }],
+      complexity: ['warn', { max: 15 }],
+    },
   }
 );
 
