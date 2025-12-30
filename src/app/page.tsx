@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { format } from 'date-fns';
 import { JournalSidebar } from '@/components/journal-sidebar';
 import { JournalMainContent } from '@/components/journal-main-content';
 import { JournalAuthError } from '@/components/journal-auth-error';
 import { JournalLoadingState } from '@/components/journal-loading-state';
+import { TemplatePromptDialog } from '@/components/template-prompt-dialog';
 import { FirebaseContext } from '@/firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { useJournalEntries } from '@/hooks/use-journal-entries';
 import { useJournalAuth } from '@/hooks/use-journal-auth';
 import { useJournalHandlers } from '@/hooks/use-journal-handlers';
+import { useTemplateConversation } from '@/hooks/use-template-conversation';
 import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
+import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
 
@@ -19,8 +22,21 @@ function JournalApp(): React.JSX.Element {
   const authState = useJournalAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<EntryTemplate | null>(null);
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
 
   const journalEntries = useJournalEntries({ selectedDate, onDateChange: setSelectedDate });
+
+  const { createConversationFromPrompt } = useTemplateConversation({
+    selectedDate,
+    onSuccess: (draftId) => {
+      journalEntries.setSelectedEntryId(draftId);
+      setIsSidebarOpen(false);
+    },
+    onError: (error) => {
+      console.error('Failed to create conversation:', error);
+    },
+  });
 
   useEffect(() => {
     journalEntries.setContent('');
@@ -39,6 +55,19 @@ function JournalApp(): React.JSX.Element {
     journalEntries,
     setIsSidebarOpen,
   });
+
+  const handleTemplateSelect = useCallback((template: EntryTemplate) => {
+    setSelectedTemplate(template);
+    setIsPromptDialogOpen(true);
+    setIsSidebarOpen(false);
+  }, []);
+
+  const handleUsePrompt = useCallback(
+    async (prompt: string) => {
+      await createConversationFromPrompt(prompt);
+    },
+    [createConversationFromPrompt]
+  );
 
   if (authState.authError) {
     return <JournalAuthError error={authState.authError} />;
@@ -61,6 +90,7 @@ function JournalApp(): React.JSX.Element {
           onNewEntry={handlers.handleNewEntry}
           onEntrySelect={handlers.handleEntrySelect}
           formatEntryTime={formatEntryTime}
+          onTemplateSelect={handleTemplateSelect}
           onDateChange={setSelectedDate}
         />
         <JournalMainContent
@@ -90,6 +120,12 @@ function JournalApp(): React.JSX.Element {
           onChangeDate={journalEntries.changeEntryDate}
         />
       </div>
+      <TemplatePromptDialog
+        open={isPromptDialogOpen}
+        onOpenChange={setIsPromptDialogOpen}
+        template={selectedTemplate}
+        onUsePrompt={handleUsePrompt}
+      />
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 export function formatEntryTime(entry: JournalEntryData & { id: string }): string {
@@ -28,5 +29,18 @@ export function getEntryTitle(
   if (entry) return formatEntryTime(entry);
   if (allEntries?.[0]) return formatEntryTime(allEntries[0]);
   return '';
+}
+
+export function convertTimestampToDate(timestamp: Date | Timestamp | string): Date {
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  return new Date();
 }
 
