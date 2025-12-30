@@ -101,6 +101,10 @@
   "places": "Lieux",
   "characters": "Personnes",
   "themes": "Thèmes",
-  "moods": "Humeurs"
+  "moods": "Humeurs",
+  "word": "mot",
+  "words": "mots",
+  "character": "caractère",
+  "charactersCount": "caractères"
 }
 
