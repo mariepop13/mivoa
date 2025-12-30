@@ -101,6 +101,10 @@
   "places": "Places",
   "characters": "Characters",
   "themes": "Themes",
-  "moods": "Moods"
+  "moods": "Moods",
+  "word": "word",
+  "words": "words",
+  "character": "character",
+  "charactersCount": "characters"
 }
 
