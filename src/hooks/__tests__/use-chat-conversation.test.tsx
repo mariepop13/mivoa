@@ -142,5 +142,132 @@ describe('useChatConversation', () => {
       expect(result.current.isTyping).toBe(false);
     });
   });
+
+  it('sets error when apiKey is not configured', async () => {
+    const wrapperWithoutApiKey = ({ children }: { children: React.ReactNode }) => (
+      <OpenRouterApiKeyContext.Provider value={{ apiKey: null, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
+        <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+          <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
+            {children}
+          </ModelContext.Provider>
+        </LanguageContext.Provider>
+      </OpenRouterApiKeyContext.Provider>
+    );
+
+    const { result } = renderHook(() => useChatConversation(), { wrapper: wrapperWithoutApiKey });
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('API key not configured');
+    });
+  });
+
+  it('loads conversation with messages and draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const testMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+      { role: 'assistant' as const, content: 'Hi there', timestamp: new Date() },
+    ];
+
+    act(() => {
+      result.current.loadConversation(testMessages, 'draft-123');
+    });
+
+    expect(result.current.messages).toEqual(testMessages);
+    expect(result.current.draftId).toBe('draft-123');
+    expect(result.current.error).toBeNull();
+    expect(result.current.isTyping).toBe(false);
+  });
+
+  it('loads conversation with messages but no draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const testMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+    ];
+
+    act(() => {
+      result.current.loadConversation(testMessages);
+    });
+
+    expect(result.current.messages).toEqual(testMessages);
+    expect(result.current.draftId).toBeNull();
+  });
+
+  it('loads empty conversation and resets draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      result.current.loadConversation([], null);
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    expect(result.current.draftId).toBeNull();
+  });
+
+  it('schedules draft save when onDraftSave is provided', async () => {
+    const mockOnDraftSave = vi.fn().mockResolvedValue('saved-draft-id');
+    const dateKey = '2024-01-15';
+
+    const { result } = renderHook(
+      () => useChatConversation({ dateKey, onDraftSave: mockOnDraftSave }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Test message');
+    });
+
+    await waitFor(
+      () => {
+        expect(mockOnDraftSave).toHaveBeenCalled();
+      },
+      { timeout: 1000 }
+    );
+  });
+
+  it('deletes draft when resetConversation is called with onDraftDelete', async () => {
+    const mockOnDraftDelete = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(
+      () => useChatConversation({ onDraftDelete: mockOnDraftDelete }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      result.current.loadConversation(
+        [{ role: 'user' as const, content: 'Test', timestamp: new Date() }],
+        'draft-to-delete'
+      );
+    });
+
+    await act(async () => {
+      await result.current.resetConversation();
+    });
+
+    await waitFor(() => {
+      expect(mockOnDraftDelete).toHaveBeenCalledWith('draft-to-delete');
+    });
+  });
 });
 
