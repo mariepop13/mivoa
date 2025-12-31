@@ -1,5 +1,12 @@
 import type { OpenRouterModel, ModelsResponse } from '../types/model';
 
+const PRICE_MULTIPLIER = 1000;
+const TOKENS_PER_K = 1000;
+const TOKENS_PER_M = 1000000;
+const ZERO_VALUE = 0;
+const PRICE_DECIMAL_PLACES = 3;
+const CONTEXT_LENGTH_DECIMAL_PLACES = 1;
+
 export async function fetchAvailableModels(apiKey: string): Promise<OpenRouterModel[]> {
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -32,8 +39,8 @@ export function formatPrice(promptPrice: string, completionPrice: string): strin
   }
 
   const formatPriceValue = (value: number): string => {
-    if (value === 0) return '$0';
-    return `$${(value * 1000).toFixed(3)}`;
+    if (value === ZERO_VALUE) return '$0';
+    return `$${(value * PRICE_MULTIPLIER).toFixed(PRICE_DECIMAL_PLACES)}`;
   };
 
   return `${formatPriceValue(prompt)} / ${formatPriceValue(completion)} per 1K tokens`;
@@ -42,11 +49,11 @@ export function formatPrice(promptPrice: string, completionPrice: string): strin
 export function formatContextLength(contextLength: number | null): string {
   if (!contextLength) return 'N/A';
   
-  if (contextLength >= 1000000) {
-    return `${(contextLength / 1000000).toFixed(1)}M tokens`;
+  if (contextLength >= TOKENS_PER_M) {
+    return `${(contextLength / TOKENS_PER_M).toFixed(CONTEXT_LENGTH_DECIMAL_PLACES)}M tokens`;
   }
-  if (contextLength >= 1000) {
-    return `${(contextLength / 1000).toFixed(0)}K tokens`;
+  if (contextLength >= TOKENS_PER_K) {
+    return `${(contextLength / TOKENS_PER_K).toFixed(ZERO_VALUE)}K tokens`;
   }
   return `${contextLength} tokens`;
 }
