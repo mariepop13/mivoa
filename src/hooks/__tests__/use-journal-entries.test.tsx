@@ -214,5 +214,155 @@ describe('useJournalEntries', () => {
     const recent = result.current.recentEntries;
     expect(recent.some(e => e.date === '2024-01-15')).toBe(true);
   });
+
+  it('should save draft with handleSaveDraft', async () => {
+    const mockMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+      { role: 'assistant' as const, content: 'Hi', timestamp: new Date() },
+    ];
+
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(journalHandlers.saveConversationDraft).mockResolvedValue('new-draft-id');
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      const draftId = await result.current.handleSaveDraft(mockMessages, null);
+      expect(draftId).toBe('new-draft-id');
+    });
+
+    expect(journalHandlers.saveConversationDraft).toHaveBeenCalled();
+  });
+
+  it('should update conversation entry when entryId is provided', async () => {
+    const mockMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+    ];
+
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(journalHandlers.updateConversationEntry).mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      const entryId = await result.current.handleSaveDraft(mockMessages, null, 'existing-entry-id');
+      expect(entryId).toBe('existing-entry-id');
+    });
+
+    expect(journalHandlers.updateConversationEntry).toHaveBeenCalled();
+  });
+
+  it('should return null when saving draft fails', async () => {
+    const mockMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+    ];
+
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(journalHandlers.saveConversationDraft).mockRejectedValue(new Error('Save failed'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      const draftId = await result.current.handleSaveDraft(mockMessages, null);
+      expect(draftId).toBeNull();
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should delete draft with handleDeleteDraft', async () => {
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(journalHandlers.deleteDraft).mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteDraft('draft-to-delete');
+    });
+
+    expect(journalHandlers.deleteDraft).toHaveBeenCalledWith({
+      draftId: 'draft-to-delete',
+      firestore: mockFirestore,
+      user: mockUser,
+    });
+  });
+
+  it('should handle delete draft errors', async () => {
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(journalHandlers.deleteDraft).mockRejectedValue(new Error('Delete failed'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteDraft('draft-to-delete');
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should return null when handleSaveDraft is called with empty messages', async () => {
+    vi.mocked(useCollection).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    });
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: mockDate }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.entries).not.toBeNull();
+    });
+
+    await act(async () => {
+      const draftId = await result.current.handleSaveDraft([], null);
+      expect(draftId).toBeNull();
+    });
+
+    expect(journalHandlers.saveConversationDraft).not.toHaveBeenCalled();
+  });
 });
 
