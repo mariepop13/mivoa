@@ -1,45 +1,26 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { validateOpenRouterApiKey } from '@/lib/openrouter-client';
 import { KeyRound, LoaderCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
+import { useApiKeyValidation } from '@/hooks/use-api-key-validation';
 
 interface ApiKeyFormProps {
   onSubmit: (apiKey: string) => Promise<void>;
 }
 
 export function ApiKeyForm({ onSubmit }: ApiKeyFormProps): React.JSX.Element {
-  const [localApiKey, setLocalApiKey] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const { t } = useTranslation();
+  const { localApiKey, setLocalApiKey, isVerifying, handleSubmit } = useApiKeyValidation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!localApiKey.trim()) {
-      return;
-    }
-
-    setIsVerifying(true);
-    try {
-      const isValid = await validateOpenRouterApiKey(localApiKey.trim());
-      if (isValid) {
-        await onSubmit(localApiKey.trim());
-        setLocalApiKey('');
-      } else {
-        alert(`${t('invalidOpenRouterApiKey')}: ${t('invalidOpenRouterApiKeyDescription')}`);
-      }
-    } catch (error) {
-      console.error('Error validating or saving OpenRouter API key', error);
+  const onFormSubmit = async (e: React.FormEvent) => {
+    await handleSubmit(e, onSubmit, (_message) => {
       alert(`${t('invalidOpenRouterApiKey')}: ${t('invalidOpenRouterApiKeyDescription')}`);
-    } finally {
-      setIsVerifying(false);
-    }
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={onFormSubmit} className="space-y-3">
       <div className="space-y-2">
         <label htmlFor="openrouter-api-key" className="text-xs font-medium">
           {t('openRouterApiKey')}
