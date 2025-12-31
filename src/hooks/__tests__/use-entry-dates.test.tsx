@@ -8,12 +8,10 @@ import type { User } from 'firebase/auth';
 
 vi.mock('@/firebase');
 vi.mock('@/firebase/auth/use-user');
-vi.mock('firebase/firestore', () => {
-  return {
+vi.mock('firebase/firestore', () => ({
     collection: vi.fn((firestore, path) => ({ id: 'mock-collection', path })),
     query: vi.fn((ref) => ref),
-  };
-});
+  }));
 
 const mockFirestore = { id: 'mock-firestore' } as any;
 const mockUser = { uid: 'test-user-id' } as Partial<User> as User;

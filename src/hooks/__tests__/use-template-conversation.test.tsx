@@ -32,7 +32,12 @@ describe('useTemplateConversation', () => {
     mockConvertTimestampToDate.mockImplementation((ts) => ts as Date);
   });
 
-  const renderWithContext = (firestore: Firestore | null, user: User | null, apiKey: string | null, onError?: (error: Error) => void) => {
+  const renderWithContext = (
+    firestore: Firestore | null,
+    user: User | null,
+    apiKey: string | null,
+    onError?: (error: Error) => void
+  ) => {
     vi.mocked(useFirestore).mockReturnValue(firestore as Firestore);
     vi.mocked(useUser).mockReturnValue({ user, isLoading: false, error: null });
     
@@ -203,7 +208,7 @@ describe('useTemplateConversation', () => {
   });
 
   it('should sanitize prompt by trimming and limiting length', async () => {
-    const longPrompt = '  ' + 'a'.repeat(1998) + '  ';
+    const longPrompt = `  ${  'a'.repeat(1998)  }  `;
     const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
 
     await act(async () => {

@@ -51,9 +51,7 @@ describe('JournalEntry', () => {
     const deleteButton = screen.getByText(/delete/i);
     await user.click(deleteButton);
     
-    const dialog = await waitFor(() => {
-      return screen.getByRole('alertdialog');
-    });
+    const dialog = await waitFor(() => screen.getByRole('alertdialog'));
 
     const confirmButton = within(dialog).getByRole('button', { name: /delete/i });
     

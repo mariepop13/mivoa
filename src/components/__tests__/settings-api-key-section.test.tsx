@@ -26,8 +26,7 @@ describe('SettingsApiKeySection', () => {
     });
   });
 
-  const renderWithContext = (apiKey: string | null) => {
-    return render(
+  const renderWithContext = (apiKey: string | null) => render(
       <OpenRouterApiKeyContext.Provider
         value={{
           apiKey,
@@ -44,7 +43,6 @@ describe('SettingsApiKeySection', () => {
         </DropdownMenu>
       </OpenRouterApiKeyContext.Provider>
     );
-  };
 
   it('should render label', async () => {
     const user = userEvent.setup();

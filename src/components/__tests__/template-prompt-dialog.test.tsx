@@ -43,8 +43,7 @@ describe('TemplatePromptDialog', () => {
     mockGenerateTemplatePrompt.mockResolvedValue('Generated prompt text');
   });
 
-  const renderWithContext = (open: boolean, template: EntryTemplate | null, apiKey: string | null) => {
-    return render(
+  const renderWithContext = (open: boolean, template: EntryTemplate | null, apiKey: string | null) => render(
       <OpenRouterApiKeyContext.Provider
         value={{
           apiKey,
@@ -63,7 +62,6 @@ describe('TemplatePromptDialog', () => {
         </LanguageContext.Provider>
       </OpenRouterApiKeyContext.Provider>
     );
-  };
 
   it('should not render when template is null', () => {
     renderWithContext(true, null, 'test-key');

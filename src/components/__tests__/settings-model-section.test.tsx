@@ -26,8 +26,7 @@ describe('SettingsModelSection', () => {
     });
   });
 
-  const renderWithContext = (selectedModel: string) => {
-    return render(
+  const renderWithContext = (selectedModel: string) => render(
       <ModelContext.Provider
         value={{
           selectedModel,
@@ -43,7 +42,6 @@ describe('SettingsModelSection', () => {
         </DropdownMenu>
       </ModelContext.Provider>
     );
-  };
 
   it('should render label', async () => {
     const user = userEvent.setup();
