@@ -113,7 +113,6 @@ function JournalApp(): React.JSX.Element {
     dateKey: format(selectedDate, DATE_KEY_FORMAT),
     handleSaveDraft: journalEntries.handleSaveDraft,
     handleDeleteDraft: journalEntries.handleDeleteDraft,
-    draftForDate: journalEntries.draftForDate,
     conversationEntryForDate: journalEntries.conversationEntryForDate,
     onChangeDate: journalEntries.changeEntryDate,
   };

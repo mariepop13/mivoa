@@ -10,6 +10,23 @@ import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
 
+function mapConversationHistory(
+  conversationHistory: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Timestamp | Date | string;
+  }> | undefined
+): ChatMessage[] {
+  if (!conversationHistory) {
+    return [];
+  }
+  return conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
+  }));
+}
+
 interface JournalMainContentProps {
   selectedDate: Date;
   selectedEntryId: string | null;
@@ -35,7 +52,6 @@ interface JournalMainContentProps {
   dateKey: string;
   handleSaveDraft: (messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>, draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
-  draftForDate: (JournalEntryData & { id: string }) | null;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
   onChangeDate?: (date: Date) => Promise<void>;
 }
@@ -62,7 +78,6 @@ export function JournalMainContent({
   dateKey,
   handleSaveDraft,
   handleDeleteDraft,
-  draftForDate: _draftForDate,
   onChangeDate,
 }: JournalMainContentProps): React.JSX.Element {
   const {
@@ -79,11 +94,7 @@ export function JournalMainContent({
 
   const getInitialConversation = () => {
     if (isDraftSelected && selectedEntry) {
-      const messages = (selectedEntry.conversationHistory || []).map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-      })) as ChatMessage[];
+      const messages = mapConversationHistory(selectedEntry.conversationHistory);
       return {
         messages,
         draftId: selectedEntry.id,
@@ -91,11 +102,7 @@ export function JournalMainContent({
       };
     }
     if (isConversationEntrySelected && selectedEntry) {
-      const messages = (selectedEntry.conversationHistory || []).map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-      })) as ChatMessage[];
+      const messages = mapConversationHistory(selectedEntry.conversationHistory);
       return {
         messages,
         draftId: null as string | null,
