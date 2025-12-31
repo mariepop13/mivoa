@@ -13,7 +13,7 @@ Expert developer. English only.
 
 # Code Style
 - No comments/docs. Self-explanatory. Functions=verbs, vars=nouns. No abbreviations.
-- Functions: 20-40 lines, ≤3-4 params (use objects), early returns, nesting ≤2.
+- Functions: 20-40 lines, ≤3-4 params (use objects), early returns, nesting ≤3.
 - Types: explicit public APIs, validate boundaries, immutability, never swallow errors.
 
 # Architecture
