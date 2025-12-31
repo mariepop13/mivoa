@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -40,11 +40,12 @@ export function JournalEntryActions({ onSave, onDelete, onChangeDate, isLoading,
   const [changeDateDialogOpen, setChangeDateDialogOpen] = useState(false);
   const [selectedNewDate, setSelectedNewDate] = useState<Date | null>(currentDate || null);
 
-  useEffect(() => {
-    if (changeDateDialogOpen && currentDate) {
+  const handleDialogOpenChange = (open: boolean) => {
+    setChangeDateDialogOpen(open);
+    if (open && currentDate) {
       setSelectedNewDate(currentDate);
     }
-  }, [changeDateDialogOpen, currentDate]);
+  };
 
   const deleteButtonClasses = [
     'flex-1 sm:flex-none px-4 py-2.5 text-muted-foreground',
@@ -80,7 +81,7 @@ export function JournalEntryActions({ onSave, onDelete, onChangeDate, isLoading,
   return (
     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
       {onChangeDate && currentDate && (
-        <Dialog open={changeDateDialogOpen} onOpenChange={setChangeDateDialogOpen}>
+        <Dialog open={changeDateDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <button
               type="button"

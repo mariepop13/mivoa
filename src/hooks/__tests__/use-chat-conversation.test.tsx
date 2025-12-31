@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useChatConversation } from '../use-chat-conversation';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
@@ -47,7 +47,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('User message');
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(chatService.sendChatMessage).toHaveBeenCalledWith({
@@ -70,7 +72,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('User message');
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe('API Error');
@@ -84,7 +88,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('   ');
+    await act(async () => {
+      await result.current.sendMessage('   ');
+    });
 
     expect(chatService.sendChatMessage).not.toHaveBeenCalled();
   });
@@ -96,7 +102,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    result.current.resetConversation();
+    act(() => {
+      result.current.resetConversation();
+    });
 
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(0);
@@ -118,14 +126,17 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    const sendPromise = result.current.sendMessage('User message');
+    let sendPromise: Promise<void> | undefined;
+    await act(async () => {
+      sendPromise = result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(result.current.isTyping).toBe(true);
     });
 
     resolvePromise!();
-    await sendPromise;
+    await sendPromise!;
 
     await waitFor(() => {
       expect(result.current.isTyping).toBe(false);

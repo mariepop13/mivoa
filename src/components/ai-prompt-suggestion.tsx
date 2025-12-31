@@ -11,7 +11,10 @@ interface AiPromptSuggestionProps {
   onPromptSelected?: (prompt: string) => void;
 }
 
-export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiPromptSuggestionProps): React.JSX.Element | null {
+export function AiPromptSuggestion({
+  recentEntries = [],
+  onPromptSelected,
+}: AiPromptSuggestionProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { prompt, isLoading, error, regenerate } = useJournalPrompts(recentEntries);
 

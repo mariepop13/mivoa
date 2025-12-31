@@ -6,9 +6,6 @@ import { useContext } from 'react';
 import { useFirestore } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
-import { LanguageContext } from '@/context/LanguageContext';
-import { useModel } from '@/context/ModelContext';
-import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
 import { convertTimestampToDate } from '@/utils/journal-utils';
 import type { ChatMessage } from '@/ai/types/chat';
@@ -49,22 +46,13 @@ function validateDependencies(
 }
 
 function buildConversationMessages(
-  sanitizedPrompt: string,
-  lang: 'en' | 'fr'
-): { initialAssistantMessage: ChatMessage; userMessage: ChatMessage } {
-  const initialAssistantMessage: ChatMessage = {
+  sanitizedPrompt: string
+): ChatMessage {
+  return {
     role: 'assistant',
-    content: generateInitialMessage(lang),
-    timestamp: new Date(),
-  };
-
-  const userMessage: ChatMessage = {
-    role: 'user',
     content: sanitizedPrompt,
     timestamp: new Date(),
   };
-
-  return { initialAssistantMessage, userMessage };
 }
 
 function prepareMessagesForStorage(messages: ChatMessage[]): Array<{
@@ -93,8 +81,6 @@ export function useTemplateConversation({
   const firestore = useFirestore();
   const { user } = useUser();
   const { apiKey } = useContext(OpenRouterApiKeyContext);
-  const { language } = useContext(LanguageContext);
-  const { selectedModel } = useModel();
 
   const createConversationFromPrompt = useCallback(
     async (prompt: string) => {
@@ -113,33 +99,11 @@ export function useTemplateConversation({
 
       const sanitizedPrompt = sanitizePrompt(prompt);
       const dateKey = format(selectedDate, 'yyyy-MM-dd');
-      const lang = (language || 'en') as 'en' | 'fr';
 
-      const { initialAssistantMessage, userMessage } = buildConversationMessages(sanitizedPrompt, lang);
-      const conversationHistory: ChatMessage[] = [initialAssistantMessage];
+      const assistantMessage = buildConversationMessages(sanitizedPrompt);
 
       try {
-        const aiResponse = await sendChatMessage({
-          conversationHistory,
-          userMessage: userMessage.content,
-          apiKey: apiKey!,
-          language: lang,
-          model: selectedModel,
-        });
-
-        const assistantResponse: ChatMessage = {
-          role: 'assistant',
-          content: aiResponse,
-          timestamp: new Date(),
-        };
-
-        const fullConversationHistory: ChatMessage[] = [
-          initialAssistantMessage,
-          userMessage,
-          assistantResponse,
-        ];
-
-        const conversationHistoryForStorage = prepareMessagesForStorage(fullConversationHistory);
+        const conversationHistoryForStorage = prepareMessagesForStorage([assistantMessage]);
 
         const draftId = await saveConversationDraft({
           draftId: null,
@@ -156,7 +120,7 @@ export function useTemplateConversation({
         onError?.(err);
       }
     },
-    [firestore, user, apiKey, language, selectedModel, selectedDate, onSuccess, onError]
+    [firestore, user, apiKey, selectedDate, onSuccess, onError]
   );
 
   return { createConversationFromPrompt };

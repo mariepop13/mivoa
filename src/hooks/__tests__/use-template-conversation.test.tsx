@@ -1,21 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import type { Firestore } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { useTemplateConversation } from '../use-template-conversation';
 import { useFirestore } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
-import { LanguageContext } from '@/context/LanguageContext';
-import { useModel } from '@/context/ModelContext';
-import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
 import { convertTimestampToDate } from '@/utils/journal-utils';
 
 vi.mock('@/firebase');
 vi.mock('@/firebase/auth/use-user');
-vi.mock('@/context/ModelContext');
-vi.mock('@/ai/services/chat-service');
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/utils/journal-utils');
 
@@ -26,7 +21,6 @@ describe('useTemplateConversation', () => {
   const mockSelectedDate = new Date('2024-01-15');
   const mockOnSuccess = vi.fn();
   const mockOnError = vi.fn();
-  const mockSendChatMessage = vi.mocked(sendChatMessage);
   const mockSaveConversationDraft = vi.mocked(saveConversationDraft);
   const mockConvertTimestampToDate = vi.mocked(convertTimestampToDate);
 
@@ -34,12 +28,6 @@ describe('useTemplateConversation', () => {
     vi.clearAllMocks();
     vi.mocked(useFirestore).mockReturnValue(mockFirestore);
     vi.mocked(useUser).mockReturnValue({ user: mockUser, isLoading: false, error: null });
-    vi.mocked(useModel).mockReturnValue({
-      selectedModel: 'test-model',
-      setSelectedModel: vi.fn(),
-      isLoading: false,
-    });
-    mockSendChatMessage.mockResolvedValue('AI response');
     mockSaveConversationDraft.mockResolvedValue('draft-id-123');
     mockConvertTimestampToDate.mockImplementation((ts) => ts as Date);
   });
@@ -64,9 +52,7 @@ describe('useTemplateConversation', () => {
               isLoading: false,
             }}
           >
-            <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
-              {children}
-            </LanguageContext.Provider>
+            {children}
           </OpenRouterApiKeyContext.Provider>
         ),
       }
@@ -76,46 +62,54 @@ describe('useTemplateConversation', () => {
   it('should call onError when firestore is missing', async () => {
     const { result } = renderWithContext(null, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     expect(mockOnError).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('missing firestore') })
     );
-    expect(mockSendChatMessage).not.toHaveBeenCalled();
+    expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
   it('should call onError when user is missing', async () => {
     vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
     const { result } = renderWithContext(mockFirestore, null, mockApiKey);
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     expect(mockOnError).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('missing firestore, user, or API key') })
     );
-    expect(mockSendChatMessage).not.toHaveBeenCalled();
+    expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
   it('should call onError when API key is missing', async () => {
     const { result } = renderWithContext(mockFirestore, mockUser, null);
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     expect(mockOnError).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('missing firestore, user, or API key') })
     );
-    expect(mockSendChatMessage).not.toHaveBeenCalled();
+    expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
   it('should call onError when prompt is too short', async () => {
     const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt('');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('');
+    });
 
     expect(mockOnError).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('too short') })
     );
-    expect(mockSendChatMessage).not.toHaveBeenCalled();
+    expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
 
@@ -125,7 +119,9 @@ describe('useTemplateConversation', () => {
 
     const { result } = renderWithContext(null, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     expect(consoleWarnSpy).toHaveBeenCalled();
 
@@ -134,10 +130,12 @@ describe('useTemplateConversation', () => {
   });
 
   it('should handle non-Error exception during conversation creation', async () => {
-    mockSendChatMessage.mockRejectedValue('String error');
+    mockSaveConversationDraft.mockRejectedValue('String error');
     const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     await waitFor(() => {
       expect(mockOnError).toHaveBeenCalledWith(
@@ -162,15 +160,15 @@ describe('useTemplateConversation', () => {
               isLoading: false,
             }}
           >
-            <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
-              {children}
-            </LanguageContext.Provider>
+            {children}
           </OpenRouterApiKeyContext.Provider>
         ),
       }
     );
 
-    await result.current.createConversationFromPrompt('Test prompt');
+    await act(async () => {
+      await result.current.createConversationFromPrompt('Test prompt');
+    });
 
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalledWith('draft-id-123');
@@ -180,21 +178,8 @@ describe('useTemplateConversation', () => {
   it('should successfully create conversation from prompt', async () => {
     const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt('What am I grateful for today?');
-
-    await waitFor(() => {
-      expect(mockSendChatMessage).toHaveBeenCalledWith({
-        conversationHistory: expect.arrayContaining([
-          expect.objectContaining({
-            role: 'assistant',
-            content: generateInitialMessage('en'),
-          }),
-        ]),
-        userMessage: 'What am I grateful for today?',
-        apiKey: mockApiKey,
-        language: 'en',
-        model: 'test-model',
-      });
+    await act(async () => {
+      await result.current.createConversationFromPrompt('What am I grateful for today?');
     });
 
     await waitFor(() => {
@@ -203,9 +188,10 @@ describe('useTemplateConversation', () => {
           draftId: null,
           entryDateKey: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
           conversationHistory: expect.arrayContaining([
-            expect.objectContaining({ role: 'assistant' }),
-            expect.objectContaining({ role: 'user' }),
-            expect.objectContaining({ role: 'assistant' }),
+            expect.objectContaining({
+              role: 'assistant',
+              content: 'What am I grateful for today?',
+            }),
           ]),
           firestore: mockFirestore,
           user: mockUser,
@@ -220,51 +206,23 @@ describe('useTemplateConversation', () => {
     const longPrompt = '  ' + 'a'.repeat(1998) + '  ';
     const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
 
-    await result.current.createConversationFromPrompt(longPrompt);
+    await act(async () => {
+      await result.current.createConversationFromPrompt(longPrompt);
+    });
 
     await waitFor(() => {
-      expect(mockSendChatMessage).toHaveBeenCalledWith(
+      expect(mockSaveConversationDraft).toHaveBeenCalledWith(
         expect.objectContaining({
-          userMessage: expect.stringMatching(/^a{1998}$/),
+          conversationHistory: expect.arrayContaining([
+            expect.objectContaining({
+              role: 'assistant',
+              content: expect.stringMatching(/^a{1998}$/),
+            }),
+          ]),
         })
       );
     });
   });
 
-  it('should use French language when language context is fr', async () => {
-    const { result } = renderHook(
-      () => useTemplateConversation({
-        selectedDate: mockSelectedDate,
-        onSuccess: mockOnSuccess,
-        onError: mockOnError,
-      }),
-      {
-        wrapper: ({ children }) => (
-          <OpenRouterApiKeyContext.Provider
-            value={{
-              apiKey: mockApiKey,
-              setApiKey: vi.fn(),
-              resetApiKey: vi.fn(),
-              isLoading: false,
-            }}
-          >
-            <LanguageContext.Provider value={{ language: 'fr', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
-              {children}
-            </LanguageContext.Provider>
-          </OpenRouterApiKeyContext.Provider>
-        ),
-      }
-    );
-
-    await result.current.createConversationFromPrompt('Test prompt');
-
-    await waitFor(() => {
-      expect(mockSendChatMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          language: 'fr',
-        })
-      );
-    });
-  });
 });
 

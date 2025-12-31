@@ -20,7 +20,11 @@ interface DatePickerProps {
   showDatesList?: boolean;
 }
 
-export function DatePicker({ value, onChange, showDatesList: enableDatesList = true }: DatePickerProps): React.JSX.Element {
+export function DatePicker({
+  value,
+  onChange,
+  showDatesList: enableDatesList = true,
+}: DatePickerProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -62,7 +66,8 @@ export function DatePicker({ value, onChange, showDatesList: enableDatesList = t
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-auto p-0 font-headline font-bold text-xl sm:text-2xl text-foreground hover:bg-accent/50 text-left justify-start w-full min-w-0 whitespace-normal"
+          className="h-auto p-0 font-headline font-bold text-xl sm:text-2xl text-foreground 
+            hover:bg-accent/50 text-left justify-start w-full min-w-0 whitespace-normal"
           aria-label="Change date"
         >
           <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mt-0.5" />
@@ -100,15 +105,17 @@ export function DatePicker({ value, onChange, showDatesList: enableDatesList = t
           )}
           {enableDatesList && showDatesList ? (
             <div className="max-h-64 overflow-y-auto">
-              {datesLoading ? (
+              {datesLoading && (
                 <div className="text-sm text-muted-foreground py-4 text-center">
                   {t('loading')}
                 </div>
-              ) : dates.length === 0 ? (
+              )}
+              {!datesLoading && dates.length === 0 && (
                 <div className="text-sm text-muted-foreground py-4 text-center">
                   {t('noEntriesYet')}
                 </div>
-              ) : (
+              )}
+              {!datesLoading && dates.length > 0 && (
                 <div className="space-y-1">
                   {dates.map((dateString) => {
                     const dateObj = parse(dateString, INPUT_DATE_FORMAT, new Date());

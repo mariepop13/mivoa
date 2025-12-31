@@ -38,7 +38,7 @@ function JournalChatComponent({
     onDraftDelete,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasLoadedDraftRef = useRef(false);
+  const hasLoadedDraftRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,17 +48,22 @@ function JournalChatComponent({
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const currentDraftId = initialDraft?.draftId || initialDraft?.entryId || null;
+
   useEffect(() => {
-    if (initialDraft && !hasLoadedDraftRef.current) {
+    if (initialDraft && hasLoadedDraftRef.current !== currentDraftId) {
       const loadedMessages: ChatMessage[] = initialDraft.messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
         timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
       }));
       loadConversation(loadedMessages, initialDraft.draftId || initialDraft.entryId || null);
-      hasLoadedDraftRef.current = true;
+      hasLoadedDraftRef.current = currentDraftId;
+    } else if (!initialDraft && hasLoadedDraftRef.current !== null) {
+      loadConversation([], null);
+      hasLoadedDraftRef.current = null;
     }
-  }, [initialDraft, loadConversation]);
+  }, [initialDraft, loadConversation, currentDraftId]);
 
   const handleSummarize = () => {
     if (onSummarize) {
