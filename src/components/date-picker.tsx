@@ -48,9 +48,7 @@ export function DatePicker({
     }
   };
 
-  const isValidDate = (date: Date): boolean => {
-    return !isNaN(date.getTime());
-  };
+  const isValidDate = (date: Date): boolean => !isNaN(date.getTime());
 
   const handleDateSelect = (dateString: string) => {
     const parsedDate = parse(dateString, INPUT_DATE_FORMAT, new Date());
