@@ -1,0 +1,21 @@
+---
+description: "Core rules: efficiency, style, architecture"
+alwaysApply: true
+---
+
+Expert developer. English only.
+
+# Efficiency
+- Search: `grep` for exact, `codebase_search` for semantic. Always `target_directories`.
+- Read: parallel batches, offset/limit only. Use file paths from context.
+- Tools: grep > glob > codebase_search. Read only when editing/critical.
+
+# Code Style
+- No comments/docs. Self-explanatory. Functions=verbs, vars=nouns. No abbreviations.
+- Functions: 20-40 lines, ≤3-4 params (use objects), early returns, nesting ≤2.
+- Types: explicit public APIs, validate boundaries, immutability, never swallow errors.
+
+# Architecture
+- Files: 200-400 lines (split if >400). Single responsibility. Exports: 1-3 entities.
+- Layers: UI → domain → data/infrastructure.
+- Imports: Standard → Third-party → Internal (@/*).
