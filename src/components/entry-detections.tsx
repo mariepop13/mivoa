@@ -28,41 +28,46 @@ const RAINBOW_COLORS = [
 
 const RAINBOW_COLORS_LENGTH = RAINBOW_COLORS.length;
 
-interface DetectionSectionConfig {
-  key: string;
+type SectionKey = 'moods' | 'themes' | 'characters' | 'places';
+
+interface SectionConfig {
+  key: SectionKey;
   hasData: boolean;
+  icon: LucideIcon;
+  translationKey: string;
+  createBadge: (index: number) => React.ReactNode;
+}
+
+interface BuildSectionParams {
+  key: string;
   icon: LucideIcon;
   translationKey: string;
   badgeComponent: React.ReactNode;
 }
 
 function buildDetectionSection(
-  config: DetectionSectionConfig,
+  params: BuildSectionParams,
   t: (key: string) => string
 ): React.ReactNode | null {
-  if (!config.hasData) {
-    return null;
-  }
-
-  const Icon = config.icon;
+  const Icon = params.icon;
 
   return (
-    <div className="space-y-1.5" key={config.key}>
+    <div className="space-y-1.5" key={params.key}>
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-        <span>{t(config.translationKey)}</span>
+        <span>{t(params.translationKey)}</span>
       </div>
-      {config.badgeComponent}
+      {params.badgeComponent}
     </div>
   );
 }
 
 function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moods, moodEmojis, className }: EntryDetectionsProps): React.JSX.Element | null {
   const { t } = useTranslation();
-  const hasPlaces = places && places.length > 0;
-  const hasCharacters = characters && characters.length > 0;
-  const hasThemes = themes && themes.length > 0;
-  const hasMoods = moods && moods.length > 0;
+  const hasPlaces = Boolean(places && places.length > 0);
+  const hasCharacters = Boolean(characters && characters.length > 0);
+  const hasThemes = Boolean(themes && themes.length > 0);
+  const hasMoods = Boolean(moods && moods.length > 0);
 
   if (!hasPlaces && !hasCharacters && !hasThemes && !hasMoods) {
     return null;
@@ -71,7 +76,7 @@ function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moo
   const sections: React.ReactNode[] = [];
   let sectionIndex = 0;
 
-  const sectionConfigs = [
+  const sectionConfigs: SectionConfig[] = [
     {
       key: 'moods',
       hasData: hasMoods,
@@ -111,7 +116,6 @@ function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moo
     const section = buildDetectionSection(
       {
         key: config.key,
-        hasData: true,
         icon: config.icon,
         translationKey: config.translationKey,
         badgeComponent: badge,

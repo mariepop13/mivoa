@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { ModelProvider, useModel } from '../ModelContext';
+import { ModelProvider, useModel, DEFAULT_MODEL } from '../ModelContext';
 import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -53,7 +53,7 @@ describe('ModelContext', () => {
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
-    expect(result.current.selectedModel).toBe('google/gemini-3-flash-preview');
+    expect(result.current.selectedModel).toBe(DEFAULT_MODEL);
     expect(result.current.isLoading).toBe(true);
   });
 
@@ -82,7 +82,7 @@ describe('ModelContext', () => {
     const { result } = renderHook(() => useModel(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.selectedModel).toBe('google/gemini-3-flash-preview');
+      expect(result.current.selectedModel).toBe(DEFAULT_MODEL);
       expect(result.current.isLoading).toBe(false);
     });
   });
@@ -136,7 +136,7 @@ describe('ModelContext', () => {
       selectedModel: expect.anything(),
       updatedAt: expect.anything(),
     });
-    expect(result.current.selectedModel).toBe('google/gemini-3-flash-preview');
+    expect(result.current.selectedModel).toBe(DEFAULT_MODEL);
   });
 
   it('should handle errors when saving model', async () => {

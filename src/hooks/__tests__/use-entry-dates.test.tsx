@@ -5,6 +5,8 @@ import { useFirestore, useCollection } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
+import type { UseCollectionResult } from '@/firebase/firestore/use-collection';
 
 vi.mock('@/firebase');
 vi.mock('@/firebase/auth/use-user');
@@ -13,7 +15,13 @@ vi.mock('firebase/firestore', () => ({
     query: vi.fn((ref) => ref),
   }));
 
-const mockFirestore = { id: 'mock-firestore' } as any;
+interface MockEntry {
+  date?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
+const mockFirestore = { id: 'mock-firestore' } as unknown as Firestore;
 const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
 
 describe('useEntryDates', () => {
@@ -37,7 +45,7 @@ describe('useEntryDates', () => {
   });
 
   it('should return unique dates from entries', () => {
-    const mockEntries = [
+    const mockEntries: MockEntry[] = [
       { date: '2024-01-15' },
       { date: '2024-01-14' },
       { date: '2024-01-15' },
@@ -45,10 +53,10 @@ describe('useEntryDates', () => {
     ];
 
     vi.mocked(useCollection).mockReturnValue({
-      data: mockEntries as any,
+      data: mockEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     const { result } = renderHook(() => useEntryDates());
 
@@ -57,7 +65,7 @@ describe('useEntryDates', () => {
   });
 
   it('should sort dates in descending order', () => {
-    const mockEntries = [
+    const mockEntries: MockEntry[] = [
       { date: '2024-01-13' },
       { date: '2024-01-15' },
       { date: '2024-01-14' },
@@ -65,10 +73,10 @@ describe('useEntryDates', () => {
     ];
 
     vi.mocked(useCollection).mockReturnValue({
-      data: mockEntries as any,
+      data: mockEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     const { result } = renderHook(() => useEntryDates());
 
@@ -76,7 +84,7 @@ describe('useEntryDates', () => {
   });
 
   it('should filter out entries without date field', () => {
-    const mockEntries = [
+    const mockEntries: MockEntry[] = [
       { date: '2024-01-15' },
       { content: 'No date' },
       { date: '2024-01-14' },
@@ -84,10 +92,10 @@ describe('useEntryDates', () => {
     ];
 
     vi.mocked(useCollection).mockReturnValue({
-      data: mockEntries as any,
+      data: mockEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     const { result } = renderHook(() => useEntryDates());
 
@@ -108,7 +116,7 @@ describe('useEntryDates', () => {
   });
 
   it('should return empty dates when firestore is not available', () => {
-    vi.mocked(useFirestore).mockReturnValue(null as any);
+    vi.mocked(useFirestore).mockReturnValue(null as unknown as Firestore);
     vi.mocked(useCollection).mockReturnValue({
       data: null,
       isLoading: false,
@@ -148,17 +156,17 @@ describe('useEntryDates', () => {
   });
 
   it('should handle entries with empty date strings', () => {
-    const mockEntries = [
+    const mockEntries: MockEntry[] = [
       { date: '2024-01-15' },
       { date: '' },
       { date: '2024-01-14' },
     ];
 
     vi.mocked(useCollection).mockReturnValue({
-      data: mockEntries as any,
+      data: mockEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     const { result } = renderHook(() => useEntryDates());
 
@@ -166,27 +174,27 @@ describe('useEntryDates', () => {
   });
 
   it('should update dates when entries data changes', async () => {
-    const initialEntries = [{ date: '2024-01-15' }];
+    const initialEntries: MockEntry[] = [{ date: '2024-01-15' }];
     vi.mocked(useCollection).mockReturnValue({
-      data: initialEntries as any,
+      data: initialEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     const { result, rerender } = renderHook(() => useEntryDates());
 
     expect(result.current.dates).toEqual(['2024-01-15']);
 
-    const updatedEntries = [
+    const updatedEntries: MockEntry[] = [
       { date: '2024-01-15' },
       { date: '2024-01-16' },
     ];
 
     vi.mocked(useCollection).mockReturnValue({
-      data: updatedEntries as any,
+      data: updatedEntries,
       isLoading: false,
       error: null,
-    });
+    } as UseCollectionResult<MockEntry>);
 
     rerender();
 

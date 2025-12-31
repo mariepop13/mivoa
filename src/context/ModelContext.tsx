@@ -4,7 +4,7 @@ import { createContext, ReactNode, useCallback, useMemo, useContext, useState, u
 import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp, deleteField } from 'firebase/firestore';
 
-const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
+export const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
 
 interface UserSettings extends Record<string, unknown> {
   openRouterApiKey?: string;

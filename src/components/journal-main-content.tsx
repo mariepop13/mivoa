@@ -9,6 +9,7 @@ import { useViewMode } from '@/hooks/use-view-mode';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
+import { convertTimestampToDate } from '@/utils/journal-utils';
 
 function mapConversationHistory(
   conversationHistory: Array<{
@@ -23,7 +24,7 @@ function mapConversationHistory(
   return conversationHistory.map((msg) => ({
     role: msg.role,
     content: msg.content,
-    timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
+    timestamp: convertTimestampToDate(msg.timestamp),
   }));
 }
 
@@ -114,21 +115,11 @@ export function JournalMainContent({
 
   const initialConversation = getInitialConversation();
 
-  const convertTimestamp = (ts: Date | Timestamp | string): Date => {
-    if (ts instanceof Date) {
-      return ts;
-    }
-    if (ts instanceof Timestamp) {
-      return ts.toDate();
-    }
-    return new Date(ts);
-  };
-
   const onDraftSaveWrapper = async (messages: ChatMessage[], draftId: string | null): Promise<string | null> => {
     const conversationHistory = messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
-      timestamp: convertTimestamp(msg.timestamp),
+      timestamp: convertTimestampToDate(msg.timestamp),
     }));
     const entryId = initialConversation?.entryId || null;
     return handleSaveDraft(conversationHistory, draftId, entryId);

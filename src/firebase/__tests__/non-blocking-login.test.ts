@@ -5,6 +5,7 @@ import {
   initiateEmailSignIn,
   signInWithGoogle,
   logout,
+  googleProvider,
 } from '../non-blocking-login';
 import {
   signInAnonymously,
@@ -166,7 +167,7 @@ describe('non-blocking-login', () => {
 
       const result = await signInWithGoogle(mockAuth);
 
-      expect(signInWithPopup).toHaveBeenCalled();
+      expect(signInWithPopup).toHaveBeenCalledWith(mockAuth, googleProvider);
       expect(result).toBe(mockUserCredential);
     });
 

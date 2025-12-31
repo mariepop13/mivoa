@@ -40,6 +40,11 @@ export function useChatInput({ onSend, isTyping }: UseChatInputParams): UseChatI
       setInputValue('');
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast({
+        variant: 'destructive',
+        title: t('messageSendError'),
+        description: t('messageSendErrorDescription'),
+      });
     }
   };
 
