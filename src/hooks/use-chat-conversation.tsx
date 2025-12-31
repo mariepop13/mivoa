@@ -101,7 +101,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
     try {
       const response = await sendChatMessage({
-        conversationHistory: conversationHistory,
+        conversationHistory,
         userMessage: userMessage.content,
         apiKey,
         language: lang,
