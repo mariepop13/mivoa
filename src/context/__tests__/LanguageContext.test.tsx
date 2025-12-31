@@ -75,11 +75,10 @@ describe('LanguageContext', () => {
 
   it('should update language and save to localStorage', async () => {
     const user = userEvent.setup();
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+     
     const contextValueRef = { current: null as LanguageContextType | null };
 
-    const TestComponent = () => {
-      return (
+    const TestComponent = () => (
         <LanguageContext.Consumer>
           {(value: LanguageContextType) => {
             // eslint-disable-next-line react-hooks/immutability
@@ -92,7 +91,6 @@ describe('LanguageContext', () => {
           }}
         </LanguageContext.Consumer>
       );
-    };
 
     render(
       <LanguageProvider>
@@ -116,11 +114,10 @@ describe('LanguageContext', () => {
   it('should default to en for unsupported language', async () => {
     const user = userEvent.setup();
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+     
     const contextValueRef = { current: null as LanguageContextType | null };
 
-    const TestComponent = () => {
-      return (
+    const TestComponent = () => (
         <LanguageContext.Consumer>
           {(value: LanguageContextType) => {
             // eslint-disable-next-line react-hooks/immutability
@@ -133,7 +130,6 @@ describe('LanguageContext', () => {
           }}
         </LanguageContext.Consumer>
       );
-    };
 
     render(
       <LanguageProvider>
