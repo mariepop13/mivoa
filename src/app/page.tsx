@@ -77,48 +77,52 @@ function JournalApp(): React.JSX.Element {
     return <JournalLoadingState />;
   }
 
+  const sidebarProps = {
+    selectedDate,
+    entries: journalEntries.entries,
+    selectedEntryId: journalEntries.selectedEntryId,
+    isSidebarOpen,
+    isSaving: journalEntries.isSaving,
+    onClose: () => setIsSidebarOpen(false),
+    onNewEntry: handlers.handleNewEntry,
+    onEntrySelect: handlers.handleEntrySelect,
+    formatEntryTime,
+    onTemplateSelect: handleTemplateSelect,
+    onDateChange: setSelectedDate,
+  };
+
+  const mainContentProps = {
+    selectedDate,
+    selectedEntryId: journalEntries.selectedEntryId,
+    selectedEntry: journalEntries.selectedEntry,
+    entries: journalEntries.entries,
+    content: journalEntries.content,
+    title: journalEntries.title,
+    isSaving: journalEntries.isSaving,
+    lastSavedAt: journalEntries.lastSavedAt,
+    saveError: journalEntries.saveError,
+    isGeneratingSummary: journalEntries.isGeneratingSummary,
+    recentEntries: journalEntries.recentEntries,
+    onContentChange: handlers.handleContentChange,
+    onSave: handlers.handleSave,
+    onDelete: journalEntries.handleDelete,
+    onSummarize: journalEntries.handleSummarizeConversation,
+    getEntryTitle,
+    onSidebarToggle: () => setIsSidebarOpen(true),
+    isSidebarOpen,
+    dateKey: format(selectedDate, DATE_KEY_FORMAT),
+    handleSaveDraft: journalEntries.handleSaveDraft,
+    handleDeleteDraft: journalEntries.handleDeleteDraft,
+    draftForDate: journalEntries.draftForDate,
+    conversationEntryForDate: journalEntries.conversationEntryForDate,
+    onChangeDate: journalEntries.changeEntryDate,
+  };
+
   return (
     <main className="min-h-screen bg-background">
       <div className="flex h-screen relative">
-        <JournalSidebar
-          selectedDate={selectedDate}
-          entries={journalEntries.entries}
-          selectedEntryId={journalEntries.selectedEntryId}
-          isSidebarOpen={isSidebarOpen}
-          isSaving={journalEntries.isSaving}
-          onClose={() => setIsSidebarOpen(false)}
-          onNewEntry={handlers.handleNewEntry}
-          onEntrySelect={handlers.handleEntrySelect}
-          formatEntryTime={formatEntryTime}
-          onTemplateSelect={handleTemplateSelect}
-          onDateChange={setSelectedDate}
-        />
-        <JournalMainContent
-          selectedDate={selectedDate}
-          selectedEntryId={journalEntries.selectedEntryId}
-          selectedEntry={journalEntries.selectedEntry}
-          entries={journalEntries.entries}
-          content={journalEntries.content}
-          title={journalEntries.title}
-          isSaving={journalEntries.isSaving}
-          lastSavedAt={journalEntries.lastSavedAt}
-          saveError={journalEntries.saveError}
-          isGeneratingSummary={journalEntries.isGeneratingSummary}
-          recentEntries={journalEntries.recentEntries}
-          onContentChange={handlers.handleContentChange}
-          onSave={handlers.handleSave}
-          onDelete={journalEntries.handleDelete}
-          onSummarize={journalEntries.handleSummarizeConversation}
-          getEntryTitle={getEntryTitle}
-          onSidebarToggle={() => setIsSidebarOpen(true)}
-          isSidebarOpen={isSidebarOpen}
-          dateKey={format(selectedDate, DATE_KEY_FORMAT)}
-          handleSaveDraft={journalEntries.handleSaveDraft}
-          handleDeleteDraft={journalEntries.handleDeleteDraft}
-          draftForDate={journalEntries.draftForDate}
-          conversationEntryForDate={journalEntries.conversationEntryForDate}
-          onChangeDate={journalEntries.changeEntryDate}
-        />
+        <JournalSidebar {...sidebarProps} />
+        <JournalMainContent {...mainContentProps} />
       </div>
       <TemplatePromptDialog
         open={isPromptDialogOpen}
@@ -142,7 +146,9 @@ export default function HomePage(): React.JSX.Element {
             {t('firebaseConfigurationRequired')}
           </h1>
           <p className="text-muted-foreground mb-4">
-            {t('firebaseConfigurationDescription')} <code className="bg-muted px-2 py-1 rounded text-sm">{t('envFile')}</code> {t('file')}
+            {t('firebaseConfigurationDescription')}{' '}
+            <code className="bg-muted px-2 py-1 rounded text-sm">{t('envFile')}</code>{' '}
+            {t('file')}
           </p>
           <div className="text-sm text-muted-foreground space-y-1">
             <p>{t('requiredVariables')}</p>

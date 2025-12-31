@@ -7,6 +7,7 @@ import { TemplatesDialog } from '@/components/templates-dialog';
 import { FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
@@ -50,9 +51,11 @@ export function JournalSidebar({
       )}
       
       <div
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-80 border-r border-border bg-card 
-          flex flex-col transform transition-transform duration-300 ease-in-out 
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={cn(
+          'fixed lg:static inset-y-0 left-0 z-50 w-80 border-r border-border bg-card',
+          'flex flex-col transform transition-transform duration-300 ease-in-out',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
       >
         <div className="p-4 sm:p-6 border-b border-border">
           <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
@@ -82,7 +85,12 @@ export function JournalSidebar({
           <button
             onClick={onNewEntry}
             disabled={isSaving}
-            className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+            className={cn(
+              'w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg',
+              'hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed',
+              'transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md',
+              'active:scale-[0.98] flex items-center justify-center gap-2'
+            )}
           >
             <span>+</span>
             <span>{t('newEntry')}</span>

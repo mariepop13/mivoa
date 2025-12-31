@@ -21,6 +21,8 @@ interface UseChatConversationResult {
   draftId: string | null;
 }
 
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
+
 // eslint-disable-next-line max-lines-per-function
 export function useChatConversation(params?: UseChatConversationParams): UseChatConversationResult {
   const { dateKey, onDraftSave, onDraftDelete } = params || {};
@@ -39,9 +41,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
   const lang = (language || 'en') as 'en' | 'fr';
 
-  const conversationHistory = useMemo(() => {
-    return messages;
-  }, [messages]);
+  const conversationHistory = useMemo(() => messages, [messages]);
 
   useEffect(() => {
     const currentDraftKey = draftId || '';
@@ -75,7 +75,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
       } catch (err) {
         console.error('Failed to save draft:', err);
       }
-    }, 500);
+    }, DRAFT_SAVE_DEBOUNCE_MS);
   }, [onDraftSave, dateKey, draftId]);
 
   const sendMessage = useCallback(async (content: string) => {

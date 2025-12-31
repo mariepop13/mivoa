@@ -65,7 +65,14 @@ export function JournalMainContent({
   draftForDate: _draftForDate,
   onChangeDate,
 }: JournalMainContentProps): React.JSX.Element {
-  const { viewMode, setViewMode, isDraftSelected, isConversationEntrySelected, shouldShowTabs, shouldShowChat } = useViewMode({
+  const {
+    viewMode,
+    setViewMode,
+    isDraftSelected,
+    isConversationEntrySelected,
+    shouldShowTabs,
+    shouldShowChat,
+  } = useViewMode({
     selectedEntryId,
     selectedEntry,
   });
