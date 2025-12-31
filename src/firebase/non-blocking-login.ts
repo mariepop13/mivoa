@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { isAppOfflineError } from './utils';
 
-const googleProvider = new GoogleAuthProvider();
+export const googleProvider = new GoogleAuthProvider();
 
 function validateEmail(email: string) {
   if (!email || email.trim() === '') {

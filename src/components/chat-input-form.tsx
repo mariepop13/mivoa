@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
-import { useToast } from '@/hooks/use-toast';
-import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
+import { useChatInput } from '@/hooks/use-chat-input';
 
 interface ChatInputFormProps {
   onSend: (message: string) => Promise<void>;
@@ -22,38 +20,11 @@ export function ChatInputForm({
   onSummarize,
   isLoadingSummary,
 }: ChatInputFormProps): React.JSX.Element {
-  const [inputValue, setInputValue] = useState('');
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
-
-  const handleSend = async () => {
-    if (!inputValue.trim() || isTyping) return;
-    
-    if (!isApiKeyLoading && !apiKey) {
-      toast({
-        variant: 'destructive',
-        title: t('openRouterApiKeyRequired'),
-        description: t('openRouterApiKeyRequiredDescription'),
-      });
-      return;
-    }
-    
-    const messageToSend = inputValue;
-    try {
-      await onSend(messageToSend);
-      setInputValue('');
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const { inputValue, setInputValue, handleSend, handleKeyDown, canSend } = useChatInput({
+    onSend,
+    isTyping,
+  });
 
   return (
     <div className="border-t border-border/60 bg-card/50 backdrop-blur-sm px-4 sm:px-6 py-4 sm:py-5">
@@ -87,7 +58,7 @@ export function ChatInputForm({
           <Button
             type="button"
             onClick={handleSend}
-            disabled={!inputValue.trim() || isTyping}
+            disabled={!canSend}
             className="self-end"
             aria-label={t('send')}
           >

@@ -47,8 +47,7 @@ describe('DatePicker', () => {
   const mockDate = new Date(2024, 0, 15);
   const mockT = vi.fn((key: string) => key);
 
-  const renderWithLanguage = (language: 'en' | 'fr', props?: { showDatesList?: boolean }) => {
-    return render(
+  const renderWithLanguage = (language: 'en' | 'fr', props?: { showDatesList?: boolean }) => render(
       <LanguageContext.Provider
         value={{
           language,
@@ -59,7 +58,6 @@ describe('DatePicker', () => {
         <DatePicker value={mockDate} onChange={mockOnChange} {...props} />
       </LanguageContext.Provider>
     );
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,9 +122,7 @@ describe('DatePicker', () => {
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => {
-      return screen.getByDisplayValue('2024-01-15') as HTMLInputElement;
-    });
+    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
 
     fireEvent.change(dateInput, { target: { value: '2024-01-20' } });
 
@@ -305,9 +301,7 @@ describe('DatePicker', () => {
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => {
-      return screen.getByDisplayValue('2024-01-15') as HTMLInputElement;
-    });
+    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
 
     fireEvent.change(dateInput, { target: { value: '2024-01-20' } });
 
@@ -323,9 +317,7 @@ describe('DatePicker', () => {
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => {
-      return screen.getByDisplayValue('2024-01-15') as HTMLInputElement;
-    });
+    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
 
     fireEvent.change(dateInput, { target: { value: '' } });
 

@@ -46,14 +46,7 @@ export function useJournalHandlers({
     [journalEntries, setIsSidebarOpen]
   );
 
-  const handleNewEntry = useCallback(async () => {
-    if (journalEntries.draftForDate) {
-      try {
-        await journalEntries.handleDeleteDraft(journalEntries.draftForDate.id);
-      } catch (error) {
-        console.error('Failed to delete draft when creating new entry:', error);
-      }
-    }
+  const handleNewEntry = useCallback(() => {
     journalEntries.setSelectedEntryId(null);
     setIsSidebarOpen(false);
   }, [journalEntries, setIsSidebarOpen]);

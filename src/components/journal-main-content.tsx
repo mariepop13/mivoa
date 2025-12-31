@@ -1,14 +1,32 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { JournalChat } from '@/components/journal-chat';
 import { JournalMobileHeader } from '@/components/journal-mobile-header';
 import { JournalViewTabs } from '@/components/journal-view-tabs';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import { useViewMode } from '@/hooks/use-view-mode';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
+import { convertTimestampToDate } from '@/utils/journal-utils';
+
+function mapConversationHistory(
+  conversationHistory: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Timestamp | Date | string;
+  }> | undefined
+): ChatMessage[] {
+  if (!conversationHistory) {
+    return [];
+  }
+  return conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: convertTimestampToDate(msg.timestamp),
+  }));
+}
 
 interface JournalMainContentProps {
   selectedDate: Date;
@@ -35,7 +53,6 @@ interface JournalMainContentProps {
   dateKey: string;
   handleSaveDraft: (messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>, draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
-  draftForDate: (JournalEntryData & { id: string }) | null;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
   onChangeDate?: (date: Date) => Promise<void>;
 }
@@ -62,51 +79,33 @@ export function JournalMainContent({
   dateKey,
   handleSaveDraft,
   handleDeleteDraft,
-  draftForDate,
   onChangeDate,
 }: JournalMainContentProps): React.JSX.Element {
-  const [viewMode, setViewMode] = useState<'chat' | 'summary'>('chat');
-  const previousEntryIdRef = useRef<string | null>(null);
-  
-  const isDraftSelected = selectedEntry?.isDraft === true;
-  const isConversationEntrySelected = selectedEntry?.conversationMode === true && selectedEntry?.isDraft !== true;
-  const shouldShowTabs = isConversationEntrySelected && !isDraftSelected;
-  
-  useEffect(() => {
-    if (selectedEntryId && previousEntryIdRef.current !== selectedEntryId) {
-      if (isConversationEntrySelected) {
-        setViewMode('summary');
-      } else if (isDraftSelected) {
-        setViewMode('chat');
-      }
-      previousEntryIdRef.current = selectedEntryId;
-    } else if (!selectedEntryId) {
-      setViewMode('chat');
-      previousEntryIdRef.current = null;
-    }
-  }, [isConversationEntrySelected, isDraftSelected, selectedEntryId]);
-  
-  const shouldShowChat = !selectedEntryId || isDraftSelected || (isConversationEntrySelected && viewMode === 'chat');
+  const {
+    viewMode,
+    setViewMode,
+    isDraftSelected,
+    isConversationEntrySelected,
+    shouldShowTabs,
+    shouldShowChat,
+  } = useViewMode({
+    selectedEntryId,
+    selectedEntry,
+  });
 
   const getInitialConversation = () => {
-    if (isDraftSelected && draftForDate) {
+    if (isDraftSelected && selectedEntry) {
+      const messages = mapConversationHistory(selectedEntry.conversationHistory);
       return {
-        messages: (draftForDate.conversationHistory || []).map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-        })) as ChatMessage[],
-        draftId: draftForDate.id,
+        messages,
+        draftId: selectedEntry.id,
         entryId: null as string | null,
       };
     }
     if (isConversationEntrySelected && selectedEntry) {
+      const messages = mapConversationHistory(selectedEntry.conversationHistory);
       return {
-        messages: (selectedEntry.conversationHistory || []).map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-        })) as ChatMessage[],
+        messages,
         draftId: null as string | null,
         entryId: selectedEntry.id,
       };
@@ -120,7 +119,7 @@ export function JournalMainContent({
     const conversationHistory = messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
-      timestamp: msg.timestamp instanceof Date ? msg.timestamp : (msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : new Date()),
+      timestamp: convertTimestampToDate(msg.timestamp),
     }));
     const entryId = initialConversation?.entryId || null;
     return handleSaveDraft(conversationHistory, draftId, entryId);

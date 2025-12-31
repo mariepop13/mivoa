@@ -39,8 +39,7 @@ describe('JournalEntryActions', () => {
   const mockOnChangeDate = vi.fn();
   const mockCurrentDate = new Date(2024, 0, 15);
 
-  const renderWithLanguage = (props?: any) => {
-    return render(
+  const renderWithLanguage = (props?: any) => render(
       <LanguageContext.Provider
         value={{
           language: 'en',
@@ -56,7 +55,6 @@ describe('JournalEntryActions', () => {
         />
       </LanguageContext.Provider>
     );
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -167,9 +165,7 @@ describe('JournalEntryActions', () => {
     const deleteButton = screen.getByText('delete');
     await user.click(deleteButton);
 
-    const dialog = await waitFor(() => {
-      return screen.getByRole('alertdialog');
-    });
+    const dialog = await waitFor(() => screen.getByRole('alertdialog'));
 
     const confirmButton = dialog.querySelector('button[class*="bg-destructive"]') as HTMLButtonElement;
     

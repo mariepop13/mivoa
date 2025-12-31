@@ -4,6 +4,16 @@ import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlo
 
 const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
 
+function convertConversationHistoryForStorage(
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
+): Array<{ role: 'user' | 'assistant'; content: string; timestamp: Timestamp }> {
+  return conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: Timestamp.fromDate(msg.timestamp),
+  }));
+}
+
 export function generateEntryId(dateKey: string): string {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
@@ -105,11 +115,7 @@ export function saveSummaryAsEntry(params: SaveSummaryParams): Promise<void> {
   const { entryId, entryDateKey, summary, conversationHistory, firestore, user, draftId } = params;
   const finalEntryId = draftId || entryId;
   const entryDocRef = doc(firestore, `users/${user.uid}/entries/${finalEntryId}`);
-  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-    timestamp: Timestamp.fromDate(msg.timestamp),
-  }));
+  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
   
   const data: Record<string, unknown> = {
     content: summary.content,
@@ -140,11 +146,7 @@ interface SaveConversationDraftParams {
 
 export function saveConversationDraft(params: SaveConversationDraftParams): Promise<string> {
   const { draftId, entryDateKey, conversationHistory, firestore, user } = params;
-  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-    timestamp: Timestamp.fromDate(msg.timestamp),
-  }));
+  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
 
   const finalDraftId = draftId || generateEntryId(entryDateKey);
   const draftDocRef = doc(firestore, `users/${user.uid}/entries/${finalDraftId}`);
@@ -187,11 +189,7 @@ interface UpdateConversationEntryParams {
 export function updateConversationEntry(params: UpdateConversationEntryParams): Promise<void> {
   const { entryId, conversationHistory, firestore, user } = params;
   const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-    timestamp: Timestamp.fromDate(msg.timestamp),
-  }));
+  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
   
   const data: Record<string, unknown> = {
     conversationHistory: conversationHistoryForStorage,

@@ -87,7 +87,7 @@ export default tseslint.config(
       'max-depth': ['warn', { max: 3 }],
       'max-lines-per-function': [
         'warn',
-        { max: 50, skipBlankLines: true, skipComments: true },
+        { max: 40, skipBlankLines: true, skipComments: true },
       ],
       'max-lines': [
         'warn',
@@ -116,7 +116,7 @@ export default tseslint.config(
       'no-implicit-coercion': 'warn',
       'prefer-spread': 'warn',
       'no-warning-comments': [
-        'warn',
+        'error',
         {
           terms: ['todo', 'fixme', 'xxx', 'hack', 'bug'],
           location: 'start',

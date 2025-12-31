@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useModel } from '@/context/ModelContext';
@@ -21,6 +21,8 @@ interface UseChatConversationResult {
   draftId: string | null;
 }
 
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
+
 // eslint-disable-next-line max-lines-per-function
 export function useChatConversation(params?: UseChatConversationParams): UseChatConversationResult {
   const { dateKey, onDraftSave, onDraftDelete } = params || {};
@@ -31,22 +33,29 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const hasInitializedRef = useRef(false);
+  // Tracks the draft ID or entry ID for which initialization has occurred.
+  // Changed from boolean to string | null to properly handle draft/entry switching
+  // and prevent re-initialization when switching between drafts and entries.
+  const hasInitializedRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const lang = (language || 'en') as 'en' | 'fr';
 
+  const conversationHistory = useMemo(() => messages, [messages]);
+
   useEffect(() => {
-    if (!hasInitializedRef.current) {
+    const currentDraftKey = draftId || '';
+    if (!draftId && hasInitializedRef.current !== currentDraftKey && messages.length === 0) {
+      const initialMessageContent = generateInitialMessage(lang);
       const initialMessage: ChatMessage = {
         role: 'assistant',
-        content: generateInitialMessage(lang),
+        content: initialMessageContent,
         timestamp: new Date(),
       };
       setMessages([initialMessage]);
-      hasInitializedRef.current = true;
+      hasInitializedRef.current = currentDraftKey;
     }
-  }, [lang]);
+  }, [draftId, messages.length, lang, selectedModel]);
 
   const scheduleDraftSave = useCallback((finalMessages: ChatMessage[]) => {
     if (!onDraftSave || !dateKey || finalMessages.length === 0) {
@@ -66,7 +75,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
       } catch (err) {
         console.error('Failed to save draft:', err);
       }
-    }, 500);
+    }, DRAFT_SAVE_DEBOUNCE_MS);
   }, [onDraftSave, dateKey, draftId]);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -92,7 +101,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
     try {
       const response = await sendChatMessage({
-        conversationHistory: updatedMessages.filter((msg) => msg.timestamp < userMessage.timestamp),
+        conversationHistory,
         userMessage: userMessage.content,
         apiKey,
         language: lang,
@@ -115,7 +124,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     } finally {
       setIsTyping(false);
     }
-  }, [apiKey, messages, lang, selectedModel, scheduleDraftSave]);
+  }, [apiKey, messages, lang, selectedModel, scheduleDraftSave, conversationHistory]);
 
   const resetConversation = useCallback(async (): Promise<void> => {
     if (saveTimeoutRef.current) {
@@ -128,7 +137,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     setError(null);
     setIsTyping(false);
     setDraftId(null);
-    hasInitializedRef.current = false;
+    hasInitializedRef.current = '';
 
     if (currentDraftId && onDraftDelete) {
       try {
@@ -151,8 +160,19 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     setIsTyping(false);
     if (loadedDraftId !== undefined) {
       setDraftId(loadedDraftId);
+      if (loadedMessages.length > 0) {
+        hasInitializedRef.current = loadedDraftId || '';
+      } else {
+        hasInitializedRef.current = null;
+      }
+    } else {
+      setDraftId(null);
+      if (loadedMessages.length > 0) {
+        hasInitializedRef.current = '';
+      } else {
+        hasInitializedRef.current = null;
+      }
     }
-    hasInitializedRef.current = true;
   }, []);
 
   return {

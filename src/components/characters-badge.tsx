@@ -10,7 +10,11 @@ interface CharactersBadgeProps {
   className?: string;
 }
 
-function CharactersBadgeComponent({ characters, colorClass, className }: CharactersBadgeProps): React.JSX.Element | null {
+function CharactersBadgeComponent({
+  characters,
+  colorClass,
+  className,
+}: CharactersBadgeProps): React.JSX.Element | null {
   if (!characters || characters.length === 0) {
     return null;
   }

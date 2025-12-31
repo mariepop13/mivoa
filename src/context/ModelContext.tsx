@@ -1,10 +1,10 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useMemo, useContext } from 'react';
+import { createContext, ReactNode, useCallback, useMemo, useContext, useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp, deleteField } from 'firebase/firestore';
 
-const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
+export const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
 
 interface UserSettings extends Record<string, unknown> {
   openRouterApiKey?: string;
@@ -35,7 +35,16 @@ export function ModelProvider({ children }: { children: ReactNode }) {
 
   const { data: settingsData, isLoading: isSettingsLoading } = useDoc<UserSettings>(settingsDocRef);
 
-  const selectedModel = settingsData?.selectedModel || DEFAULT_MODEL;
+  const persistedModel = settingsData?.selectedModel || DEFAULT_MODEL;
+  const [optimisticModel, setOptimisticModel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (settingsData?.selectedModel !== undefined) {
+      setOptimisticModel(null);
+    }
+  }, [settingsData?.selectedModel]);
+
+  const selectedModel = optimisticModel ?? persistedModel;
   const isLoading = isSettingsLoading || isUserLoading;
 
   const setSelectedModel = useCallback(async (modelId: string | null) => {
@@ -43,6 +52,9 @@ export function ModelProvider({ children }: { children: ReactNode }) {
       console.warn('Cannot save model: missing settings doc ref or user');
       return;
     }
+
+    const modelToUse = modelId || DEFAULT_MODEL;
+    setOptimisticModel(modelToUse);
 
     try {
       if (modelId) {
@@ -61,6 +73,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (error) {
+      setOptimisticModel(null);
       console.error('Failed to save selected model to Firestore', error);
       throw error;
     }

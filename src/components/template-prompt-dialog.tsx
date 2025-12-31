@@ -84,7 +84,7 @@ export function TemplatePromptDialog({
       setError(null);
       templateIdRef.current = null;
     }
-  }, [open, template?.id, apiKey, lang, selectedModel, t]);
+  }, [open, template, apiKey, lang, selectedModel, t]);
 
   const handleUsePrompt = () => {
     if (generatedPrompt) {
@@ -96,7 +96,7 @@ export function TemplatePromptDialog({
   const templateDescription = useMemo(() => {
     if (!template) return '';
     return getTemplateDescription(template.id, t);
-  }, [template?.id, t]);
+  }, [template, t]);
 
   if (!template) {
     return null;
@@ -113,28 +113,7 @@ export function TemplatePromptDialog({
         </DialogHeader>
 
         <div className="py-4">
-          {isGenerating ? (
-            <div className="flex items-center justify-center py-8 gap-3">
-              <span className="inline-block w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <div className="text-sm text-muted-foreground">
-                {t('generatingTemplatePrompt')}
-              </div>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-destructive">{error}</div>
-            </div>
-          ) : generatedPrompt ? (
-            <div className="space-y-3">
-              <div className="bg-muted rounded-lg p-4 border border-border">
-                <p className="text-base text-foreground font-medium">{templateDescription}</p>
-              </div>
-              <div className="bg-accent/50 rounded-lg p-4 border border-border">
-                <p className="text-sm text-muted-foreground mb-2">{t('generatedPrompt')}</p>
-                <p className="text-sm text-foreground italic">&quot;{generatedPrompt}&quot;</p>
-              </div>
-            </div>
-          ) : null}
+          {renderPromptContent(isGenerating, error, generatedPrompt, templateDescription, t)}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -155,5 +134,48 @@ export function TemplatePromptDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function renderPromptContent(
+  isGenerating: boolean,
+  error: string | null,
+  generatedPrompt: string,
+  templateDescription: string,
+  t: (key: string) => string
+): React.ReactNode {
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center py-8 gap-3">
+        <span className="inline-block w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="text-sm text-muted-foreground">
+          {t('generatingTemplatePrompt')}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    );
+  }
+
+  if (generatedPrompt) {
+    return (
+      <div className="space-y-3">
+        <div className="bg-muted rounded-lg p-4 border border-border">
+          <p className="text-base text-foreground font-medium">{templateDescription}</p>
+        </div>
+        <div className="bg-accent/50 rounded-lg p-4 border border-border">
+          <p className="text-sm text-muted-foreground mb-2">{t('generatedPrompt')}</p>
+          <p className="text-sm text-foreground italic">&quot;{generatedPrompt}&quot;</p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 

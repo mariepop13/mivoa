@@ -77,7 +77,18 @@ export function useSummaryOperations({
     } finally {
       setIsGeneratingSummary(false);
     }
-  }, [apiKey, user, firestore, language, dateKey, updateEntryState, analyze, selectedModel, setIsGeneratingSummary, setSaveError]);
+  }, [
+    apiKey,
+    user,
+    firestore,
+    language,
+    dateKey,
+    updateEntryState,
+    analyze,
+    selectedModel,
+    setIsGeneratingSummary,
+    setSaveError,
+  ]);
 
   return { handleSummarizeConversation } satisfies UseSummaryOperationsResult;
 }
