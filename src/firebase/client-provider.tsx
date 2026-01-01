@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider, initializeFirebase } from '@/firebase';
 
-export function FirebaseClientProvider({ children }: { children: ReactNode }) {
+export function FirebaseClientProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const firebaseServices = useMemo<ReturnType<typeof initializeFirebase> | null>(() => {
     try {
       return initializeFirebase();
