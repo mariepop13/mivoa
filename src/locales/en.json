@@ -137,6 +137,18 @@
   "word": "word",
   "words": "words",
   "character": "character",
-  "charactersCount": "characters"
+  "charactersCount": "characters",
+  "linkEntry": "Link Entry",
+  "linkedEntries": "Linked Entries",
+  "selectEntryToLink": "Select Entry to Link",
+  "searchEntries": "Search entries...",
+  "noEntriesFound": "No entries found",
+  "unlinkEntry": "Unlink",
+  "confirmUnlink": "Remove this link?",
+  "entryAlreadyLinked": "This entry is already linked",
+  "cannotLinkToSelf": "Cannot link entry to itself",
+  "linkCreated": "Link created",
+  "linkRemoved": "Link removed",
+  "loadingLinkedEntries": "Loading linked entries..."
 }
 
