@@ -55,6 +55,9 @@ interface JournalMainContentProps {
   handleDeleteDraft: (draftId: string) => Promise<void>;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
   onChangeDate?: (date: Date) => Promise<void>;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  setSelectedEntryId?: (id: string | null) => void;
+  onLinksUpdated?: () => void;
 }
 
 interface InitialConversation {
@@ -150,6 +153,8 @@ function renderEntryContent({
   selectedEntryId,
   selectedEntry,
   recentEntries,
+  onNavigateToEntry,
+  onLinksUpdated,
 }: {
   selectedDate: Date;
   content: string;
@@ -164,6 +169,8 @@ function renderEntryContent({
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
 }): React.JSX.Element {
   return (
     <JournalEntry
@@ -186,6 +193,10 @@ function renderEntryContent({
       themeEmojis={selectedEntry?.themeEmojis}
       moods={selectedEntry?.moods}
       moodEmojis={selectedEntry?.moodEmojis}
+      entryId={selectedEntryId}
+      linkedEntryIds={selectedEntry?.linkedEntryIds}
+      onNavigateToEntry={onNavigateToEntry}
+      onLinksUpdated={onLinksUpdated}
     />
   );
 }
@@ -211,6 +222,8 @@ function renderContent({
   selectedEntryId,
   selectedEntry,
   recentEntries,
+  onNavigateToEntry,
+  onLinksUpdated,
 }: {
   shouldShowChat: boolean;
   onSummarize: JournalMainContentProps['onSummarize'];
@@ -232,6 +245,8 @@ function renderContent({
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
 }): React.JSX.Element {
   if (shouldShowChat) {
     return renderChatContent({
@@ -258,6 +273,8 @@ function renderContent({
     selectedEntryId,
     selectedEntry,
     recentEntries,
+    onNavigateToEntry,
+    onLinksUpdated,
   });
 }
 
@@ -284,6 +301,9 @@ export function JournalMainContent({
   handleSaveDraft,
   handleDeleteDraft,
   onChangeDate,
+  onNavigateToEntry,
+  setSelectedEntryId,
+  onLinksUpdated,
 }: JournalMainContentProps): React.JSX.Element {
   const {
     viewMode,
@@ -350,6 +370,8 @@ export function JournalMainContent({
                 selectedEntryId,
                 selectedEntry,
                 recentEntries,
+                onNavigateToEntry,
+                onLinksUpdated,
               })}
             </div>
           </div>

@@ -22,14 +22,17 @@ function calculateInitialViewMode(
   if (!selectedEntryId) {
     return 'chat';
   }
-  return isConversationEntrySelected ? 'summary' : 'chat';
+  return 'summary';
 }
 
 function calculateViewModeForEntry(
   selectedEntryId: string | null,
   isConversationEntrySelected: boolean
 ): 'chat' | 'summary' {
-  return isConversationEntrySelected ? 'summary' : 'chat';
+  if (!selectedEntryId) {
+    return 'chat';
+  }
+  return 'summary';
 }
 
 export function useViewMode({ selectedEntryId, selectedEntry }: UseViewModeParams): UseViewModeResult {

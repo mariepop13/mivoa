@@ -4,7 +4,7 @@ import { DatePicker } from '@/components/date-picker';
 import { SettingsMenu } from '@/components/settings-menu';
 import { UserMenu } from '@/components/user-menu';
 import { TemplatesDialog } from '@/components/templates-dialog';
-import { FileText } from 'lucide-react';
+import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
@@ -152,6 +152,12 @@ function EntriesList({
                 </span>
               )}
             </div>
+            {entry.linkedEntryIds && entry.linkedEntryIds.length > 0 && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{entry.linkedEntryIds.length}</span>
+              </div>
+            )}
           </div>
           {entry.title && (
             <div className="text-xs text-muted-foreground mt-1">{formatEntryTime(entry)}</div>
