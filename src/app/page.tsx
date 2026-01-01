@@ -19,13 +19,21 @@ import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
 
-function useJournalEffects(
-  selectedDate: Date,
-  setContent: (content: string) => void,
-  setTitle: (title: string) => void,
-  setSelectedEntryId: (id: string | null) => void,
-  selectedEntryData: JournalEntryData | null
-): void {
+interface UseJournalEffectsParams {
+  selectedDate: Date;
+  setContent: (content: string) => void;
+  setTitle: (title: string) => void;
+  setSelectedEntryId: (id: string | null) => void;
+  selectedEntryData: JournalEntryData | null;
+}
+
+function useJournalEffects({
+  selectedDate,
+  setContent,
+  setTitle,
+  setSelectedEntryId,
+  selectedEntryData,
+}: UseJournalEffectsParams): void {
   useEffect(() => {
     setContent('');
     setTitle('');
@@ -138,7 +146,13 @@ function JournalApp(): React.JSX.Element {
     },
   });
 
-  useJournalEffects(selectedDate, setContent, setTitle, setSelectedEntryId, selectedEntryData);
+  useJournalEffects({
+    selectedDate,
+    setContent,
+    setTitle,
+    setSelectedEntryId,
+    selectedEntryData,
+  });
 
   const handlers = useJournalHandlers({
     journalEntries,
