@@ -57,7 +57,7 @@ export function EntryContentForm({
           placeholder={t('writeYourThoughts')}
           className="flex-1 w-full resize-none bg-transparent text-foreground 
             placeholder:text-muted-foreground/60 focus:outline-none text-base sm:text-lg
-            leading-relaxed font-body py-2"
+            leading-[1.75] font-serif py-2"
           style={{ minHeight: TEXTAREA_MIN_HEIGHT }}
         />
         <div className="mt-2">
