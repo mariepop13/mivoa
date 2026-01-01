@@ -137,6 +137,22 @@
   "word": "word",
   "words": "words",
   "character": "character",
-  "charactersCount": "characters"
+  "charactersCount": "characters",
+  "deleteDraft": "Delete Draft",
+  "confirmDeleteDraft": "Delete this draft?",
+  "deleteDraftDescription": "This action cannot be undone. The draft and all its messages will be permanently deleted.",
+  "draftDeleted": "Draft deleted",
+  "draftDeleteError": "Failed to delete draft",
+  "undoDelete": "Undo",
+  "deleteSelectedDrafts": "Delete Selected",
+  "draftsDeleted": "{{count}} drafts deleted",
+  "selectAllDrafts": "Select All",
+  "selectMultipleDrafts": "Select Multiple",
+  "draftPreview": "Preview",
+  "messageCount": "{{count}} messages",
+  "lastUpdated": "Last updated",
+  "selected": "selected",
+  "selectedDraft": "{{count}} draft selected",
+  "selectedDrafts": "{{count}} drafts selected"
 }
 

@@ -137,6 +137,22 @@
   "word": "mot",
   "words": "mots",
   "character": "caractère",
-  "charactersCount": "caractères"
+  "charactersCount": "caractères",
+  "deleteDraft": "Supprimer le brouillon",
+  "confirmDeleteDraft": "Supprimer ce brouillon ?",
+  "deleteDraftDescription": "Cette action ne peut pas être annulée. Le brouillon et tous ses messages seront définitivement supprimés.",
+  "draftDeleted": "Brouillon supprimé",
+  "draftDeleteError": "Échec de la suppression du brouillon",
+  "undoDelete": "Annuler",
+  "deleteSelectedDrafts": "Supprimer la sélection",
+  "draftsDeleted": "{{count}} brouillons supprimés",
+  "selectAllDrafts": "Tout sélectionner",
+  "selectMultipleDrafts": "Sélectionner plusieurs",
+  "draftPreview": "Aperçu",
+  "messageCount": "{{count}} messages",
+  "lastUpdated": "Dernière mise à jour",
+  "selected": "sélectionné",
+  "selectedDraft": "{{count}} brouillon sélectionné",
+  "selectedDrafts": "{{count}} brouillons sélectionnés"
 }
 
