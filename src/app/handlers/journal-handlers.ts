@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, Timestamp, type Firestore, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, serverTimestamp, Timestamp, type Firestore, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
@@ -228,14 +228,22 @@ interface CreateEntryLinkParams {
 
 export function createEntryLink(params: CreateEntryLinkParams): Promise<void> {
   const { fromEntryId, toEntryId, firestore, user } = params;
-  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  const batch = writeBatch(firestore);
   
-  const data: Record<string, unknown> = {
+  const fromEntryRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  const toEntryRef = doc(firestore, `users/${user.uid}/entries/${toEntryId}`);
+  
+  batch.update(fromEntryRef, {
     linkedEntryIds: arrayUnion(toEntryId),
     updatedAt: serverTimestamp(),
-  };
+  });
+  
+  batch.update(toEntryRef, {
+    linkedEntryIds: arrayUnion(fromEntryId),
+    updatedAt: serverTimestamp(),
+  });
 
-  return updateDocumentNonBlocking(entryDocRef, data);
+  return batch.commit();
 }
 
 interface DeleteEntryLinkParams {
@@ -247,13 +255,21 @@ interface DeleteEntryLinkParams {
 
 export function deleteEntryLink(params: DeleteEntryLinkParams): Promise<void> {
   const { fromEntryId, toEntryId, firestore, user } = params;
-  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  const batch = writeBatch(firestore);
   
-  const data: Record<string, unknown> = {
+  const fromEntryRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  const toEntryRef = doc(firestore, `users/${user.uid}/entries/${toEntryId}`);
+  
+  batch.update(fromEntryRef, {
     linkedEntryIds: arrayRemove(toEntryId),
     updatedAt: serverTimestamp(),
-  };
+  });
+  
+  batch.update(toEntryRef, {
+    linkedEntryIds: arrayRemove(fromEntryId),
+    updatedAt: serverTimestamp(),
+  });
 
-  return updateDocumentNonBlocking(entryDocRef, data);
+  return batch.commit();
 }
 

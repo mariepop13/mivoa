@@ -1,5 +1,4 @@
 import { parse } from 'date-fns';
-import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 export function parseEntryDate(dateString: string): Date {
   try {
@@ -18,16 +17,29 @@ export function getEntryPreview(content: string, maxLength = 100): string {
 export function validateLink(
   fromEntryId: string,
   toEntryId: string,
-  linkedEntryIds?: string[]
+  fromLinkedEntryIds?: string[],
+  toLinkedEntryIds?: string[]
 ): { valid: boolean; error?: string } {
   if (fromEntryId === toEntryId) {
     return { valid: false, error: 'cannotLinkToSelf' };
   }
 
-  if (linkedEntryIds?.includes(toEntryId)) {
+  if (fromLinkedEntryIds?.includes(toEntryId) || toLinkedEntryIds?.includes(fromEntryId)) {
     return { valid: false, error: 'entryAlreadyLinked' };
   }
 
   return { valid: true };
+}
+
+export function areEntriesLinked(
+  entryId1: string,
+  entryId2: string,
+  entry1LinkedIds?: string[],
+  entry2LinkedIds?: string[]
+): boolean {
+  return (
+    entry1LinkedIds?.includes(entryId2) === true ||
+    entry2LinkedIds?.includes(entryId1) === true
+  );
 }
 
