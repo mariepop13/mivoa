@@ -1,0 +1,31 @@
+'use client';
+
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface MessageEditButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function MessageEditButton({
+  onClick,
+  disabled = false,
+  className,
+}: MessageEditButtonProps): React.JSX.Element {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn('h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity', className)}
+      aria-label="Edit message"
+    >
+      <Pencil className="h-4 w-4" />
+    </Button>
+  );
+}
+
