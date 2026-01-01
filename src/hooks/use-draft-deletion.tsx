@@ -81,7 +81,7 @@ function createUndoToastAction(
   const timeRemaining = calculateUndoTimeRemaining(undoableDraft);
   if (!timeRemaining || timeRemaining <= 0) return undefined;
   
-  const actionElement = (
+  return (
     <ToastAction
       onClick={async () => {
         await undoDelete();
@@ -92,8 +92,6 @@ function createUndoToastAction(
       {t('undoDelete')} ({timeRemaining}s)
     </ToastAction>
   );
-  
-  return actionElement as unknown as ToastActionElement;
 }
 
 interface UseDraftDeletionParams {
@@ -262,16 +260,27 @@ export function useDraftDeletion({
     setIsDeleting(true);
 
     if (draftsData) {
-      draftsData.forEach((draft, index) => {
-        if (draftIds[index]) {
+      const draftsMap = new Map<string, JournalEntryData & { id: string }>();
+      draftsData.forEach(draft => {
+        draftsMap.set(draft.id, draft);
+      });
+
+      let savedCount = 0;
+      draftIds.forEach(draftId => {
+        const draft = draftsMap.get(draftId);
+        if (draft) {
           saveDeletedDraft({
-            draftId: draftIds[index],
+            draftId,
             draftData: draft,
             timestamp: Date.now(),
           });
+          savedCount++;
         }
       });
-      setCanUndo(true);
+
+      if (savedCount > 0) {
+        setCanUndo(true);
+      }
     }
 
     if (onOptimisticUpdate) {

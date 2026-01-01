@@ -140,7 +140,7 @@
   "charactersCount": "characters",
   "deleteDraft": "Delete Draft",
   "confirmDeleteDraft": "Delete this draft?",
-  "deleteDraftDescription": "This action cannot be undone. The draft and all its messages will be permanently deleted.",
+  "deleteDraftDescription": "This action can be undone within 30 seconds. The draft and all its messages will be permanently deleted after this period.",
   "draftDeleted": "Draft deleted",
   "draftDeleteError": "Failed to delete draft",
   "undoDelete": "Undo",

@@ -24,7 +24,7 @@ interface JournalSidebarProps {
   formatEntryTime: (entry: JournalEntryData & { id: string }) => string;
   onTemplateSelect?: (template: EntryTemplate) => void;
   onDateChange: (date: Date) => void;
-  handleDeleteDraft?: (draftId: string) => Promise<void>;
+  handleDeleteDraft: (draftId: string) => Promise<void>;
 }
 
 
@@ -51,7 +51,7 @@ export function JournalSidebar({
   const drafts = useMemo(() => entries?.filter(e => e.isDraft) || [], [entries]);
 
   const { deleteDraft, deleteDrafts, isDeleting } = useDraftDeletion({
-    handleDeleteDraft: handleDeleteDraft || (async () => {}),
+    handleDeleteDraft,
     selectedDate,
     onOptimisticUpdate: (draftId) => {
       setDeletedDraftIds(prev => new Set(prev).add(draftId));
@@ -119,7 +119,7 @@ export function JournalSidebar({
           t={t}
         />
 
-        {drafts.length > 0 && handleDeleteDraft && (
+        {drafts.length > 0 && (
           <DraftBulkActions
             drafts={drafts}
             onDeleteSelected={handleBulkDelete}
@@ -144,7 +144,7 @@ export function JournalSidebar({
             onEntrySelect={onEntrySelect}
             formatEntryTime={formatEntryTime}
             t={t}
-            onDeleteDraft={handleDeleteDraft ? handleDeleteDraftClick : undefined}
+            onDeleteDraft={handleDeleteDraftClick}
             isDeleting={isDeleting}
             deletedDraftIds={deletedDraftIds}
             isSelectionMode={isSelectionMode}

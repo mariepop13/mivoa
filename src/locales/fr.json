@@ -140,7 +140,7 @@
   "charactersCount": "caractères",
   "deleteDraft": "Supprimer le brouillon",
   "confirmDeleteDraft": "Supprimer ce brouillon ?",
-  "deleteDraftDescription": "Cette action ne peut pas être annulée. Le brouillon et tous ses messages seront définitivement supprimés.",
+  "deleteDraftDescription": "Cette action peut être annulée dans les 30 secondes qui suivent. Le brouillon et tous ses messages seront définitivement supprimés après ce délai.",
   "draftDeleted": "Brouillon supprimé",
   "draftDeleteError": "Échec de la suppression du brouillon",
   "undoDelete": "Annuler",
