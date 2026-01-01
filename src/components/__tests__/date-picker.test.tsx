@@ -89,7 +89,7 @@ describe('DatePicker', () => {
 
     expect(format).toHaveBeenCalledWith(
       mockDate,
-      'EEEE, MMMM d, yyyy',
+      'EEEE, do MMMM yyyy',
       { locale: fr }
     );
     expect(screen.getByText('lundi, 15 janvier 2024')).toBeInTheDocument();

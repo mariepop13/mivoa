@@ -33,21 +33,21 @@ const renderWithContext = (props = {}) => render(
   );
 
 const createMockUseChatConversationReturn = (overrides = {}) => ({
-  messages: [],
-  isTyping: false,
-  error: null,
-  sendMessage: vi.fn().mockResolvedValue(undefined),
-  resetConversation: vi.fn().mockResolvedValue(undefined),
-  loadConversation: vi.fn(),
+      messages: [],
+      isTyping: false,
+      error: null,
+      sendMessage: vi.fn().mockResolvedValue(undefined),
+      resetConversation: vi.fn().mockResolvedValue(undefined),
+      loadConversation: vi.fn(),
   editMessage: vi.fn().mockResolvedValue(undefined),
   regenerateFrom: vi.fn().mockResolvedValue(undefined),
   deleteMessage: vi.fn().mockResolvedValue(undefined),
   undoEdit: vi.fn().mockResolvedValue(undefined),
   isEditing: false,
   isRegenerating: false,
-  draftId: null,
+      draftId: null,
   ...overrides,
-});
+    });
 
 describe('JournalChat', () => {
   beforeEach(() => {
