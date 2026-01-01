@@ -35,7 +35,6 @@ interface SectionConfig {
   hasData: boolean;
   icon: LucideIcon;
   translationKey: string;
-  createBadge: (index: number) => React.ReactNode;
 }
 
 interface BuildSectionParams {
@@ -62,58 +61,70 @@ function buildDetectionSection(
   );
 }
 
-function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moods, moodEmojis, className }: EntryDetectionsProps): React.JSX.Element | null {
-  const { t } = useTranslation();
-  const hasPlaces = Boolean(places && places.length > 0);
-  const hasCharacters = Boolean(characters && characters.length > 0);
-  const hasThemes = Boolean(themes && themes.length > 0);
-  const hasMoods = Boolean(moods && moods.length > 0);
+function createBadgeForSection(
+  key: SectionKey,
+  index: number,
+  props: EntryDetectionsProps
+): React.ReactNode {
+  const colorClass = RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH];
+  
+  switch (key) {
+    case 'moods':
+      return <MoodsBadge moods={props.moods} moodEmojis={props.moodEmojis} colorClass={colorClass} />;
+    case 'themes':
+      return <ThemesBadge themes={props.themes} themeEmojis={props.themeEmojis} colorClass={colorClass} />;
+    case 'characters':
+      return <CharactersBadge characters={props.characters} colorClass={colorClass} />;
+    case 'places':
+      return <PlacesBadge places={props.places} colorClass={colorClass} />;
+    default:
+      return null;
+  }
+}
 
-  if (!hasPlaces && !hasCharacters && !hasThemes && !hasMoods) {
+function hasDataForSection(key: SectionKey, props: EntryDetectionsProps): boolean {
+  switch (key) {
+    case 'moods':
+      return Boolean(props.moods && props.moods.length > 0);
+    case 'themes':
+      return Boolean(props.themes && props.themes.length > 0);
+    case 'characters':
+      return Boolean(props.characters && props.characters.length > 0);
+    case 'places':
+      return Boolean(props.places && props.places.length > 0);
+    default:
+      return false;
+  }
+}
+
+function EntryDetectionsComponent({
+  places,
+  characters,
+  themes,
+  themeEmojis,
+  moods,
+  moodEmojis,
+  className,
+}: EntryDetectionsProps): React.JSX.Element | null {
+  const { t } = useTranslation();
+  const props = { places, characters, themes, themeEmojis, moods, moodEmojis };
+
+  const sectionConfigs: SectionConfig[] = [
+    { key: 'moods', hasData: hasDataForSection('moods', props), icon: Smile, translationKey: 'moods' },
+    { key: 'themes', hasData: hasDataForSection('themes', props), icon: Tag, translationKey: 'themes' },
+    { key: 'characters', hasData: hasDataForSection('characters', props), icon: Users, translationKey: 'characters' },
+    { key: 'places', hasData: hasDataForSection('places', props), icon: MapPin, translationKey: 'places' },
+  ];
+
+  const sectionsWithData = sectionConfigs.filter(config => config.hasData);
+  
+  if (sectionsWithData.length === 0) {
     return null;
   }
 
-  const sections: React.ReactNode[] = [];
-  let sectionIndex = 0;
-
-  const sectionConfigs: SectionConfig[] = [
-    {
-      key: 'moods',
-      hasData: hasMoods,
-      icon: Smile,
-      translationKey: 'moods',
-      createBadge: (index: number) => <MoodsBadge moods={moods} moodEmojis={moodEmojis} colorClass={RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH]} />,
-    },
-    {
-      key: 'themes',
-      hasData: hasThemes,
-      icon: Tag,
-      translationKey: 'themes',
-      createBadge: (index: number) => <ThemesBadge themes={themes} themeEmojis={themeEmojis} colorClass={RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH]} />,
-    },
-    {
-      key: 'characters',
-      hasData: hasCharacters,
-      icon: Users,
-      translationKey: 'characters',
-      createBadge: (index: number) => <CharactersBadge characters={characters} colorClass={RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH]} />,
-    },
-    {
-      key: 'places',
-      hasData: hasPlaces,
-      icon: MapPin,
-      translationKey: 'places',
-      createBadge: (index: number) => <PlacesBadge places={places} colorClass={RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH]} />,
-    },
-  ];
-
-  for (const config of sectionConfigs) {
-    if (!config.hasData) {
-      continue;
-    }
-
-    const badge = config.createBadge(sectionIndex);
-    const section = buildDetectionSection(
+  const sections = sectionsWithData.map((config, index) => {
+    const badge = createBadgeForSection(config.key, index, props);
+    return buildDetectionSection(
       {
         key: config.key,
         icon: config.icon,
@@ -122,9 +133,7 @@ function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moo
       },
       t
     );
-    sections.push(section);
-    sectionIndex++;
-  }
+  });
 
   const containerClassName = cn(
     'px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-muted/20 space-y-3',
