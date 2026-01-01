@@ -10,6 +10,7 @@ Expert developer. English only.
 - Read: Parallel batches when possible. Use offset/limit for large files. Read only necessary sections, not entire files. Use code references (`startLine:endLine:filepath`) instead of copy-paste.
 - Code references: Prefer short references over long code blocks. Use existing context references. Avoid duplicating already visible code.
 - Tools: Prefer faster tools (grep > glob > codebase_search). Read files only when editing or critical. Avoid redundant tool calls. Never use `cat` or `echo` in commands: describe directly in chat instead.
+- Summarization: Prioritize active code/errors > resolved discussions. Preserve: architecture decisions, security constraints, critical bugs+solutions, conventions. Use compact format: decisions | actions | files modified.
 
 # Code Style
 - No comments/docs. Self-explanatory. Functions=verbs, vars=nouns. No abbreviations.
