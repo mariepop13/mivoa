@@ -14,6 +14,7 @@ import { useJournalAuth } from '@/hooks/use-journal-auth';
 import { useJournalHandlers } from '@/hooks/use-journal-handlers';
 import { useTemplateConversation } from '@/hooks/use-template-conversation';
 import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
+import { parseEntryDate } from '@/utils/entry-linking-utils';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
@@ -79,17 +80,24 @@ function buildMainContentProps({
   isSidebarOpen,
   setIsSidebarOpen,
   handlers,
+  onDateChange: _onDateChange,
+  handleNavigateToEntry,
+  handleLinksUpdated,
 }: {
   selectedDate: Date;
   journalEntries: ReturnType<typeof useJournalEntries>;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   handlers: ReturnType<typeof useJournalHandlers>;
+  onDateChange: (date: Date) => void;
+  handleNavigateToEntry: (entry: JournalEntryData & { id: string }) => void;
+  handleLinksUpdated: () => void;
 }) {
   return {
     selectedDate,
     selectedEntryId: journalEntries.selectedEntryId,
     selectedEntry: journalEntries.selectedEntry,
+    selectedEntryData: journalEntries.selectedEntryData,
     entries: journalEntries.entries,
     content: journalEntries.content,
     title: journalEntries.title,
@@ -110,6 +118,9 @@ function buildMainContentProps({
     handleDeleteDraft: journalEntries.handleDeleteDraft,
     conversationEntryForDate: journalEntries.conversationEntryForDate,
     onChangeDate: journalEntries.changeEntryDate,
+    onNavigateToEntry: handleNavigateToEntry,
+    setSelectedEntryId: journalEntries.setSelectedEntryId,
+    onLinksUpdated: handleLinksUpdated,
   };
 }
 
@@ -159,6 +170,22 @@ function JournalApp(): React.JSX.Element {
     [createConversationFromPrompt]
   );
 
+  const handleNavigateToEntry = useCallback((entry: JournalEntryData & { id: string }) => {
+    const entryDate = parseEntryDate(entry.date);
+    setSelectedDate(entryDate);
+    setSelectedEntryId(entry.id);
+  }, [setSelectedEntryId]);
+
+  const handleLinksUpdated = useCallback(() => {
+    if (journalEntries.selectedEntryId) {
+      const currentEntryId = journalEntries.selectedEntryId;
+      journalEntries.setSelectedEntryId(null);
+      setTimeout(() => {
+        journalEntries.setSelectedEntryId(currentEntryId);
+      }, 0);
+    }
+  }, [journalEntries]);
+
   if (authState.authError) {
     return <JournalAuthError error={authState.authError} />;
   }
@@ -183,6 +210,9 @@ function JournalApp(): React.JSX.Element {
     isSidebarOpen,
     setIsSidebarOpen,
     handlers,
+    onDateChange: setSelectedDate,
+    handleNavigateToEntry,
+    handleLinksUpdated,
   });
 
   return (

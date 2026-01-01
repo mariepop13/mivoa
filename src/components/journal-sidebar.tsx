@@ -27,7 +27,6 @@ interface JournalSidebarProps {
   handleDeleteDraft: (draftId: string) => Promise<void>;
 }
 
-
 export function JournalSidebar({
   selectedDate,
   entries,

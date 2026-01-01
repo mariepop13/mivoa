@@ -15,21 +15,11 @@ interface UseViewModeResult {
   shouldShowChat: boolean;
 }
 
-function calculateInitialViewMode(
-  selectedEntryId: string | null,
-  isConversationEntrySelected: boolean
-): 'chat' | 'summary' {
+function calculateViewMode(selectedEntryId: string | null): 'chat' | 'summary' {
   if (!selectedEntryId) {
     return 'chat';
   }
-  return isConversationEntrySelected ? 'summary' : 'chat';
-}
-
-function calculateViewModeForEntry(
-  selectedEntryId: string | null,
-  isConversationEntrySelected: boolean
-): 'chat' | 'summary' {
-  return isConversationEntrySelected ? 'summary' : 'chat';
+  return 'summary';
 }
 
 export function useViewMode({ selectedEntryId, selectedEntry }: UseViewModeParams): UseViewModeResult {
@@ -38,13 +28,13 @@ export function useViewMode({ selectedEntryId, selectedEntry }: UseViewModeParam
   const shouldShowTabs = isConversationEntrySelected && !isDraftSelected;
 
   const [viewMode, setViewMode] = useState<'chat' | 'summary'>(() =>
-    calculateInitialViewMode(selectedEntryId, isConversationEntrySelected)
+    calculateViewMode(selectedEntryId)
   );
   const previousEntryIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (selectedEntryId && previousEntryIdRef.current !== selectedEntryId) {
-      const newViewMode = calculateViewModeForEntry(selectedEntryId, isConversationEntrySelected);
+      const newViewMode = calculateViewMode(selectedEntryId);
       startTransition(() => {
         setViewMode(newViewMode);
       });
@@ -55,7 +45,7 @@ export function useViewMode({ selectedEntryId, selectedEntry }: UseViewModeParam
       });
       previousEntryIdRef.current = null;
     }
-  }, [isConversationEntrySelected, selectedEntryId]);
+  }, [selectedEntryId]);
 
   const shouldShowChat = !selectedEntryId || isDraftSelected || (isConversationEntrySelected && viewMode === 'chat');
 
