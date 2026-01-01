@@ -32,6 +32,7 @@ interface JournalMainContentProps {
   selectedDate: Date;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  selectedEntryData: JournalEntryData | null;
   entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
@@ -152,6 +153,7 @@ function renderEntryContent({
   saveError,
   selectedEntryId,
   selectedEntry,
+  selectedEntryData,
   recentEntries,
   onNavigateToEntry,
   onLinksUpdated,
@@ -168,6 +170,7 @@ function renderEntryContent({
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  selectedEntryData: JournalEntryData | null;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
@@ -194,7 +197,7 @@ function renderEntryContent({
       moods={selectedEntry?.moods}
       moodEmojis={selectedEntry?.moodEmojis}
       entryId={selectedEntryId}
-      linkedEntryIds={selectedEntry?.linkedEntryIds}
+      linkedEntryIds={selectedEntryData?.linkedEntryIds || selectedEntry?.linkedEntryIds}
       onNavigateToEntry={onNavigateToEntry}
       onLinksUpdated={onLinksUpdated}
     />
@@ -221,6 +224,7 @@ function renderContent({
   saveError,
   selectedEntryId,
   selectedEntry,
+  selectedEntryData,
   recentEntries,
   onNavigateToEntry,
   onLinksUpdated,
@@ -244,6 +248,7 @@ function renderContent({
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  selectedEntryData: JournalEntryData | null;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
@@ -272,6 +277,7 @@ function renderContent({
     saveError,
     selectedEntryId,
     selectedEntry,
+    selectedEntryData,
     recentEntries,
     onNavigateToEntry,
     onLinksUpdated,
@@ -293,6 +299,7 @@ export function JournalMainContent({
   onDelete,
   onSummarize,
   selectedEntry,
+  selectedEntryData,
   entries,
   getEntryTitle,
   onSidebarToggle,
@@ -302,7 +309,7 @@ export function JournalMainContent({
   handleDeleteDraft,
   onChangeDate,
   onNavigateToEntry,
-  setSelectedEntryId,
+  setSelectedEntryId: _setSelectedEntryId,
   onLinksUpdated,
 }: JournalMainContentProps): React.JSX.Element {
   const {
@@ -369,6 +376,7 @@ export function JournalMainContent({
                 saveError,
                 selectedEntryId,
                 selectedEntry,
+                selectedEntryData,
                 recentEntries,
                 onNavigateToEntry,
                 onLinksUpdated,

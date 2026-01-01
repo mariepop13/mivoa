@@ -22,13 +22,15 @@ interface EntryLinksListProps {
   entryId: string | null;
   linkedEntryIds?: string[];
   onNavigateToEntry: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
 }
 
 export function EntryLinksList({
   entryId,
   linkedEntryIds = [],
   onNavigateToEntry,
-}: EntryLinksListProps): React.JSX.Element {
+  onLinksUpdated,
+}: EntryLinksListProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { getLinkedEntries, unlinkEntry } = useEntryLinking();
   const [linkedEntries, setLinkedEntries] = useState<Array<JournalEntryData & { id: string }>>([]);
@@ -43,6 +45,7 @@ export function EntryLinksList({
   useEffect(() => {
     if (!entryId || linkedEntryIds.length === 0) {
       setLinkedEntries([]);
+      setIsLoading(false);
       return;
     }
 
@@ -81,18 +84,22 @@ export function EntryLinksList({
   const handleUnlinkConfirm = async () => {
     if (!entryId || !entryToUnlink) return;
 
+    const previousEntries = [...linkedEntries];
+    setLinkedEntries((prev) => prev.filter((entry) => entry.id !== entryToUnlink));
+
     try {
       await unlinkEntry(entryId, entryToUnlink);
-      setLinkedEntries((prev) => prev.filter((entry) => entry.id !== entryToUnlink));
+      onLinksUpdated?.();
     } catch (error) {
       console.error('Failed to unlink entry:', error);
+      setLinkedEntries(previousEntries);
     } finally {
       setUnlinkDialogOpen(false);
       setEntryToUnlink(null);
     }
   };
 
-  if (linkedEntryIds.length === 0) {
+  if (!entryId || linkedEntryIds.length === 0) {
     return null;
   }
 
@@ -137,10 +144,10 @@ export function EntryLinksList({
                 <button
                   type="button"
                   onClick={(e) => handleUnlinkClick(e, entry.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-destructive/10 rounded text-destructive"
+                  className="opacity-70 hover:opacity-100 transition-opacity p-1.5 hover:bg-destructive/20 rounded text-foreground/80 hover:text-destructive border border-border/50 hover:border-destructive/40"
                   aria-label={t('unlinkEntry')}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 stroke-[2.5]" />
                 </button>
               </div>
             </div>

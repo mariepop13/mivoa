@@ -17,7 +17,7 @@ interface UseViewModeResult {
 
 function calculateInitialViewMode(
   selectedEntryId: string | null,
-  isConversationEntrySelected: boolean
+  _isConversationEntrySelected: boolean
 ): 'chat' | 'summary' {
   if (!selectedEntryId) {
     return 'chat';
@@ -27,7 +27,7 @@ function calculateInitialViewMode(
 
 function calculateViewModeForEntry(
   selectedEntryId: string | null,
-  isConversationEntrySelected: boolean
+  _isConversationEntrySelected: boolean
 ): 'chat' | 'summary' {
   if (!selectedEntryId) {
     return 'chat';

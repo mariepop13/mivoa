@@ -16,7 +16,7 @@ export function EntryLinkButton({
   entryId,
   linkedEntryIds = [],
   onLinksUpdated,
-}: EntryLinkButtonProps): React.JSX.Element {
+}: EntryLinkButtonProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { linkEntry } = useEntryLinking();
   const [dialogOpen, setDialogOpen] = useState(false);

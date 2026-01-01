@@ -87,6 +87,7 @@ function JournalEntryComponent({
           entryId={entryId}
           linkedEntryIds={linkedEntryIds}
           onNavigateToEntry={onNavigateToEntry}
+          onLinksUpdated={onLinksUpdated}
         />
       )}
       <div className="mt-5 sm:mt-6 lg:mt-8 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-5 lg:pb-6 pt-4 sm:pt-5 lg:pt-6 border-t 

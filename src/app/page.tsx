@@ -79,7 +79,7 @@ function buildMainContentProps({
   isSidebarOpen,
   setIsSidebarOpen,
   handlers,
-  onDateChange,
+  onDateChange: _onDateChange,
   handleNavigateToEntry,
   handleLinksUpdated,
 }: {
@@ -96,6 +96,7 @@ function buildMainContentProps({
     selectedDate,
     selectedEntryId: journalEntries.selectedEntryId,
     selectedEntry: journalEntries.selectedEntry,
+    selectedEntryData: journalEntries.selectedEntryData,
     entries: journalEntries.entries,
     content: journalEntries.content,
     title: journalEntries.title,
@@ -176,10 +177,11 @@ function JournalApp(): React.JSX.Element {
 
   const handleLinksUpdated = useCallback(() => {
     if (journalEntries.selectedEntryId) {
-      const selectedEntry = journalEntries.entries?.find(e => e.id === journalEntries.selectedEntryId);
-      if (selectedEntry) {
-        journalEntries.setSelectedEntryId(journalEntries.selectedEntryId);
-      }
+      const currentEntryId = journalEntries.selectedEntryId;
+      journalEntries.setSelectedEntryId(null);
+      setTimeout(() => {
+        journalEntries.setSelectedEntryId(currentEntryId);
+      }, 0);
     }
   }, [journalEntries]);
 
