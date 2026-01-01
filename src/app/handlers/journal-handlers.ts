@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, Timestamp, type Firestore } from 'firebase/firestore';
+import { doc, serverTimestamp, Timestamp, type Firestore, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 
@@ -219,4 +219,41 @@ export function changeEntryDate(params: ChangeEntryDateParams): Promise<void> {
   return updateDocumentNonBlocking(entryDocRef, data);
 }
 
+interface CreateEntryLinkParams {
+  fromEntryId: string;
+  toEntryId: string;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function createEntryLink(params: CreateEntryLinkParams): Promise<void> {
+  const { fromEntryId, toEntryId, firestore, user } = params;
+  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  
+  const data: Record<string, unknown> = {
+    linkedEntryIds: arrayUnion(toEntryId),
+    updatedAt: serverTimestamp(),
+  };
+
+  return updateDocumentNonBlocking(entryDocRef, data);
+}
+
+interface DeleteEntryLinkParams {
+  fromEntryId: string;
+  toEntryId: string;
+  firestore: Firestore;
+  user: { uid: string };
+}
+
+export function deleteEntryLink(params: DeleteEntryLinkParams): Promise<void> {
+  const { fromEntryId, toEntryId, firestore, user } = params;
+  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
+  
+  const data: Record<string, unknown> = {
+    linkedEntryIds: arrayRemove(toEntryId),
+    updatedAt: serverTimestamp(),
+  };
+
+  return updateDocumentNonBlocking(entryDocRef, data);
+}
 
