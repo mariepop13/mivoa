@@ -134,9 +134,11 @@ export function EntryLinksList({
                   <div className="font-medium text-foreground mb-1">
                     {entry.title || format(parseEntryDate(entry.date), 'PPP')}
                   </div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {format(parseEntryDate(entry.date), 'PPP')}
-                  </div>
+                  {entry.title && (
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {format(parseEntryDate(entry.date), 'PPP')}
+                    </div>
+                  )}
                   <div className="text-sm text-muted-foreground">
                     {getEntryPreview(entry.content)}
                   </div>

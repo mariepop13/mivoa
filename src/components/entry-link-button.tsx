@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useEntryLinking } from '@/hooks/use-entry-linking';
+import { useToast } from '@/hooks/use-toast';
 import { EntryLinkDialog } from './entry-link-dialog';
 
 interface EntryLinkButtonProps {
@@ -19,6 +20,7 @@ export function EntryLinkButton({
 }: EntryLinkButtonProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { linkEntry } = useEntryLinking();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSelectEntries = async (selectedEntryIds: string[]) => {
@@ -31,6 +33,11 @@ export function EntryLinkButton({
       onLinksUpdated?.();
     } catch (error) {
       console.error('Failed to link entries:', error);
+      toast({
+        variant: 'destructive',
+        title: t('linkEntryFailed') || 'Failed to link entries',
+        description: error instanceof Error ? error.message : undefined,
+      });
     }
   };
 
@@ -43,6 +50,7 @@ export function EntryLinkButton({
       <button
         type="button"
         onClick={() => setDialogOpen(true)}
+        aria-label={t('linkEntry')}
         className="flex-1 sm:flex-none px-4 py-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium active:scale-[0.98] border border-transparent hover:border-border flex items-center justify-center gap-2"
       >
         <Link2 className="h-4 w-4" />

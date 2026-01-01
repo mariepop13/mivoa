@@ -89,7 +89,7 @@ function buildMainContentProps({
   setIsSidebarOpen: (open: boolean) => void;
   handlers: ReturnType<typeof useJournalHandlers>;
   onDateChange: (date: Date) => void;
-  handleNavigateToEntry: (entry: JournalEntryData & { id: string }) => Promise<void>;
+  handleNavigateToEntry: (entry: JournalEntryData & { id: string }) => void;
   handleLinksUpdated: () => void;
 }) {
   return {
@@ -169,11 +169,11 @@ function JournalApp(): React.JSX.Element {
     [createConversationFromPrompt]
   );
 
-  const handleNavigateToEntry = useCallback(async (entry: JournalEntryData & { id: string }) => {
+  const handleNavigateToEntry = useCallback((entry: JournalEntryData & { id: string }) => {
     const entryDate = parseEntryDate(entry.date);
-    await setSelectedDate(entryDate);
-    journalEntries.setSelectedEntryId(entry.id);
-  }, [setSelectedDate, journalEntries]);
+    setSelectedDate(entryDate);
+    setSelectedEntryId(entry.id);
+  }, [setSelectedEntryId]);
 
   const handleLinksUpdated = useCallback(() => {
     if (journalEntries.selectedEntryId) {

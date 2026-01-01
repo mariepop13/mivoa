@@ -28,7 +28,7 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 }
 
 function createCacheKey(linkedEntryIds: string[]): string {
-  return linkedEntryIds.sort().join(',');
+  return [...linkedEntryIds].sort().join(',');
 }
 
 interface EntryData {

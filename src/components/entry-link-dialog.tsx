@@ -127,7 +127,11 @@ export function EntryLinkDialog({
         </DialogHeader>
 
         <div className="py-4">
+          <label htmlFor="entry-search-input" className="sr-only">
+            {t('searchEntries')}
+          </label>
           <input
+            id="entry-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

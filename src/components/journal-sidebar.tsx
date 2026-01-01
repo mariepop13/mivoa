@@ -153,8 +153,11 @@ function EntriesList({
               )}
             </div>
             {entry.linkedEntryIds && entry.linkedEntryIds.length > 0 && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <div 
+                className="flex items-center gap-1 flex-shrink-0"
+                aria-label={`${entry.linkedEntryIds.length} ${entry.linkedEntryIds.length === 1 ? t('linkedEntry') : t('linkedEntries')}`}
+              >
+                <Link2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 <span className="text-xs text-muted-foreground">{entry.linkedEntryIds.length}</span>
               </div>
             )}

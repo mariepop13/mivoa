@@ -139,6 +139,8 @@
   "character": "caractère",
   "charactersCount": "caractères",
   "linkEntry": "Lier une entrée",
+  "linkEntryFailed": "Échec de la liaison des entrées",
+  "linkedEntry": "entrée liée",
   "linkedEntries": "Entrées liées",
   "selectEntryToLink": "Sélectionner une entrée à lier",
   "searchEntries": "Rechercher des entrées...",

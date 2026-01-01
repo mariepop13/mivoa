@@ -139,6 +139,8 @@
   "character": "character",
   "charactersCount": "characters",
   "linkEntry": "Link Entry",
+  "linkEntryFailed": "Failed to link entries",
+  "linkedEntry": "linked entry",
   "linkedEntries": "Linked Entries",
   "selectEntryToLink": "Select Entry to Link",
   "searchEntries": "Search entries...",
