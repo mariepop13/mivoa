@@ -4,6 +4,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date | Timestamp;
+  editedAt?: Date | Timestamp;
 }
 
 export interface ConversationState {
