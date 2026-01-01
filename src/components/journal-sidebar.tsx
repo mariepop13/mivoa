@@ -25,6 +25,42 @@ interface JournalSidebarProps {
   onDateChange: (date: Date) => void;
 }
 
+function renderDateAndCloseButton(
+  selectedDate: Date,
+  onDateChange: (date: Date) => void,
+  onClose: () => void,
+  t: (key: string) => string
+): React.JSX.Element {
+  return (
+    <div className="flex items-center justify-end gap-2 w-full">
+      <div className="flex justify-end min-w-0 [&_button]:!w-auto [&_button]:!justify-end [&_button]:!text-right">
+        <DatePicker value={selectedDate} onChange={onDateChange} />
+      </div>
+      <button
+        onClick={onClose}
+        aria-label={t('close')}
+        className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0"
+      >
+        <span className="text-2xl">×</span>
+      </button>
+    </div>
+  );
+}
+
+function renderEntriesCount(
+  entries: (JournalEntryData & { id: string })[] | null,
+  t: (key: string) => string
+): React.JSX.Element | null {
+  if (!entries || entries.length === 0) {
+    return null;
+  }
+  return (
+    <p className="text-xs sm:text-sm text-muted-foreground">
+      {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
+    </p>
+  );
+}
+
 function SidebarHeader({
   selectedDate,
   entries,
@@ -41,29 +77,53 @@ function SidebarHeader({
   return (
     <div className="p-4 sm:p-6 border-b border-border">
       <div className="flex flex-col gap-3 mb-2 items-end">
-        <div className="flex items-center justify-end gap-2 w-full">
-          <div className="flex justify-end min-w-0 [&_button]:!w-auto [&_button]:!justify-end [&_button]:!text-right">
-          <DatePicker value={selectedDate} onChange={onDateChange} />
-        </div>
-          <button
-            onClick={onClose}
-            aria-label={t('close')}
-            className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0"
-          >
-            <span className="text-2xl">×</span>
-          </button>
-        </div>
+        {renderDateAndCloseButton(selectedDate, onDateChange, onClose, t)}
         <div className="flex items-center gap-2 flex-shrink-0">
           <UserMenu />
           <SettingsMenu />
         </div>
       </div>
-      {entries && entries.length > 0 && (
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
-        </p>
-      )}
+      {renderEntriesCount(entries, t)}
     </div>
+  );
+}
+
+function renderNewEntryButton(
+  isSaving: boolean,
+  onNewEntry: () => void,
+  t: (key: string) => string
+): React.JSX.Element {
+  return (
+    <button
+      onClick={onNewEntry}
+      disabled={isSaving}
+      className={cn(
+        'w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg',
+        'hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed',
+        'transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md',
+        'active:scale-[0.98] flex items-center justify-center gap-2'
+      )}
+    >
+      <span>+</span>
+      <span>{t('newEntry')}</span>
+    </button>
+  );
+}
+
+function renderTemplatesButton(
+  isSaving: boolean,
+  setIsTemplatesDialogOpen: (open: boolean) => void,
+  t: (key: string) => string
+): React.JSX.Element {
+  return (
+    <button
+      onClick={() => setIsTemplatesDialogOpen(true)}
+      disabled={isSaving}
+      className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium border border-border flex items-center justify-center gap-2"
+    >
+      <FileText className="h-4 w-4" />
+      <span>{t('templates')}</span>
+    </button>
   );
 }
 
@@ -82,29 +142,8 @@ function SidebarActions({
 }): React.JSX.Element {
   return (
     <div className="p-4 sm:p-6 border-b border-border space-y-2">
-      <button
-        onClick={onNewEntry}
-        disabled={isSaving}
-        className={cn(
-          'w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg',
-          'hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed',
-          'transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md',
-          'active:scale-[0.98] flex items-center justify-center gap-2'
-        )}
-      >
-        <span>+</span>
-        <span>{t('newEntry')}</span>
-      </button>
-      {onTemplateSelect && (
-        <button
-          onClick={() => setIsTemplatesDialogOpen(true)}
-          disabled={isSaving}
-          className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium border border-border flex items-center justify-center gap-2"
-        >
-          <FileText className="h-4 w-4" />
-          <span>{t('templates')}</span>
-        </button>
-      )}
+      {renderNewEntryButton(isSaving, onNewEntry, t)}
+      {onTemplateSelect && renderTemplatesButton(isSaving, setIsTemplatesDialogOpen, t)}
     </div>
   );
 }

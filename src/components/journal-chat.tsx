@@ -3,6 +3,7 @@
 import { useEffect, useRef, memo } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { useChatConversation } from '@/hooks/use-chat-conversation';
+import { useConversationLoader } from '@/hooks/use-conversation-loader';
 import { ChatMessagesList } from '@/components/chat-messages-list';
 import { ChatInputForm } from '@/components/chat-input-form';
 import type { ChatMessage } from '@/ai/types/chat';
@@ -52,7 +53,6 @@ function JournalChatComponent({
     onDraftDelete,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasLoadedDraftRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,22 +62,10 @@ function JournalChatComponent({
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const currentDraftId = initialDraft?.draftId || initialDraft?.entryId || null;
-
-  useEffect(() => {
-    if (initialDraft && hasLoadedDraftRef.current !== currentDraftId) {
-      const loadedMessages: ChatMessage[] = initialDraft.messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
-      }));
-      loadConversation(loadedMessages, initialDraft.draftId || initialDraft.entryId || null);
-      hasLoadedDraftRef.current = currentDraftId;
-    } else if (!initialDraft && hasLoadedDraftRef.current !== null) {
-      loadConversation([], null);
-      hasLoadedDraftRef.current = null;
-    }
-  }, [initialDraft, loadConversation, currentDraftId]);
+  useConversationLoader({
+    initialDraft,
+    loadConversation,
+  });
 
   const handleSummarize = () => {
     if (onSummarize) {

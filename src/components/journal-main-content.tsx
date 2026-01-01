@@ -139,6 +139,22 @@ function renderChatContent({
   );
 }
 
+interface RenderEntryContentParams {
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+}
+
 function renderEntryContent({
   selectedDate,
   content,
@@ -153,21 +169,7 @@ function renderEntryContent({
   selectedEntryId,
   selectedEntry,
   recentEntries,
-}: {
-  selectedDate: Date;
-  content: string;
-  title: string;
-  onContentChange: (content: string) => void;
-  onSave: () => void;
-  onDelete: () => Promise<void>;
-  onChangeDate?: (date: Date) => Promise<void>;
-  isSaving: boolean;
-  lastSavedAt: Date | null;
-  saveError: string | null;
-  selectedEntryId: string | null;
-  selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
-}): React.JSX.Element {
+}: RenderEntryContentParams): React.JSX.Element {
   return (
     <JournalEntry
       date={selectedDate}
@@ -193,6 +195,30 @@ function renderEntryContent({
   );
 }
 
+interface RenderContentParams {
+  shouldShowChat: boolean;
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  setViewMode: (mode: 'chat' | 'summary') => void;
+}
+
 function renderContent({
   shouldShowChat,
   onSummarize,
@@ -215,29 +241,7 @@ function renderContent({
   selectedEntry,
   recentEntries,
   setViewMode,
-}: {
-  shouldShowChat: boolean;
-  onSummarize: JournalMainContentProps['onSummarize'];
-  isGeneratingSummary: boolean;
-  dateKey: string;
-  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
-  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
-  initialConversation: InitialConversation | null;
-  selectedDate: Date;
-  content: string;
-  title: string;
-  onContentChange: (content: string) => void;
-  onSave: () => void;
-  onDelete: () => Promise<void>;
-  onChangeDate?: (date: Date) => Promise<void>;
-  isSaving: boolean;
-  lastSavedAt: Date | null;
-  saveError: string | null;
-  selectedEntryId: string | null;
-  selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
-  setViewMode: (mode: 'chat' | 'summary') => void;
-}): React.JSX.Element {
+}: RenderContentParams): React.JSX.Element {
   if (shouldShowChat) {
     return renderChatContent({
       onSummarize,
