@@ -115,11 +115,6 @@ export function MessageEditDialog({
                   {t('messageTooShort', 'Message is very short')}
                 </span>
               )}
-              {characterCount > MAX_MESSAGE_LENGTH && (
-                <span className="text-destructive text-xs">
-                  {t('messageTooLong', 'Message is too long')}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -129,7 +124,7 @@ export function MessageEditDialog({
             onClick={() => {
               setContent(initialContent);
             }}
-            disabled={content === initialContent}
+            disabled={trimmedContent === initialContent.trim()}
           >
             {t('restoreOriginal', 'Restore original')}
           </Button>

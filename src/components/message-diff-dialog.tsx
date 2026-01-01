@@ -17,7 +17,30 @@ interface MessageDiffDialogProps {
   editedContent: string;
 }
 
+function handleLookahead(
+  originalLines: string[],
+  editedLines: string[],
+  i: number,
+  j: number,
+  diff: { type: 'added' | 'removed' | 'unchanged'; text: string }[]
+): { newI: number; newJ: number } {
+  if (i < originalLines.length - 1 && originalLines[i + 1] === editedLines[j]) {
+    diff.push({ type: 'removed', text: originalLines[i] });
+    return { newI: i + 1, newJ: j };
+  }
+  if (j < editedLines.length - 1 && originalLines[i] === editedLines[j + 1]) {
+    diff.push({ type: 'added', text: editedLines[j] });
+    return { newI: i, newJ: j + 1 };
+  }
+  diff.push({ type: 'removed', text: originalLines[i] });
+  diff.push({ type: 'added', text: editedLines[j] });
+  return { newI: i + 1, newJ: j + 1 };
+}
+
 function computeSimpleDiff(original: string, edited: string): { type: 'added' | 'removed' | 'unchanged'; text: string }[] {
+  // Using a simple greedy algorithm with single-line lookahead instead of LCS-based diff.
+  // This trade-off is acceptable for message edits which are typically simple and linear.
+  // For complex structural changes, consider using a library like 'diff' or 'fast-diff'.
   const originalLines = original.split('\n');
   const editedLines = edited.split('\n');
   const diff: { type: 'added' | 'removed' | 'unchanged'; text: string }[] = [];
@@ -29,27 +52,23 @@ function computeSimpleDiff(original: string, edited: string): { type: 'added' | 
     if (i >= originalLines.length) {
       diff.push({ type: 'added', text: editedLines[j] });
       j++;
-    } else if (j >= editedLines.length) {
+      continue;
+    }
+    if (j >= editedLines.length) {
       diff.push({ type: 'removed', text: originalLines[i] });
       i++;
-    } else if (originalLines[i] === editedLines[j]) {
+      continue;
+    }
+    if (originalLines[i] === editedLines[j]) {
       diff.push({ type: 'unchanged', text: originalLines[i] });
       i++;
       j++;
-    } else {
-      if (i < originalLines.length - 1 && originalLines[i + 1] === editedLines[j]) {
-        diff.push({ type: 'removed', text: originalLines[i] });
-        i++;
-      } else if (j < editedLines.length - 1 && originalLines[i] === editedLines[j + 1]) {
-        diff.push({ type: 'added', text: editedLines[j] });
-        j++;
-      } else {
-        diff.push({ type: 'removed', text: originalLines[i] });
-        diff.push({ type: 'added', text: editedLines[j] });
-        i++;
-        j++;
-      }
+      continue;
     }
+    
+    const result = handleLookahead(originalLines, editedLines, i, j, diff);
+    i = result.newI;
+    j = result.newJ;
   }
   
   return diff;

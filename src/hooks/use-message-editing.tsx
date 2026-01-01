@@ -121,11 +121,6 @@ export function useMessageEditing({
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to edit message';
         setError(errorMessage);
-        toast({
-          variant: 'destructive',
-          title: t('editMessageError'),
-          description: t('editMessageErrorDescription'),
-        });
         throw err;
       } finally {
         setIsEditing(false);
@@ -149,11 +144,6 @@ export function useMessageEditing({
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate';
         setError(errorMessage);
-        toast({
-          variant: 'destructive',
-          title: t('regenerateError'),
-          description: t('regenerateErrorDescription'),
-        });
         throw err;
       } finally {
         setIsRegenerating(false);
@@ -178,7 +168,7 @@ export function useMessageEditing({
 
       try {
         const messagesBeforeDelete = messages.slice(0, messageIndex);
-        const truncatedMessages = truncateConversation(messagesBeforeDelete, messageIndex - 1);
+        const truncatedMessages = messagesBeforeDelete;
 
         if (truncatedMessages.length > 0 && truncatedMessages[truncatedMessages.length - 1].role === 'user') {
           await regenerateResponse(truncatedMessages.length - 1, truncatedMessages);

@@ -34,7 +34,7 @@ export function MessageRegenerateConfirmationDialog({
 
   const getDescription = () => {
     if (messagesToDeleteCount > 0) {
-      return t('regenerateConfirmationDescriptionWithCount', `Regenerating will create a new response. ${messagesToDeleteCount} message(s) after this point will be removed. Continue?`).replace('{count}', String(messagesToDeleteCount));
+      return t('regenerateConfirmationDescriptionWithCount', 'Regenerating will create a new response. {count} message(s) after this point will be removed. Continue?').replace('{count}', String(messagesToDeleteCount));
     }
     return t('regenerateConfirmationDescription', 'Regenerating will create a new response. All messages after this point will be removed. Continue?');
   };

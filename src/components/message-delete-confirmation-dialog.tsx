@@ -39,7 +39,7 @@ export function MessageDeleteConfirmationDialog({
           <AlertDialogTitle>{t('deleteMessageConfirmationTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
             {messagesToDeleteCount > 0
-              ? t('deleteMessageConfirmationDescriptionWithCount', `This message will be deleted. ${messagesToDeleteCount} message(s) after this point will also be removed.`).replace('{count}', String(messagesToDeleteCount))
+              ? t('deleteMessageConfirmationDescriptionWithCount', 'This message will be deleted. {count} message(s) after this point will also be removed.').replace('{count}', String(messagesToDeleteCount))
               : t('deleteMessageConfirmationDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
