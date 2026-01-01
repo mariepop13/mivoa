@@ -64,14 +64,14 @@ export function EntryListItem({
             const draftStatus = Boolean(isDraft);
             handleEntryClick(selectionMode, draftStatus, entry.id, onEntrySelect, onToggleSelection);
           }}
-          className="flex-1 text-left"
+          className="flex-1 min-w-0 text-left"
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="font-medium flex-1 min-w-0 truncate flex items-center gap-1.5">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="font-medium flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
               {entry.subjectEmoji && (
                 <span className="flex-shrink-0" aria-hidden="true">{entry.subjectEmoji}</span>
               )}
-              <span className="truncate">{entry.title || formatEntryTime(entry)}</span>
+              <span className="truncate min-w-0">{entry.title || formatEntryTime(entry)}</span>
               {isDraft && (
                 <span className="flex-shrink-0 text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded border border-border">
                   {t('draft')}
