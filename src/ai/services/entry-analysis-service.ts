@@ -58,10 +58,9 @@ function parseEmojiMap(emojiMap: unknown, toLowerCase = false): Record<string, s
     return undefined;
   }
   
-  const isValidEntry = ([key, value]: [string, unknown]): boolean => {
-    return typeof key === 'string' && typeof value === 'string' &&
-      key.trim().length > 0 && value.trim().length > 0;
-  };
+  const isValidEntry = ([key, value]: [string, unknown]): boolean =>
+    typeof key === 'string' && typeof value === 'string' &&
+    key.trim().length > 0 && value.trim().length > 0;
 
   const entries = Object.entries(emojiMap)
     .filter(isValidEntry)

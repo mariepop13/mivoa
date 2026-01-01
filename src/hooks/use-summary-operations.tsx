@@ -45,7 +45,6 @@ async function performSummarization({
   selectedModel,
   analyze,
   updateEntryState,
-  setSaveError,
 }: {
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
   draftId?: string | null;
@@ -57,7 +56,6 @@ async function performSummarization({
   selectedModel: string | undefined;
   analyze: ReturnType<typeof useEntryAnalysis>['analyze'];
   updateEntryState: (entryId: string, newContent: string, newTitle: string) => void;
-  setSaveError: (error: string | null) => void;
 }): Promise<void> {
   const lang = (language || 'en') as 'en' | 'fr';
   const chatMessages = convertToChatMessages(conversationHistory);
@@ -111,7 +109,6 @@ export function useSummaryOperations({
         selectedModel,
         analyze,
         updateEntryState,
-        setSaveError,
       });
     } catch (error) {
       console.error('Failed to generate summary:', error);
