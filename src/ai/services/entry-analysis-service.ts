@@ -58,8 +58,13 @@ function parseEmojiMap(emojiMap: unknown, toLowerCase = false): Record<string, s
     return undefined;
   }
   
+  const isValidEntry = ([key, value]: [string, unknown]): boolean => {
+    return typeof key === 'string' && typeof value === 'string' &&
+      key.trim().length > 0 && value.trim().length > 0;
+  };
+
   const entries = Object.entries(emojiMap)
-    .filter(([key, value]) => typeof key === 'string' && typeof value === 'string' && key.trim().length > 0 && value.trim().length > 0)
+    .filter(isValidEntry)
     .map(([key, value]) => [toLowerCase ? key.trim().toLowerCase() : key.trim(), value.trim()]);
   
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
@@ -119,6 +124,30 @@ function parseAnalysisResponse(response: string): AnalysisResult {
   }
 }
 
+function buildAnalysisSystemPrompt(language: 'en' | 'fr'): string {
+  const systemPromptFr = `Tu es un assistant qui analyse des entrées de journal pour extraire 
+    des informations structurées. Réponds UNIQUEMENT avec un objet JSON valide, sans texte 
+    supplémentaire.`;
+  const systemPromptEn = `You are an assistant that analyzes journal entries to extract 
+    structured information. Respond ONLY with a valid JSON object, no additional text.`;
+  return language === 'fr' ? systemPromptFr : systemPromptEn;
+}
+
+function buildAnalysisResult(parsed: AnalysisResult): EntryAnalysis {
+  return {
+    moods: parsed.moods,
+    moodEmojis: parsed.moodEmojis,
+    subjectEmoji: parsed.subjectEmoji,
+    emotions: parsed.emotions,
+    themes: parsed.themes,
+    themeEmojis: parsed.themeEmojis,
+    keyTakeaways: parsed.keyTakeaways,
+    places: parsed.places,
+    characters: parsed.characters,
+    processedAt: new Date(),
+  };
+}
+
 export async function analyzeEntry(
   entryContent: string,
   apiKey: string,
@@ -131,13 +160,7 @@ export async function analyzeEntry(
     };
   }
 
-  const systemPromptFr = `Tu es un assistant qui analyse des entrées de journal pour extraire 
-    des informations structurées. Réponds UNIQUEMENT avec un objet JSON valide, sans texte 
-    supplémentaire.`;
-  const systemPromptEn = `You are an assistant that analyzes journal entries to extract 
-    structured information. Respond ONLY with a valid JSON object, no additional text.`;
-  const systemPrompt = language === 'fr' ? systemPromptFr : systemPromptEn;
-
+  const systemPrompt = buildAnalysisSystemPrompt(language);
   const userPrompt = buildAnalysisPrompt(entryContent, language);
 
   const response = await generateChatCompletion(
@@ -154,18 +177,6 @@ export async function analyzeEntry(
   );
 
   const parsed = parseAnalysisResponse(response);
-
-  return {
-    moods: parsed.moods,
-    moodEmojis: parsed.moodEmojis,
-    subjectEmoji: parsed.subjectEmoji,
-    emotions: parsed.emotions,
-    themes: parsed.themes,
-    themeEmojis: parsed.themeEmojis,
-    keyTakeaways: parsed.keyTakeaways,
-    places: parsed.places,
-    characters: parsed.characters,
-    processedAt: new Date(),
-  };
+  return buildAnalysisResult(parsed);
 }
 

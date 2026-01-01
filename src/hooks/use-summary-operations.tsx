@@ -8,6 +8,8 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { useModel } from '@/context/ModelContext';
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { ChatMessage } from '@/ai/types/chat';
+import type { User } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 
 interface UseSummaryOperationsParams {
   dateKey: string;
@@ -30,6 +32,48 @@ function convertToChatMessages(
     content: msg.content,
     timestamp: msg.timestamp,
   }));
+}
+
+async function performSummarization({
+  conversationHistory,
+  draftId,
+  dateKey,
+  apiKey,
+  user,
+  firestore,
+  language,
+  selectedModel,
+  analyze,
+  updateEntryState,
+  setSaveError,
+}: {
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
+  draftId?: string | null;
+  dateKey: string;
+  apiKey: string;
+  user: User;
+  firestore: Firestore;
+  language: string | null;
+  selectedModel: string | undefined;
+  analyze: ReturnType<typeof useEntryAnalysis>['analyze'];
+  updateEntryState: (entryId: string, newContent: string, newTitle: string) => void;
+  setSaveError: (error: string | null) => void;
+}): Promise<void> {
+  const lang = (language || 'en') as 'en' | 'fr';
+  const chatMessages = convertToChatMessages(conversationHistory);
+  const summary = await generateConversationSummary(chatMessages, apiKey, lang, selectedModel);
+  const entryId = draftId || generateEntryId(dateKey);
+  await saveSummaryAsEntry({
+    entryId,
+    entryDateKey: dateKey,
+    summary,
+    conversationHistory,
+    firestore,
+    user,
+    draftId,
+  });
+  updateEntryState(entryId, summary.content, summary.title);
+  triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
 }
 
 export function useSummaryOperations({
@@ -56,21 +100,19 @@ export function useSummaryOperations({
     setIsGeneratingSummary(true);
     setSaveError(null);
     try {
-      const lang = (language || 'en') as 'en' | 'fr';
-      const chatMessages = convertToChatMessages(conversationHistory);
-      const summary = await generateConversationSummary(chatMessages, apiKey, lang, selectedModel);
-      const entryId = draftId || generateEntryId(dateKey);
-      await saveSummaryAsEntry({
-        entryId,
-        entryDateKey: dateKey,
-        summary,
+      await performSummarization({
         conversationHistory,
-        firestore,
-        user,
         draftId,
+        dateKey,
+        apiKey,
+        user,
+        firestore,
+        language,
+        selectedModel,
+        analyze,
+        updateEntryState,
+        setSaveError,
       });
-      updateEntryState(entryId, summary.content, summary.title);
-      triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
     } catch (error) {
       console.error('Failed to generate summary:', error);
       setSaveError(error instanceof Error ? error.message : 'Error generating summary');

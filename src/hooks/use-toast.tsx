@@ -73,58 +73,73 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+function handleAddToast(state: State, toast: ToasterToast): State {
+  return {
+    ...state,
+    toasts: [toast, ...state.toasts].slice(0, TOAST_LIMIT),
+  };
+}
+
+function handleUpdateToast(state: State, toast: Partial<ToasterToast>): State {
+  return {
+    ...state,
+    toasts: state.toasts.map((t) =>
+      t.id === toast.id ? { ...t, ...toast } : t
+    ),
+  };
+}
+
+function handleDismissToast(state: State, toastId: string | undefined): State {
+  if (toastId) {
+    addToRemoveQueue(toastId);
+  } else {
+    state.toasts.forEach((toast) => {
+      addToRemoveQueue(toast.id);
+    });
+  }
+
+  return {
+    ...state,
+    toasts: state.toasts.map((t) =>
+      t.id === toastId || toastId === undefined
+        ? {
+            ...t,
+            open: false,
+          }
+        : t
+    ),
+  };
+}
+
+function handleRemoveToast(state: State, toastId: string | undefined): State {
+  if (toastId === undefined) {
+    return {
+      ...state,
+      toasts: [],
+    };
+  }
+  return {
+    ...state,
+    toasts: state.toasts.filter((t) => t.id !== toastId),
+  };
+}
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case ACTION_TYPES.ADD_TOAST:
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      }
+      return handleAddToast(state, action.toast);
 
     case ACTION_TYPES.UPDATE_TOAST:
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      }
+      return handleUpdateToast(state, action.toast);
 
-    case ACTION_TYPES.DISMISS_TOAST: {
-      const { toastId } = action
+    case ACTION_TYPES.DISMISS_TOAST:
+      return handleDismissToast(state, action.toastId);
 
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      }
-    }
     case ACTION_TYPES.REMOVE_TOAST:
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      }
+      return handleRemoveToast(state, action.toastId);
+
     default:
-      return state
+      return state;
   }
 }
 

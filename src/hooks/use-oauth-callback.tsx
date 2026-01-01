@@ -13,6 +13,53 @@ interface UseOAuthCallbackResult {
   errorMessage: string | null;
 }
 
+async function handleOAuthCallback({
+  code,
+  state,
+  error,
+  setApiKey,
+  setStatus,
+  setErrorMessage,
+  t,
+  pushRoute,
+}: {
+  code: string | null;
+  state: string | null;
+  error: string | null;
+  setApiKey: (key: string) => Promise<void>;
+  setStatus: (status: OAuthCallbackStatus) => void;
+  setErrorMessage: (error: string | null) => void;
+  t: (key: string) => string;
+  pushRoute: (path: string) => void;
+}): Promise<NodeJS.Timeout | null> {
+  if (error) {
+    setErrorMessage(error);
+    setStatus('error');
+    return null;
+  }
+
+  if (!code) {
+    setErrorMessage(t('noAuthorizationCode'));
+    setStatus('error');
+    return null;
+  }
+
+  try {
+    const apiKey = await exchangeAuthCodeForApiKey(code, state || undefined);
+    await setApiKey(apiKey);
+    setStatus('success');
+
+    return setTimeout(() => {
+      pushRoute('/');
+    }, REDIRECT_DELAY_MS);
+  } catch (error) {
+    console.error('Failed to exchange auth code:', error);
+    setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+    setStatus('error');
+    return null;
+  }
+}
+
 export function useOAuthCallback(): UseOAuthCallbackResult {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -24,39 +71,24 @@ export function useOAuthCallback(): UseOAuthCallbackResult {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
 
-    const handleCallback = async () => {
+    const processCallback = async () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
 
-      if (error) {
-        setErrorMessage(error);
-        setStatus('error');
-        return;
-      }
-
-      if (!code) {
-        setErrorMessage(t('noAuthorizationCode'));
-        setStatus('error');
-        return;
-      }
-
-      try {
-        const apiKey = await exchangeAuthCodeForApiKey(code, state || undefined);
-        await setApiKey(apiKey);
-        setStatus('success');
-
-        timeoutId = setTimeout(() => {
-          router.push('/');
-        }, REDIRECT_DELAY_MS);
-      } catch (error) {
-        console.error('Failed to exchange auth code:', error);
-        setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
-        setStatus('error');
-      }
+      timeoutId = await handleOAuthCallback({
+        code,
+        state,
+        error,
+        setApiKey,
+        setStatus,
+        setErrorMessage,
+        t,
+        pushRoute: router.push.bind(router),
+      });
     };
 
-    handleCallback();
+    processCallback();
 
     return () => {
       if (timeoutId) {
