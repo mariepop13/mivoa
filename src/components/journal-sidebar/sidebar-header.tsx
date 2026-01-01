@@ -22,20 +22,22 @@ export function SidebarHeader({
 }: SidebarHeaderProps): React.JSX.Element {
   return (
     <div className="p-4 sm:p-6 border-b border-border">
-      <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
-        <div className="flex-1 min-w-0 max-w-full">
-          <DatePicker value={selectedDate} onChange={onDateChange} />
+      <div className="flex flex-col gap-3 mb-2 items-end">
+        <div className="flex items-center justify-end gap-2 w-full">
+          <div className="flex justify-end min-w-0 [&_button]:!w-auto [&_button]:!justify-end [&_button]:!text-right">
+            <DatePicker value={selectedDate} onChange={onDateChange} />
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t('close')}
+            className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0"
+          >
+            <span className="text-2xl">×</span>
+          </button>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <UserMenu />
           <SettingsMenu />
-          <button
-            onClick={onClose}
-            aria-label={t('close')}
-            className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-          >
-            <span className="text-2xl">×</span>
-          </button>
         </div>
       </div>
       {entries && entries.length > 0 && (
