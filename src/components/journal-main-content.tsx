@@ -120,6 +120,7 @@ function renderChatContent({
   onDraftSaveWrapper,
   handleDeleteDraft,
   initialConversation,
+  setViewMode,
   selectedEntry,
 }: {
   onSummarize: JournalMainContentProps['onSummarize'];
@@ -128,6 +129,7 @@ function renderChatContent({
   onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
   handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
   initialConversation: InitialConversation | null;
+  setViewMode: (mode: 'chat' | 'summary') => void;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
 }): React.JSX.Element {
   return (
@@ -138,9 +140,26 @@ function renderChatContent({
       onDraftSave={onDraftSaveWrapper}
       onDraftDelete={handleDeleteDraft}
       initialDraft={initialConversation}
+      onViewModeChange={setViewMode}
       draftData={selectedEntry?.isDraft ? selectedEntry : null}
     />
   );
+}
+
+interface RenderEntryContentParams {
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
 }
 
 function renderEntryContent({
@@ -160,21 +179,8 @@ function renderEntryContent({
   recentEntries,
   onNavigateToEntry,
   onLinksUpdated,
-}: {
-  selectedDate: Date;
-  content: string;
-  title: string;
-  onContentChange: (content: string) => void;
-  onSave: () => void;
-  onDelete: () => Promise<void>;
-  onChangeDate?: (date: Date) => Promise<void>;
-  isSaving: boolean;
-  lastSavedAt: Date | null;
-  saveError: string | null;
-  selectedEntryId: string | null;
-  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+}: RenderEntryContentParams & {
   selectedEntryData: JournalEntryData | null;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
 }): React.JSX.Element {
@@ -207,6 +213,30 @@ function renderEntryContent({
   );
 }
 
+interface RenderContentParams {
+  shouldShowChat: boolean;
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  setViewMode: (mode: 'chat' | 'summary') => void;
+}
+
 function renderContent({
   shouldShowChat,
   onSummarize,
@@ -229,30 +259,11 @@ function renderContent({
   selectedEntry,
   selectedEntryData,
   recentEntries,
+  setViewMode,
   onNavigateToEntry,
   onLinksUpdated,
-}: {
-  shouldShowChat: boolean;
-  onSummarize: JournalMainContentProps['onSummarize'];
-  isGeneratingSummary: boolean;
-  dateKey: string;
-  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
-  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
-  initialConversation: InitialConversation | null;
-  selectedDate: Date;
-  content: string;
-  title: string;
-  onContentChange: (content: string) => void;
-  onSave: () => void;
-  onDelete: () => Promise<void>;
-  onChangeDate?: (date: Date) => Promise<void>;
-  isSaving: boolean;
-  lastSavedAt: Date | null;
-  saveError: string | null;
-  selectedEntryId: string | null;
-  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+}: RenderContentParams & {
   selectedEntryData: JournalEntryData | null;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
 }): React.JSX.Element {
@@ -264,6 +275,7 @@ function renderContent({
       onDraftSaveWrapper,
       handleDeleteDraft,
       initialConversation,
+      setViewMode,
       selectedEntry,
     });
   }
@@ -382,6 +394,7 @@ export function JournalMainContent({
                 selectedEntry,
                 selectedEntryData,
                 recentEntries,
+                setViewMode,
                 onNavigateToEntry,
                 onLinksUpdated,
               })}

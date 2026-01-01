@@ -12,30 +12,75 @@ import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 interface ChatMessagesListProps {
   messages: ChatMessageType[];
   isTyping: boolean;
+  isRegenerating?: boolean;
   error: string | null;
+  onEdit?: (messageIndex: number, newContent: string) => Promise<void>;
+  onDelete?: (messageIndex: number) => Promise<void>;
+  onRegenerate?: (messageIndex: number) => Promise<void>;
+  onUndoEdit?: (messageIndex: number) => Promise<void>;
 }
 
-export function ChatMessagesList({ messages, isTyping, error }: ChatMessagesListProps): React.JSX.Element {
+function renderApiKeyWarning(t: (key: string) => string): React.JSX.Element {
+  return (
+    <div role="status" aria-live="polite" className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg px-4 py-3 text-sm">
+      <p className="font-medium mb-1">{t('openRouterApiKeyRequired')}</p>
+      <p className="text-xs opacity-90">{t('openRouterApiKeyRequiredDescription')}</p>
+    </div>
+  );
+}
+
+function renderMessages(
+  messages: ChatMessagesListProps['messages'],
+  isTyping: boolean,
+  onEdit?: ChatMessagesListProps['onEdit'],
+  onDelete?: ChatMessagesListProps['onDelete'],
+  onRegenerate?: ChatMessagesListProps['onRegenerate'],
+  onUndoEdit?: ChatMessagesListProps['onUndoEdit']
+): React.JSX.Element[] {
+  return messages.map((message, index) => {
+    const timestampMs = message.timestamp instanceof Timestamp 
+      ? message.timestamp.toMillis() 
+      : message.timestamp.getTime();
+    return (
+      <ChatMessage
+        key={`${timestampMs}-${index}`}
+        message={message}
+        messageIndex={index}
+        totalMessages={messages.length}
+        isTyping={isTyping}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRegenerate={onRegenerate}
+        onUndoEdit={onUndoEdit}
+      />
+    );
+  });
+}
+
+export function ChatMessagesList({
+  messages,
+  isTyping,
+  isRegenerating = false,
+  error,
+  onEdit,
+  onDelete,
+  onRegenerate,
+  onUndoEdit,
+}: ChatMessagesListProps): React.JSX.Element {
   const { t } = useTranslation();
   const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-6 lg:py-8">
       <div className="max-w-3xl mx-auto space-y-5">
-        {!isApiKeyLoading && !apiKey && (
-          <div role="status" aria-live="polite" className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg px-4 py-3 text-sm">
-            <p className="font-medium mb-1">{t('openRouterApiKeyRequired')}</p>
-            <p className="text-xs opacity-90">{t('openRouterApiKeyRequiredDescription')}</p>
-          </div>
-        )}
+        {!isApiKeyLoading && !apiKey && renderApiKeyWarning(t)}
         {messages.length === 0 && <ChatEmptyState />}
-        {messages.map((message, index) => {
-          const timestampMs = message.timestamp instanceof Timestamp 
-            ? message.timestamp.toMillis() 
-            : message.timestamp.getTime();
-          return <ChatMessage key={`${timestampMs}-${index}`} message={message} />;
-        })}
-        {isTyping && <ChatTypingIndicator />}
+        {renderMessages(messages, isTyping, onEdit, onDelete, onRegenerate, onUndoEdit)}
+        {isTyping && (
+          <ChatTypingIndicator
+            message={isRegenerating ? t('regeneratingResponse', 'Regenerating response...') : undefined}
+          />
+        )}
         {error && (
           <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-sm">
             {t('error')}: {error}

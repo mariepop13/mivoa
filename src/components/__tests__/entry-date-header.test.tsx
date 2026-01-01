@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 
 vi.mock('date-fns', () => ({
-  format: vi.fn((date: Date, formatStr: string, options: { locale: any }) => {
+  format: vi.fn((date: Date, formatStr: string, options: { locale: { code: string } }) => {
     if (options.locale.code === 'fr') {
       return 'lundi, 15 janvier 2024';
     }
@@ -45,7 +45,7 @@ describe('EntryDateHeader', () => {
   it('should format date in French when language is fr', () => {
     renderWithLanguage('fr');
 
-    expect(format).toHaveBeenCalledWith(mockDate, 'EEEE, MMMM d, yyyy', { locale: fr });
+    expect(format).toHaveBeenCalledWith(mockDate, 'EEEE, do MMMM yyyy', { locale: fr });
     expect(screen.getByText('lundi, 15 janvier 2024')).toBeInTheDocument();
   });
 

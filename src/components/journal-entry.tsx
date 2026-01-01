@@ -81,7 +81,14 @@ function JournalEntryComponent({
         recentEntries={recentEntries}
         onContentChange={handleContentChange}
       />
-      <EntryDetections places={places} characters={characters} themes={themes} themeEmojis={themeEmojis} moods={moods} moodEmojis={moodEmojis} />
+      <EntryDetections
+        places={places}
+        characters={characters}
+        themes={themes}
+        themeEmojis={themeEmojis}
+        moods={moods}
+        moodEmojis={moodEmojis}
+      />
       {entryId && onNavigateToEntry && (
         <EntryLinksList
           entryId={entryId}

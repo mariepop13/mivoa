@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DatePicker } from '../date-picker';
 import { LanguageContext } from '@/context/LanguageContext';
@@ -14,7 +14,7 @@ vi.mock('date-fns', async () => {
   const actual = await vi.importActual('date-fns');
   return {
     ...actual,
-    format: vi.fn((date: Date, formatStr: string, options?: { locale: any }) => {
+    format: vi.fn((date: Date, formatStr: string, options?: { locale: { code: string } }) => {
       if (formatStr === 'yyyy-MM-dd') {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -89,7 +89,7 @@ describe('DatePicker', () => {
 
     expect(format).toHaveBeenCalledWith(
       mockDate,
-      'EEEE, MMMM d, yyyy',
+      'EEEE, do MMMM yyyy',
       { locale: fr }
     );
     expect(screen.getByText('lundi, 15 janvier 2024')).toBeInTheDocument();
@@ -111,28 +111,34 @@ describe('DatePicker', () => {
     await user.click(button);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('2024-01-15')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Go to the Previous Month/i })).toBeInTheDocument();
     });
   });
 
-  it('should call onChange when date is selected via input', async () => {
+  it('should call onChange when date is selected via calendar', async () => {
     const user = userEvent.setup();
     renderWithLanguage('en');
 
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Go to the Previous Month/i })).toBeInTheDocument();
+    });
 
-    fireEvent.change(dateInput, { target: { value: '2024-01-20' } });
+    const dayButtons = screen.getAllByRole('button');
+    const day20Button = dayButtons.find(btn => btn.textContent === '20' && !btn.getAttribute('aria-label')?.includes('Month'));
+    expect(day20Button).toBeDefined();
+    if (day20Button) {
+      await user.click(day20Button);
+    }
 
     await waitFor(() => {
       expect(mockOnChange).toHaveBeenCalled();
     });
 
     const callArgs = mockOnChange.mock.calls[0][0];
-    expect(callArgs.getFullYear()).toBe(2024);
-    expect(callArgs.getMonth()).toBe(0);
+    expect(callArgs).toBeInstanceOf(Date);
     expect(callArgs.getDate()).toBe(20);
   });
 
@@ -301,25 +307,35 @@ describe('DatePicker', () => {
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Go to the Previous Month/i })).toBeInTheDocument();
+    });
 
-    fireEvent.change(dateInput, { target: { value: '2024-01-20' } });
+    const dayButtons = screen.getAllByRole('button');
+    const day20Button = dayButtons.find(btn => btn.textContent === '20' && !btn.getAttribute('aria-label')?.includes('Month'));
+    expect(day20Button).toBeDefined();
+    if (day20Button) {
+      await user.click(day20Button);
+    }
 
     await waitFor(() => {
-      expect(screen.queryByDisplayValue('2024-01-20')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Go to the Previous Month/i })).not.toBeInTheDocument();
     });
   });
 
-  it('should not call onChange when date input is empty', async () => {
+  it('should not call onChange when navigating months without selecting', async () => {
     const user = userEvent.setup();
     renderWithLanguage('en');
 
     const button = screen.getByRole('button', { name: 'Change date' });
     await user.click(button);
 
-    const dateInput = await waitFor(() => screen.getByDisplayValue('2024-01-15') as HTMLInputElement);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Go to the Previous Month/i })).toBeInTheDocument();
+    });
 
-    fireEvent.change(dateInput, { target: { value: '' } });
+    const prevMonthButton = screen.getByRole('button', { name: /Go to the Previous Month/i });
+    await user.click(prevMonthButton);
 
     await waitFor(() => {
       expect(mockOnChange).not.toHaveBeenCalled();

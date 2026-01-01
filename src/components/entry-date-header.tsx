@@ -12,7 +12,8 @@ interface EntryDateHeaderProps {
 export function EntryDateHeader({ date }: EntryDateHeaderProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const dateLocale = language === 'fr' ? fr : enUS;
-  const formattedDate = format(date, "EEEE, MMMM d, yyyy", { locale: dateLocale });
+  const displayDateFormat = language === 'fr' ? "EEEE, do MMMM yyyy" : "EEEE, MMMM d, yyyy";
+  const formattedDate = format(date, displayDateFormat, { locale: dateLocale });
 
   return (
     <div className="mb-6 px-6 pt-6">

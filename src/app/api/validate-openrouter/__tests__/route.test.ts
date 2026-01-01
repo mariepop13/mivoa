@@ -29,7 +29,7 @@ describe('validate-openrouter route', () => {
   });
 
   it('should return 400 when apiKey is not a string', async () => {
-    const request = createRequest({ apiKey: 123 as any });
+    const request = createRequest({ apiKey: 123 as unknown as string });
 
     const response = await POST(request);
     const data = await response.json();

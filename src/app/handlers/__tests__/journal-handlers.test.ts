@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { changeEntryDate } from '../journal-handlers';
 import { updateDocumentNonBlocking } from '@/firebase';
 import { format } from 'date-fns';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, type Firestore } from 'firebase/firestore';
 
 vi.mock('@/firebase');
 vi.mock('date-fns', () => ({
@@ -23,7 +23,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 describe('changeEntryDate', () => {
-  const mockFirestore = { id: 'mock-firestore' } as any;
+  const mockFirestore = { id: 'mock-firestore' } as unknown as Firestore;
   const mockUser = { uid: 'test-user-id' };
   const mockEntryId = 'test-entry-id';
   const mockNewDate = new Date(2024, 0, 20);

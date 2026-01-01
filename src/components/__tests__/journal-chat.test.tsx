@@ -32,18 +32,27 @@ const renderWithContext = (props = {}) => render(
     </LanguageContext.Provider>
   );
 
-describe('JournalChat', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(useChatConversation).mockReturnValue({
+const createMockUseChatConversationReturn = (overrides = {}) => ({
       messages: [],
       isTyping: false,
       error: null,
       sendMessage: vi.fn().mockResolvedValue(undefined),
       resetConversation: vi.fn().mockResolvedValue(undefined),
       loadConversation: vi.fn(),
+  editMessage: vi.fn().mockResolvedValue(undefined),
+  regenerateFrom: vi.fn().mockResolvedValue(undefined),
+  deleteMessage: vi.fn().mockResolvedValue(undefined),
+  undoEdit: vi.fn().mockResolvedValue(undefined),
+  isEditing: false,
+  isRegenerating: false,
       draftId: null,
+  ...overrides,
     });
+
+describe('JournalChat', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn());
   });
 
   it('renders chat interface', () => {
@@ -52,15 +61,9 @@ describe('JournalChat', () => {
   });
 
   it('displays messages', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       messages: mockMessages,
-      isTyping: false,
-      error: null,
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     expect(screen.getByText('Initial message')).toBeInTheDocument();
@@ -69,15 +72,9 @@ describe('JournalChat', () => {
 
   it('sends message when send button is clicked', async () => {
     const mockSendMessage = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useChatConversation).mockReturnValue({
-      messages: [],
-      isTyping: false,
-      error: null,
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     const textarea = screen.getByPlaceholderText('typeMessage');
@@ -93,15 +90,9 @@ describe('JournalChat', () => {
 
   it('sends message when Enter key is pressed', async () => {
     const mockSendMessage = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useChatConversation).mockReturnValue({
-      messages: [],
-      isTyping: false,
-      error: null,
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     const textarea = screen.getByPlaceholderText('typeMessage');
@@ -116,15 +107,9 @@ describe('JournalChat', () => {
 
   it('does not send message when Shift+Enter is pressed', () => {
     const mockSendMessage = vi.fn();
-    vi.mocked(useChatConversation).mockReturnValue({
-      messages: [],
-      isTyping: false,
-      error: null,
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       sendMessage: mockSendMessage,
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     const textarea = screen.getByPlaceholderText('typeMessage');
@@ -136,45 +121,27 @@ describe('JournalChat', () => {
   });
 
   it('displays error message', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
-      messages: [],
-      isTyping: false,
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       error: 'Test error',
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     expect(screen.getByText(/error.*Test error/i)).toBeInTheDocument();
   });
 
   it('shows summarize button when there are enough messages', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       messages: mockMessages,
-      isTyping: false,
-      error: null,
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     expect(screen.getByText('summarizeConversation')).toBeInTheDocument();
   });
 
   it('calls onSummarize when summarize button is clicked', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       messages: mockMessages,
-      isTyping: false,
-      error: null,
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     const summarizeButton = screen.getByText('summarizeConversation');
@@ -195,15 +162,9 @@ describe('JournalChat', () => {
   });
 
   it('disables input when typing', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
-      messages: [],
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       isTyping: true,
-      error: null,
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext();
     const textarea = screen.getByPlaceholderText('typeMessage');
@@ -211,15 +172,9 @@ describe('JournalChat', () => {
   });
 
   it('shows loading state for summary generation', () => {
-    vi.mocked(useChatConversation).mockReturnValue({
+    vi.mocked(useChatConversation).mockReturnValue(createMockUseChatConversationReturn({
       messages: mockMessages,
-      isTyping: false,
-      error: null,
-      sendMessage: vi.fn().mockResolvedValue(undefined),
-      resetConversation: vi.fn().mockResolvedValue(undefined),
-      loadConversation: vi.fn(),
-      draftId: null,
-    });
+    }));
 
     renderWithContext({ isLoadingSummary: true });
     expect(screen.getByText('generatingSummary')).toBeInTheDocument();

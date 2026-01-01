@@ -97,6 +97,34 @@ function hasDataForSection(key: SectionKey, props: EntryDetectionsProps): boolea
   }
 }
 
+function buildSectionConfigs(props: EntryDetectionsProps): SectionConfig[] {
+  return [
+    { key: 'moods', hasData: hasDataForSection('moods', props), icon: Smile, translationKey: 'moods' },
+    { key: 'themes', hasData: hasDataForSection('themes', props), icon: Tag, translationKey: 'themes' },
+    { key: 'characters', hasData: hasDataForSection('characters', props), icon: Users, translationKey: 'characters' },
+    { key: 'places', hasData: hasDataForSection('places', props), icon: MapPin, translationKey: 'places' },
+  ];
+}
+
+function renderSections(
+  configs: SectionConfig[],
+  props: EntryDetectionsProps,
+  t: (key: string) => string
+): React.JSX.Element[] {
+  return configs.map((config, index) => {
+    const badge = createBadgeForSection(config.key, index, props);
+    return buildDetectionSection(
+      {
+        key: config.key,
+        icon: config.icon,
+        translationKey: config.translationKey,
+        badgeComponent: badge,
+      },
+      t
+    ) as React.JSX.Element;
+  });
+}
+
 function EntryDetectionsComponent({
   places,
   characters,
@@ -108,33 +136,14 @@ function EntryDetectionsComponent({
 }: EntryDetectionsProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const props = { places, characters, themes, themeEmojis, moods, moodEmojis };
-
-  const sectionConfigs: SectionConfig[] = [
-    { key: 'moods', hasData: hasDataForSection('moods', props), icon: Smile, translationKey: 'moods' },
-    { key: 'themes', hasData: hasDataForSection('themes', props), icon: Tag, translationKey: 'themes' },
-    { key: 'characters', hasData: hasDataForSection('characters', props), icon: Users, translationKey: 'characters' },
-    { key: 'places', hasData: hasDataForSection('places', props), icon: MapPin, translationKey: 'places' },
-  ];
-
+  const sectionConfigs = buildSectionConfigs(props);
   const sectionsWithData = sectionConfigs.filter(config => config.hasData);
   
   if (sectionsWithData.length === 0) {
     return null;
   }
 
-  const sections = sectionsWithData.map((config, index) => {
-    const badge = createBadgeForSection(config.key, index, props);
-    return buildDetectionSection(
-      {
-        key: config.key,
-        icon: config.icon,
-        translationKey: config.translationKey,
-        badgeComponent: badge,
-      },
-      t
-    );
-  });
-
+  const sections = renderSections(sectionsWithData, props, t);
   const containerClassName = cn(
     'px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-muted/20 space-y-3',
     className

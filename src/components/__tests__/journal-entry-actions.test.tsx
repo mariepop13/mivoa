@@ -39,7 +39,7 @@ describe('JournalEntryActions', () => {
   const mockOnChangeDate = vi.fn();
   const mockCurrentDate = new Date(2024, 0, 15);
 
-  const renderWithLanguage = (props?: any) => render(
+  const renderWithLanguage = (props?: Partial<Parameters<typeof JournalEntryActions>[0]>) => render(
       <LanguageContext.Provider
         value={{
           language: 'en',

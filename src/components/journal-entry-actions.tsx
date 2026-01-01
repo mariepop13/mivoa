@@ -52,19 +52,21 @@ const SAVE_BUTTON_CLASSES = [
   'active:scale-[0.98]',
 ].join(' ');
 
+interface DeleteDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+  t: (key: string) => string;
+}
+
 function DeleteDialog({
   open,
   onOpenChange,
   onConfirm,
   isLoading,
   t,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  isLoading: boolean;
-  t: (key: string) => string;
-}): React.JSX.Element {
+}: DeleteDialogProps): React.JSX.Element {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogTrigger asChild>
@@ -119,6 +121,32 @@ function ChangeDateDialogTrigger({
   );
 }
 
+interface ChangeDateDialogContentProps {
+  selectedNewDate: Date | null;
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+  t: (key: string) => string;
+}
+
+function renderDatePickerSection(
+  selectedNewDate: Date | null,
+  currentDate: Date,
+  onDateChange: (date: Date) => void
+): React.JSX.Element {
+  return (
+    <div className="py-4">
+      <DatePicker
+        value={selectedNewDate || currentDate}
+        onChange={onDateChange}
+        showDatesList={false}
+      />
+    </div>
+  );
+}
+
 function ChangeDateDialogContent({
   selectedNewDate,
   currentDate,
@@ -127,15 +155,7 @@ function ChangeDateDialogContent({
   onConfirm,
   isLoading,
   t,
-}: {
-  selectedNewDate: Date | null;
-  currentDate: Date;
-  onDateChange: (date: Date) => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-  isLoading: boolean;
-  t: (key: string) => string;
-}): React.JSX.Element {
+}: ChangeDateDialogContentProps): React.JSX.Element {
   return (
     <DialogContent>
       <DialogHeader>
@@ -144,13 +164,7 @@ function ChangeDateDialogContent({
           {t('confirmChangeDate')}
         </DialogDescription>
       </DialogHeader>
-      <div className="py-4">
-        <DatePicker
-          value={selectedNewDate || currentDate}
-          onChange={onDateChange}
-          showDatesList={false}
-        />
-      </div>
+      {renderDatePickerSection(selectedNewDate, currentDate, onDateChange)}
       <DialogFooter>
         <button
           type="button"
@@ -172,6 +186,15 @@ function ChangeDateDialogContent({
   );
 }
 
+interface ChangeDateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentDate: Date;
+  onConfirm: (date: Date) => Promise<void>;
+  isLoading: boolean;
+  t: (key: string) => string;
+}
+
 function ChangeDateDialog({
   open,
   onOpenChange,
@@ -179,14 +202,7 @@ function ChangeDateDialog({
   onConfirm,
   isLoading,
   t,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  currentDate: Date;
-  onConfirm: (date: Date) => Promise<void>;
-  isLoading: boolean;
-  t: (key: string) => string;
-}): React.JSX.Element {
+}: ChangeDateDialogProps): React.JSX.Element {
   const [selectedNewDate, setSelectedNewDate] = useState<Date | null>(currentDate);
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -223,7 +239,17 @@ function ChangeDateDialog({
   );
 }
 
-export function JournalEntryActions({ onSave, onDelete, onChangeDate, isLoading, canDelete, currentDate, entryId, linkedEntryIds, onLinksUpdated }: JournalEntryActionsProps): React.JSX.Element {
+export function JournalEntryActions({
+  onSave,
+  onDelete,
+  onChangeDate,
+  isLoading,
+  canDelete,
+  currentDate,
+  entryId,
+  linkedEntryIds,
+  onLinksUpdated,
+}: JournalEntryActionsProps): React.JSX.Element {
   const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [changeDateDialogOpen, setChangeDateDialogOpen] = useState(false);
