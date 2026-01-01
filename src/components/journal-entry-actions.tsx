@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/date-picker';
 
@@ -97,13 +96,16 @@ function DeleteDialog({
 function ChangeDateDialogTrigger({
   isLoading,
   t,
+  onClick,
 }: {
   isLoading: boolean;
   t: (key: string) => string;
+  onClick: () => void;
 }): React.JSX.Element {
   return (
     <button
       type="button"
+      onClick={onClick}
       disabled={isLoading}
       className="flex-1 sm:flex-none px-4 py-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium active:scale-[0.98] border border-transparent hover:border-border flex items-center justify-center gap-2"
     >
@@ -204,9 +206,6 @@ function ChangeDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <ChangeDateDialogTrigger isLoading={isLoading} t={t} />
-      </DialogTrigger>
       <ChangeDateDialogContent
         selectedNewDate={selectedNewDate}
         currentDate={currentDate}
@@ -238,14 +237,21 @@ export function JournalEntryActions({ onSave, onDelete, onChangeDate, isLoading,
   return (
     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
       {onChangeDate && currentDate && (
-        <ChangeDateDialog
-          open={changeDateDialogOpen}
-          onOpenChange={setChangeDateDialogOpen}
-          currentDate={currentDate}
-          onConfirm={handleChangeDateConfirm}
-          isLoading={isLoading}
-          t={t}
-        />
+        <>
+          <ChangeDateDialogTrigger
+            isLoading={isLoading}
+            t={t}
+            onClick={() => setChangeDateDialogOpen(true)}
+          />
+          <ChangeDateDialog
+            open={changeDateDialogOpen}
+            onOpenChange={setChangeDateDialogOpen}
+            currentDate={currentDate}
+            onConfirm={handleChangeDateConfirm}
+            isLoading={isLoading}
+            t={t}
+          />
+        </>
       )}
       {canDelete && onDelete && (
         <DeleteDialog
