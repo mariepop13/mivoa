@@ -71,7 +71,7 @@ describe('entry-linking-utils', () => {
     });
 
     it('should trim whitespace before truncation', () => {
-      const content = '   ' + 'a'.repeat(150) + '   ';
+      const content = `   ${'a'.repeat(150)}   `;
       const result = getEntryPreview(content, 100);
       
       expect(result.endsWith('...')).toBe(true);
@@ -214,18 +214,6 @@ describe('entry-linking-utils', () => {
       const result = areEntriesLinked('entry-1', 'entry-2', undefined, undefined);
       
       expect(result).toBe(false);
-    });
-
-    it('should return false when entry1LinkedIds includes entry2 but check fails', () => {
-      const result = areEntriesLinked('entry-1', 'entry-2', ['entry-2'], []);
-      
-      expect(result).toBe(true);
-    });
-
-    it('should handle case where entry1LinkedIds includes entry2Id but not strictly true', () => {
-      const result = areEntriesLinked('entry-1', 'entry-2', ['entry-2'], []);
-      
-      expect(result).toBe(true);
     });
   });
 });

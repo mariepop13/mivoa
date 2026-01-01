@@ -3,7 +3,11 @@ import { parse } from 'date-fns';
 export function parseEntryDate(dateString: string): Date {
   try {
     return parse(dateString, 'yyyy-MM-dd', new Date());
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse entry date:', {
+      dateString,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return new Date(dateString);
   }
 }
@@ -11,7 +15,7 @@ export function parseEntryDate(dateString: string): Date {
 export function getEntryPreview(content: string, maxLength = 100): string {
   if (!content) return '';
   if (content.length <= maxLength) return content;
-  return content.slice(0, maxLength).trim() + '...';
+  return `${content.slice(0, maxLength).trim()}...`;
 }
 
 export function validateLink(
