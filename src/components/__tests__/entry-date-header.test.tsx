@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
 
 vi.mock('date-fns', () => ({
-  format: vi.fn((date: Date, formatStr: string, options: { locale: any }) => {
+  format: vi.fn((date: Date, formatStr: string, options: { locale: { code: string } }) => {
     if (options.locale.code === 'fr') {
       return 'lundi, 15 janvier 2024';
     }

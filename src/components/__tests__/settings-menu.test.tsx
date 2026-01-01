@@ -31,9 +31,28 @@ const renderWithContext = (overrides = {}) => {
   };
 
   return render(
-    <LanguageContext.Provider value={{ language: defaultContexts.language.language as 'en' | 'fr', setLanguage: defaultContexts.language.setLanguage, supportedLanguages: SUPPORTED_LANGUAGES }}>
-      <OpenRouterApiKeyContext.Provider value={{ apiKey: defaultContexts.apiKey.apiKey, setApiKey: defaultContexts.apiKey.setApiKey, resetApiKey: vi.fn(), isLoading: false }}>
-        <ModelContext.Provider value={{ selectedModel: defaultContexts.model.selectedModel, setSelectedModel: defaultContexts.model.setSelectedModel, isLoading: false }}>
+    <LanguageContext.Provider
+      value={{
+        language: defaultContexts.language.language as 'en' | 'fr',
+        setLanguage: defaultContexts.language.setLanguage,
+        supportedLanguages: SUPPORTED_LANGUAGES,
+      }}
+    >
+      <OpenRouterApiKeyContext.Provider
+        value={{
+          apiKey: defaultContexts.apiKey.apiKey,
+          setApiKey: defaultContexts.apiKey.setApiKey,
+          resetApiKey: vi.fn(),
+          isLoading: false,
+        }}
+      >
+        <ModelContext.Provider
+          value={{
+            selectedModel: defaultContexts.model.selectedModel,
+            setSelectedModel: defaultContexts.model.setSelectedModel,
+            isLoading: false,
+          }}
+        >
           <SettingsMenu />
         </ModelContext.Provider>
       </OpenRouterApiKeyContext.Provider>

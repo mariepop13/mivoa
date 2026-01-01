@@ -14,7 +14,7 @@ vi.mock('date-fns', async () => {
   const actual = await vi.importActual('date-fns');
   return {
     ...actual,
-    format: vi.fn((date: Date, formatStr: string, options?: { locale: any }) => {
+    format: vi.fn((date: Date, formatStr: string, options?: { locale: { code: string } }) => {
       if (formatStr === 'yyyy-MM-dd') {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');

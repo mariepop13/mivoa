@@ -147,7 +147,7 @@ describe('EntryContentForm', () => {
   it('should call onContentChange when prompt is selected', () => {
     let promptCallback: ((prompt: string) => void) | undefined;
 
-    vi.mocked(AiPromptSuggestion).mockImplementation((props: any) => {
+    vi.mocked(AiPromptSuggestion).mockImplementation((props) => {
       promptCallback = props.onPromptSelected;
       return null;
     });
