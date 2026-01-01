@@ -5,6 +5,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date | Timestamp;
   editedAt?: Date | Timestamp;
+  originalContent?: string;
 }
 
 export interface ConversationState {

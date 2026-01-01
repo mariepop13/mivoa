@@ -22,6 +22,7 @@ interface UseChatConversationResult {
   editMessage: (messageIndex: number, newContent: string) => Promise<void>;
   regenerateFrom: (messageIndex: number) => Promise<void>;
   deleteMessage: (messageIndex: number) => Promise<void>;
+  undoEdit: (messageIndex: number) => Promise<void>;
   isEditing: boolean;
   isRegenerating: boolean;
   draftId: string | null;
@@ -93,6 +94,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     editMessage: editMessageInternal,
     regenerateFrom: regenerateFromInternal,
     deleteMessage: deleteMessageInternal,
+    undoEdit: undoEditInternal,
     isEditing,
     isRegenerating,
     error: editingError,
@@ -217,6 +219,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     editMessage: editMessageInternal,
     regenerateFrom: regenerateFromInternal,
     deleteMessage: deleteMessageInternal,
+    undoEdit: undoEditInternal,
     isEditing,
     isRegenerating,
     draftId,
