@@ -29,7 +29,7 @@ describe('ChatMessage', () => {
           supportedLanguages: ['en', 'fr'],
         }}
       >
-        <ChatMessage message={message} />
+        <ChatMessage message={message} messageIndex={0} isTyping={false} />
       </LanguageContext.Provider>
     );
 

@@ -211,10 +211,7 @@ describe('useChatConversation', () => {
       result.current.loadConversation([], null);
     });
 
-    await waitFor(() => {
-      expect(result.current.messages.length).toBeGreaterThan(0);
-    });
-
+    expect(result.current.messages).toEqual([]);
     expect(result.current.draftId).toBeNull();
   });
 

@@ -137,6 +137,19 @@
   "word": "mot",
   "words": "mots",
   "character": "caractère",
-  "charactersCount": "caractères"
+  "charactersCount": "caractères",
+  "editMessage": "Modifier le message",
+  "editMessageDescription": "Modifiez le contenu de votre message",
+  "editMessageConfirmationTitle": "Régénérer la réponse ?",
+  "editMessageConfirmationDescription": "Si vous modifiez ce message, la réponse de l'IA sera régénérée. Tous les messages après ce point seront supprimés. Continuer ?",
+  "saveEdit": "Enregistrer",
+  "cancelEdit": "Annuler",
+  "edited": "Modifié",
+  "regenerateFromHere": "Régénérer à partir d'ici",
+  "deleteMessage": "Supprimer le message",
+  "editingMessage": "Modification du message...",
+  "regeneratingResponse": "Régénération de la réponse...",
+  "messageRequired": "Le message ne peut pas être vide",
+  "messageTooLong": "Le message est trop long"
 }
 

@@ -137,6 +137,19 @@
   "word": "word",
   "words": "words",
   "character": "character",
-  "charactersCount": "characters"
+  "charactersCount": "characters",
+  "editMessage": "Edit message",
+  "editMessageDescription": "Edit your message content",
+  "editMessageConfirmationTitle": "Regenerate response?",
+  "editMessageConfirmationDescription": "If you edit this message, the AI response will be regenerated. All messages after this point will be removed. Continue?",
+  "saveEdit": "Save",
+  "cancelEdit": "Cancel",
+  "edited": "Edited",
+  "regenerateFromHere": "Regenerate from here",
+  "deleteMessage": "Delete message",
+  "editingMessage": "Editing message...",
+  "regeneratingResponse": "Regenerating response...",
+  "messageRequired": "Message cannot be empty",
+  "messageTooLong": "Message is too long"
 }
 
