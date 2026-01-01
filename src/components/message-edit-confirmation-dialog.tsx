@@ -16,12 +16,14 @@ interface MessageEditConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  messagesToDeleteCount?: number;
 }
 
 export function MessageEditConfirmationDialog({
   open,
   onOpenChange,
   onConfirm,
+  messagesToDeleteCount = 0,
 }: MessageEditConfirmationDialogProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -30,13 +32,20 @@ export function MessageEditConfirmationDialog({
     onOpenChange(false);
   };
 
+  const getDescription = () => {
+    if (messagesToDeleteCount > 0) {
+      return t('editMessageConfirmationDescriptionWithCount', `If you edit this message, the AI response will be regenerated. ${messagesToDeleteCount} message(s) after this point will be removed. Continue?`).replace('{count}', String(messagesToDeleteCount));
+    }
+    return t('editMessageConfirmationDescription');
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('editMessageConfirmationTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('editMessageConfirmationDescription')}
+            {getDescription()}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

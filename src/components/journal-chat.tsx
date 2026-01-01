@@ -43,6 +43,8 @@ function JournalChatComponent({
     editMessage,
     regenerateFrom,
     deleteMessage,
+    undoEdit,
+    isRegenerating,
     draftId,
   } = useChatConversation({
     dateKey,
@@ -101,10 +103,12 @@ function JournalChatComponent({
       <ChatMessagesList
         messages={messages}
         isTyping={isTyping}
+        isRegenerating={isRegenerating}
         error={error}
         onEdit={editMessage}
         onDelete={deleteMessage}
         onRegenerate={regenerateFrom}
+        onUndoEdit={undoEdit}
       />
       <div ref={messagesEndRef} id="messages-end" />
       <ChatInputForm

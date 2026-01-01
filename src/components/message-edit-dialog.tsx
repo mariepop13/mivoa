@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,9 +30,14 @@ export function MessageEditDialog({
   const { t } = useTranslation();
   const [content, setContent] = useState(initialContent);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     if (open) {
       setContent(initialContent);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
   }, [open, initialContent]);
 
@@ -50,8 +55,14 @@ export function MessageEditDialog({
     onOpenChange(false);
   };
 
-  const isValid = content.trim().length > 0 && content.length <= MAX_MESSAGE_LENGTH;
+
+  const trimmedContent = content.trim();
+  const isValid = trimmedContent.length > 0 && content.length <= MAX_MESSAGE_LENGTH;
   const characterCount = content.length;
+  const wordCount = trimmedContent.split(/\s+/).filter(word => word.length > 0).length;
+  const hasNoChanges = trimmedContent === initialContent.trim();
+  const isEmpty = trimmedContent.length === 0;
+  const isTooShort = trimmedContent.length > 0 && trimmedContent.length < 3;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,35 +75,72 @@ export function MessageEditDialog({
         </DialogHeader>
         <div className="space-y-4 py-4">
           <textarea
+            ref={textareaRef}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (newValue.length <= MAX_MESSAGE_LENGTH) {
+                setContent(newValue);
+              }
+            }}
+            style={{ minHeight: '200px', height: 'auto' }}
             className="w-full min-h-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
             placeholder={t('writeYourThoughts')}
             maxLength={MAX_MESSAGE_LENGTH}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>
-              {characterCount} / {MAX_MESSAGE_LENGTH} {t('charactersCount')}
-            </span>
-            {!isValid && content.trim().length === 0 && (
-              <span className="text-destructive">
-                {t('messageRequired', 'Message cannot be empty')}
-              </span>
-            )}
-            {characterCount > MAX_MESSAGE_LENGTH && (
-              <span className="text-destructive">
-                {t('messageTooLong', 'Message is too long')}
-              </span>
-            )}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex gap-4">
+                <span>
+                  {characterCount} / {MAX_MESSAGE_LENGTH} {t('charactersCount')}
+                </span>
+                <span>
+                  {wordCount} {wordCount === 1 ? t('word', 'word') : t('words', 'words')}
+                </span>
+              </div>
+              {hasNoChanges && !isEmpty && (
+                <span className="text-yellow-600 dark:text-yellow-400">
+                  {t('noChangesWarning', 'No changes detected')}
+                </span>
+              )}
+            </div>
+            <div className="flex justify-end">
+              {isEmpty && (
+                <span className="text-destructive text-xs">
+                  {t('messageRequired', 'Message cannot be empty')}
+                </span>
+              )}
+              {isTooShort && !isEmpty && (
+                <span className="text-yellow-600 dark:text-yellow-400 text-xs">
+                  {t('messageTooShort', 'Message is very short')}
+                </span>
+              )}
+              {characterCount > MAX_MESSAGE_LENGTH && (
+                <span className="text-destructive text-xs">
+                  {t('messageTooLong', 'Message is too long')}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
-            {t('cancel')}
+        <DialogFooter className="flex justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setContent(initialContent);
+            }}
+            disabled={content === initialContent}
+          >
+            {t('restoreOriginal', 'Restore original')}
           </Button>
-          <Button onClick={handleSave} disabled={!isValid}>
-            {t('saveEdit')}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCancel}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={handleSave} disabled={!isValid || hasNoChanges}>
+              {t('saveEdit')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

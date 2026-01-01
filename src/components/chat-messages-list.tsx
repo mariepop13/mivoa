@@ -12,19 +12,23 @@ import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 interface ChatMessagesListProps {
   messages: ChatMessageType[];
   isTyping: boolean;
+  isRegenerating?: boolean;
   error: string | null;
   onEdit?: (messageIndex: number, newContent: string) => Promise<void>;
   onDelete?: (messageIndex: number) => Promise<void>;
   onRegenerate?: (messageIndex: number) => Promise<void>;
+  onUndoEdit?: (messageIndex: number) => Promise<void>;
 }
 
 export function ChatMessagesList({
   messages,
   isTyping,
+  isRegenerating = false,
   error,
   onEdit,
   onDelete,
   onRegenerate,
+  onUndoEdit,
 }: ChatMessagesListProps): React.JSX.Element {
   const { t } = useTranslation();
   const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
@@ -48,14 +52,20 @@ export function ChatMessagesList({
               key={`${timestampMs}-${index}`}
               message={message}
               messageIndex={index}
+              totalMessages={messages.length}
               isTyping={isTyping}
               onEdit={onEdit}
               onDelete={onDelete}
               onRegenerate={onRegenerate}
+              onUndoEdit={onUndoEdit}
             />
           );
         })}
-        {isTyping && <ChatTypingIndicator />}
+        {isTyping && (
+          <ChatTypingIndicator
+            message={isRegenerating ? t('regeneratingResponse', 'Regenerating response...') : undefined}
+          />
+        )}
         {error && (
           <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-sm">
             {t('error')}: {error}

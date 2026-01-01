@@ -10,6 +10,9 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { MessageEditButton } from '@/components/message-edit-button';
 import { MessageEditDialog } from '@/components/message-edit-dialog';
 import { MessageEditConfirmationDialog } from '@/components/message-edit-confirmation-dialog';
+import { MessageDeleteConfirmationDialog } from '@/components/message-delete-confirmation-dialog';
+import { MessageRegenerateConfirmationDialog } from '@/components/message-regenerate-confirmation-dialog';
+import { MessageDiffDialog } from '@/components/message-diff-dialog';
 import { MessageActionsMenu } from '@/components/message-actions-menu';
 import { useTranslation } from '@/hooks/use-translation';
 import { canEditMessage } from '@/utils/conversation-utils';
@@ -17,10 +20,12 @@ import { canEditMessage } from '@/utils/conversation-utils';
 interface ChatMessageProps {
   message: ChatMessageType;
   messageIndex: number;
+  totalMessages: number;
   isTyping: boolean;
   onEdit?: (messageIndex: number, newContent: string) => Promise<void>;
   onDelete?: (messageIndex: number) => Promise<void>;
   onRegenerate?: (messageIndex: number) => Promise<void>;
+  onUndoEdit?: (messageIndex: number) => Promise<void>;
 }
 
 const MAX_MESSAGE_WIDTH_PERCENT = 80;
@@ -28,15 +33,20 @@ const MAX_MESSAGE_WIDTH_PERCENT = 80;
 function ChatMessageComponent({
   message,
   messageIndex,
+  totalMessages,
   isTyping,
   onEdit,
   onDelete,
   onRegenerate,
+  onUndoEdit,
 }: ChatMessageProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const { t } = useTranslation();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [showDeleteConfirmationDialog, setShowDeleteConfirmationDialog] = useState(false);
+  const [showRegenerateConfirmationDialog, setShowRegenerateConfirmationDialog] = useState(false);
+  const [showDiffDialog, setShowDiffDialog] = useState(false);
 
   const dateLocale = language === 'fr' ? fr : enUS;
   const timestampDate = message.timestamp instanceof Timestamp 
@@ -45,6 +55,7 @@ function ChatMessageComponent({
   const formattedTime = format(timestampDate, 'HH:mm:ss', { locale: dateLocale });
 
   const isEdited = Boolean(message.editedAt);
+  const canUndo = isEdited && message.originalContent && !!onUndoEdit && !isTyping;
 
   const isUser = message.role === 'user';
   const canEdit = canEditMessage(message, isTyping) && !!onEdit;
@@ -62,13 +73,18 @@ function ChatMessageComponent({
     if (onEdit) {
       try {
         await onEdit(messageIndex, newContent);
+        setShowEditDialog(false);
       } catch (err) {
         console.error('Failed to edit message:', err);
       }
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setShowDeleteConfirmationDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (onDelete) {
       try {
         await onDelete(messageIndex);
@@ -78,12 +94,26 @@ function ChatMessageComponent({
     }
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerateClick = () => {
+    setShowRegenerateConfirmationDialog(true);
+  };
+
+  const handleRegenerateConfirm = async () => {
     if (onRegenerate) {
       try {
         await onRegenerate(messageIndex);
       } catch (err) {
         console.error('Failed to regenerate:', err);
+      }
+    }
+  };
+
+  const handleUndoEdit = async () => {
+    if (onUndoEdit) {
+      try {
+        await onUndoEdit(messageIndex);
+      } catch (err) {
+        console.error('Failed to undo edit:', err);
       }
     }
   };
@@ -132,35 +162,50 @@ function ChatMessageComponent({
           {formattedTime}
                 </div>
                 {isEdited && (
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded ${
-                      isUser
-                        ? 'bg-primary-foreground/20 text-primary-foreground/80'
-                        : 'bg-muted-foreground/20 text-muted-foreground'
-                    }`}
-                  >
-                    {t('edited')}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setShowDiffDialog(true)}
+                      className={`text-xs px-1.5 py-0.5 rounded ${
+                        isUser
+                          ? 'bg-primary-foreground/20 text-primary-foreground/80 hover:bg-primary-foreground/30'
+                          : 'bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30'
+                      } cursor-pointer`}
+                      title={t('viewChanges', 'View changes')}
+                    >
+                      {t('edited')}
+                    </button>
+                    {canUndo && (
+                      <button
+                        onClick={handleUndoEdit}
+                        className={`text-xs px-1.5 py-0.5 rounded underline ${
+                          isUser
+                            ? 'text-primary-foreground/80 hover:text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        title={t('undoEdit', 'Undo edit')}
+                      >
+                        {t('undo', 'Undo')}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-            {isUser && (
-              <div className="flex items-start gap-1 ml-2">
-                {canEdit && (
-                  <MessageEditButton
-                    onClick={handleEditClick}
-                    disabled={isTyping}
-                  />
-                )}
-                <MessageActionsMenu
-                  messageRole={message.role}
-                  onEdit={canEdit ? handleEditClick : undefined}
-                  onDelete={onDelete ? handleDelete : undefined}
-                  onRegenerate={onRegenerate ? handleRegenerate : undefined}
+            <div className="flex items-start gap-1 ml-2">
+              {isUser && canEdit && (
+                <MessageEditButton
+                  onClick={handleEditClick}
                   disabled={isTyping}
                 />
-              </div>
-            )}
+              )}
+              <MessageActionsMenu
+                messageRole={message.role}
+                onEdit={isUser && canEdit ? handleEditClick : undefined}
+                onDelete={isUser && onDelete ? handleDeleteClick : undefined}
+                onRegenerate={onRegenerate ? handleRegenerateClick : undefined}
+                disabled={isTyping}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -168,6 +213,7 @@ function ChatMessageComponent({
         open={showConfirmationDialog}
         onOpenChange={setShowConfirmationDialog}
         onConfirm={handleConfirmationConfirm}
+        messagesToDeleteCount={Math.max(0, totalMessages - messageIndex - 1)}
       />
       <MessageEditDialog
         open={showEditDialog}
@@ -175,6 +221,26 @@ function ChatMessageComponent({
         initialContent={message.content}
         onSave={handleEditSave}
       />
+      <MessageDeleteConfirmationDialog
+        open={showDeleteConfirmationDialog}
+        onOpenChange={setShowDeleteConfirmationDialog}
+        onConfirm={handleDeleteConfirm}
+        messagesToDeleteCount={Math.max(0, totalMessages - messageIndex - 1)}
+      />
+      <MessageRegenerateConfirmationDialog
+        open={showRegenerateConfirmationDialog}
+        onOpenChange={setShowRegenerateConfirmationDialog}
+        onConfirm={handleRegenerateConfirm}
+        messagesToDeleteCount={Math.max(0, totalMessages - messageIndex - 1)}
+      />
+      {message.originalContent && (
+        <MessageDiffDialog
+          open={showDiffDialog}
+          onOpenChange={setShowDiffDialog}
+          originalContent={message.originalContent}
+          editedContent={message.content}
+        />
+      )}
     </>
   );
 }
