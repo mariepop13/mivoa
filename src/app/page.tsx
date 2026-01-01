@@ -15,8 +15,102 @@ import { useJournalHandlers } from '@/hooks/use-journal-handlers';
 import { useTemplateConversation } from '@/hooks/use-template-conversation';
 import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
+import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 const DATE_KEY_FORMAT = 'yyyy-MM-dd';
+
+function useJournalEffects(
+  selectedDate: Date,
+  setContent: (content: string) => void,
+  setTitle: (title: string) => void,
+  setSelectedEntryId: (id: string | null) => void,
+  selectedEntryData: JournalEntryData | null
+): void {
+  useEffect(() => {
+    setContent('');
+    setTitle('');
+    setSelectedEntryId(null);
+  }, [selectedDate, setContent, setTitle, setSelectedEntryId]);
+
+  useEffect(() => {
+    if (selectedEntryData && selectedEntryData.content !== undefined) {
+      setContent(selectedEntryData.content || '');
+      setTitle(selectedEntryData.title || '');
+    }
+  }, [selectedEntryData, setContent, setTitle]);
+}
+
+function buildSidebarProps({
+  selectedDate,
+  journalEntries,
+  isSidebarOpen,
+  setIsSidebarOpen,
+  handlers,
+  handleTemplateSelect,
+  onDateChange,
+}: {
+  selectedDate: Date;
+  journalEntries: ReturnType<typeof useJournalEntries>;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+  handlers: ReturnType<typeof useJournalHandlers>;
+  handleTemplateSelect: (template: EntryTemplate) => void;
+  onDateChange: (date: Date) => void;
+}) {
+  return {
+    selectedDate,
+    entries: journalEntries.entries,
+    selectedEntryId: journalEntries.selectedEntryId,
+    isSidebarOpen,
+    isSaving: journalEntries.isSaving,
+    onClose: () => setIsSidebarOpen(false),
+    onNewEntry: handlers.handleNewEntry,
+    onEntrySelect: handlers.handleEntrySelect,
+    formatEntryTime,
+    onTemplateSelect: handleTemplateSelect,
+    onDateChange,
+  };
+}
+
+function buildMainContentProps({
+  selectedDate,
+  journalEntries,
+  isSidebarOpen,
+  setIsSidebarOpen,
+  handlers,
+}: {
+  selectedDate: Date;
+  journalEntries: ReturnType<typeof useJournalEntries>;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (open: boolean) => void;
+  handlers: ReturnType<typeof useJournalHandlers>;
+}) {
+  return {
+    selectedDate,
+    selectedEntryId: journalEntries.selectedEntryId,
+    selectedEntry: journalEntries.selectedEntry,
+    entries: journalEntries.entries,
+    content: journalEntries.content,
+    title: journalEntries.title,
+    isSaving: journalEntries.isSaving,
+    lastSavedAt: journalEntries.lastSavedAt,
+    saveError: journalEntries.saveError,
+    isGeneratingSummary: journalEntries.isGeneratingSummary,
+    recentEntries: journalEntries.recentEntries,
+    onContentChange: handlers.handleContentChange,
+    onSave: handlers.handleSave,
+    onDelete: journalEntries.handleDelete,
+    onSummarize: journalEntries.handleSummarizeConversation,
+    getEntryTitle,
+    onSidebarToggle: () => setIsSidebarOpen(true),
+    isSidebarOpen,
+    dateKey: format(selectedDate, DATE_KEY_FORMAT),
+    handleSaveDraft: journalEntries.handleSaveDraft,
+    handleDeleteDraft: journalEntries.handleDeleteDraft,
+    conversationEntryForDate: journalEntries.conversationEntryForDate,
+    onChangeDate: journalEntries.changeEntryDate,
+  };
+}
 
 function JournalApp(): React.JSX.Element {
   const authState = useJournalAuth();
@@ -26,11 +120,17 @@ function JournalApp(): React.JSX.Element {
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
 
   const journalEntries = useJournalEntries({ selectedDate, onDateChange: setSelectedDate });
+  const {
+    setContent,
+    setTitle,
+    setSelectedEntryId,
+    selectedEntryData,
+  } = journalEntries;
 
   const { createConversationFromPrompt } = useTemplateConversation({
     selectedDate,
     onSuccess: (draftId) => {
-      journalEntries.setSelectedEntryId(draftId);
+      setSelectedEntryId(draftId);
       setIsSidebarOpen(false);
     },
     onError: (error) => {
@@ -38,18 +138,7 @@ function JournalApp(): React.JSX.Element {
     },
   });
 
-  useEffect(() => {
-    journalEntries.setContent('');
-    journalEntries.setTitle('');
-    journalEntries.setSelectedEntryId(null);
-  }, [selectedDate, journalEntries.setContent, journalEntries.setTitle, journalEntries.setSelectedEntryId]);
-
-  useEffect(() => {
-    if (journalEntries.selectedEntryData && journalEntries.selectedEntryData.content !== undefined) {
-      journalEntries.setContent(journalEntries.selectedEntryData.content || '');
-      journalEntries.setTitle(journalEntries.selectedEntryData.title || '');
-    }
-  }, [journalEntries.selectedEntryData, journalEntries.setContent, journalEntries.setTitle]);
+  useJournalEffects(selectedDate, setContent, setTitle, setSelectedEntryId, selectedEntryData);
 
   const handlers = useJournalHandlers({
     journalEntries,
@@ -77,45 +166,23 @@ function JournalApp(): React.JSX.Element {
     return <JournalLoadingState />;
   }
 
-  const sidebarProps = {
+  const sidebarProps = buildSidebarProps({
     selectedDate,
-    entries: journalEntries.entries,
-    selectedEntryId: journalEntries.selectedEntryId,
+    journalEntries,
     isSidebarOpen,
-    isSaving: journalEntries.isSaving,
-    onClose: () => setIsSidebarOpen(false),
-    onNewEntry: handlers.handleNewEntry,
-    onEntrySelect: handlers.handleEntrySelect,
-    formatEntryTime,
-    onTemplateSelect: handleTemplateSelect,
+    setIsSidebarOpen,
+    handlers,
+    handleTemplateSelect,
     onDateChange: setSelectedDate,
-  };
+  });
 
-  const mainContentProps = {
+  const mainContentProps = buildMainContentProps({
     selectedDate,
-    selectedEntryId: journalEntries.selectedEntryId,
-    selectedEntry: journalEntries.selectedEntry,
-    entries: journalEntries.entries,
-    content: journalEntries.content,
-    title: journalEntries.title,
-    isSaving: journalEntries.isSaving,
-    lastSavedAt: journalEntries.lastSavedAt,
-    saveError: journalEntries.saveError,
-    isGeneratingSummary: journalEntries.isGeneratingSummary,
-    recentEntries: journalEntries.recentEntries,
-    onContentChange: handlers.handleContentChange,
-    onSave: handlers.handleSave,
-    onDelete: journalEntries.handleDelete,
-    onSummarize: journalEntries.handleSummarizeConversation,
-    getEntryTitle,
-    onSidebarToggle: () => setIsSidebarOpen(true),
+    journalEntries,
     isSidebarOpen,
-    dateKey: format(selectedDate, DATE_KEY_FORMAT),
-    handleSaveDraft: journalEntries.handleSaveDraft,
-    handleDeleteDraft: journalEntries.handleDeleteDraft,
-    conversationEntryForDate: journalEntries.conversationEntryForDate,
-    onChangeDate: journalEntries.changeEntryDate,
-  };
+    setIsSidebarOpen,
+    handlers,
+  });
 
   return (
     <main className="min-h-screen bg-background">

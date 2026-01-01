@@ -109,6 +109,87 @@ function getCardClassName(shouldShowTabs: boolean): string {
   return cn(baseClasses, minHeightClasses);
 }
 
+function renderChatContent({
+  onSummarize,
+  isGeneratingSummary,
+  dateKey,
+  onDraftSaveWrapper,
+  handleDeleteDraft,
+  initialConversation,
+}: {
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+}): React.JSX.Element {
+  return (
+    <JournalChat
+      onSummarize={onSummarize}
+      isLoadingSummary={isGeneratingSummary}
+      dateKey={dateKey}
+      onDraftSave={onDraftSaveWrapper}
+      onDraftDelete={handleDeleteDraft}
+      initialDraft={initialConversation}
+    />
+  );
+}
+
+function renderEntryContent({
+  selectedDate,
+  content,
+  title,
+  onContentChange,
+  onSave,
+  onDelete,
+  onChangeDate,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  selectedEntryId,
+  selectedEntry,
+  recentEntries,
+}: {
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+}): React.JSX.Element {
+  return (
+    <JournalEntry
+      date={selectedDate}
+      content={content}
+      title={title}
+      onContentChange={onContentChange}
+      onSave={onSave}
+      onDelete={onDelete}
+      onChangeDate={onChangeDate}
+      isLoading={isSaving}
+      isSaved={lastSavedAt !== null && !isSaving}
+      error={saveError}
+      hideDate={false}
+      canDelete={Boolean(selectedEntryId)}
+      recentEntries={recentEntries}
+      places={selectedEntry?.places}
+      characters={selectedEntry?.characters}
+      themes={selectedEntry?.themes}
+      themeEmojis={selectedEntry?.themeEmojis}
+      moods={selectedEntry?.moods}
+      moodEmojis={selectedEntry?.moodEmojis}
+    />
+  );
+}
+
 function renderContent({
   shouldShowChat,
   onSummarize,
@@ -153,41 +234,31 @@ function renderContent({
   recentEntries: Array<{ content: string; title?: string; date: string }>;
 }): React.JSX.Element {
   if (shouldShowChat) {
-    return (
-      <JournalChat
-        onSummarize={onSummarize}
-        isLoadingSummary={isGeneratingSummary}
-        dateKey={dateKey}
-        onDraftSave={onDraftSaveWrapper}
-        onDraftDelete={handleDeleteDraft}
-        initialDraft={initialConversation}
-      />
-    );
+    return renderChatContent({
+      onSummarize,
+      isGeneratingSummary,
+      dateKey,
+      onDraftSaveWrapper,
+      handleDeleteDraft,
+      initialConversation,
+    });
   }
 
-  return (
-    <JournalEntry
-      date={selectedDate}
-      content={content}
-      title={title}
-      onContentChange={onContentChange}
-      onSave={onSave}
-      onDelete={onDelete}
-      onChangeDate={onChangeDate}
-      isLoading={isSaving}
-      isSaved={lastSavedAt !== null && !isSaving}
-      error={saveError}
-      hideDate={false}
-      canDelete={Boolean(selectedEntryId)}
-      recentEntries={recentEntries}
-      places={selectedEntry?.places}
-      characters={selectedEntry?.characters}
-      themes={selectedEntry?.themes}
-      themeEmojis={selectedEntry?.themeEmojis}
-      moods={selectedEntry?.moods}
-      moodEmojis={selectedEntry?.moodEmojis}
-    />
-  );
+  return renderEntryContent({
+    selectedDate,
+    content,
+    title,
+    onContentChange,
+    onSave,
+    onDelete,
+    onChangeDate,
+    isSaving,
+    lastSavedAt,
+    saveError,
+    selectedEntryId,
+    selectedEntry,
+    recentEntries,
+  });
 }
 
 export function JournalMainContent({

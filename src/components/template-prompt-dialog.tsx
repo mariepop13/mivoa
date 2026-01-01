@@ -113,7 +113,13 @@ export function TemplatePromptDialog({
         </DialogHeader>
 
         <div className="py-4">
-          {renderPromptContent(isGenerating, error, generatedPrompt, templateDescription, t)}
+          {renderPromptContent({
+            isGenerating,
+            error,
+            generatedPrompt,
+            templateDescription,
+            t,
+          })}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -136,13 +142,21 @@ export function TemplatePromptDialog({
   );
 }
 
-function renderPromptContent(
-  isGenerating: boolean,
-  error: string | null,
-  generatedPrompt: string,
-  templateDescription: string,
-  t: (key: string) => string
-): React.ReactNode {
+interface RenderPromptContentOptions {
+  isGenerating: boolean;
+  error: string | null;
+  generatedPrompt: string;
+  templateDescription: string;
+  t: (key: string) => string;
+}
+
+function renderPromptContent({
+  isGenerating,
+  error,
+  generatedPrompt,
+  templateDescription,
+  t,
+}: RenderPromptContentOptions): React.ReactNode {
   if (isGenerating) {
     return (
       <div className="flex items-center justify-center py-8 gap-3">
