@@ -116,6 +116,7 @@ function renderChatContent({
   onDraftSaveWrapper,
   handleDeleteDraft,
   initialConversation,
+  setViewMode,
 }: {
   onSummarize: JournalMainContentProps['onSummarize'];
   isGeneratingSummary: boolean;
@@ -123,6 +124,7 @@ function renderChatContent({
   onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
   handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
   initialConversation: InitialConversation | null;
+  setViewMode: (mode: 'chat' | 'summary') => void;
 }): React.JSX.Element {
   return (
     <JournalChat
@@ -132,6 +134,7 @@ function renderChatContent({
       onDraftSave={onDraftSaveWrapper}
       onDraftDelete={handleDeleteDraft}
       initialDraft={initialConversation}
+      onViewModeChange={setViewMode}
     />
   );
 }
@@ -211,6 +214,7 @@ function renderContent({
   selectedEntryId,
   selectedEntry,
   recentEntries,
+  setViewMode,
 }: {
   shouldShowChat: boolean;
   onSummarize: JournalMainContentProps['onSummarize'];
@@ -232,6 +236,7 @@ function renderContent({
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   recentEntries: Array<{ content: string; title?: string; date: string }>;
+  setViewMode: (mode: 'chat' | 'summary') => void;
 }): React.JSX.Element {
   if (shouldShowChat) {
     return renderChatContent({
@@ -241,6 +246,7 @@ function renderContent({
       onDraftSaveWrapper,
       handleDeleteDraft,
       initialConversation,
+      setViewMode,
     });
   }
 
@@ -350,6 +356,7 @@ export function JournalMainContent({
                 selectedEntryId,
                 selectedEntry,
                 recentEntries,
+                setViewMode,
               })}
             </div>
           </div>

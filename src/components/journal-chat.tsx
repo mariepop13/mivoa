@@ -20,6 +20,7 @@ interface JournalChatProps {
   onDraftSave?: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
   onDraftDelete?: (draftId: string) => Promise<void>;
   initialDraft?: { messages: ChatMessage[]; draftId: string | null; entryId: string | null } | null;
+  onViewModeChange?: (mode: 'chat' | 'summary') => void;
 }
 
 const MIN_MESSAGES_FOR_SUMMARY = 2;
@@ -31,8 +32,19 @@ function JournalChatComponent({
   onDraftSave,
   onDraftDelete,
   initialDraft,
+  onViewModeChange,
 }: JournalChatProps): React.JSX.Element {
-  const { messages, isTyping, error, sendMessage, loadConversation, draftId } = useChatConversation({
+  const {
+    messages,
+    isTyping,
+    error,
+    sendMessage,
+    loadConversation,
+    editMessage,
+    regenerateFrom,
+    deleteMessage,
+    draftId,
+  } = useChatConversation({
     dateKey,
     onDraftSave,
     onDraftDelete,
@@ -75,6 +87,9 @@ function JournalChatComponent({
       const entryId = initialDraft?.entryId || null;
       const finalDraftId = draftId || entryId;
       onSummarize(conversationHistory, finalDraftId);
+      if (onViewModeChange) {
+        onViewModeChange('summary');
+      }
     }
   };
 
@@ -83,7 +98,14 @@ function JournalChatComponent({
 
   return (
     <div className="flex flex-col h-full">
-      <ChatMessagesList messages={messages} isTyping={isTyping} error={error} />
+      <ChatMessagesList
+        messages={messages}
+        isTyping={isTyping}
+        error={error}
+        onEdit={editMessage}
+        onDelete={deleteMessage}
+        onRegenerate={regenerateFrom}
+      />
       <div ref={messagesEndRef} id="messages-end" />
       <ChatInputForm
         onSend={sendMessage}

@@ -13,9 +13,19 @@ interface ChatMessagesListProps {
   messages: ChatMessageType[];
   isTyping: boolean;
   error: string | null;
+  onEdit?: (messageIndex: number, newContent: string) => Promise<void>;
+  onDelete?: (messageIndex: number) => Promise<void>;
+  onRegenerate?: (messageIndex: number) => Promise<void>;
 }
 
-export function ChatMessagesList({ messages, isTyping, error }: ChatMessagesListProps): React.JSX.Element {
+export function ChatMessagesList({
+  messages,
+  isTyping,
+  error,
+  onEdit,
+  onDelete,
+  onRegenerate,
+}: ChatMessagesListProps): React.JSX.Element {
   const { t } = useTranslation();
   const { apiKey, isLoading: isApiKeyLoading } = useContext(OpenRouterApiKeyContext);
 
@@ -33,7 +43,17 @@ export function ChatMessagesList({ messages, isTyping, error }: ChatMessagesList
           const timestampMs = message.timestamp instanceof Timestamp 
             ? message.timestamp.toMillis() 
             : message.timestamp.getTime();
-          return <ChatMessage key={`${timestampMs}-${index}`} message={message} />;
+          return (
+            <ChatMessage
+              key={`${timestampMs}-${index}`}
+              message={message}
+              messageIndex={index}
+              isTyping={isTyping}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onRegenerate={onRegenerate}
+            />
+          );
         })}
         {isTyping && <ChatTypingIndicator />}
         {error && (
