@@ -42,6 +42,7 @@ const createMockUseChatConversationReturn = (overrides = {}) => ({
   editMessage: vi.fn().mockResolvedValue(undefined),
   regenerateFrom: vi.fn().mockResolvedValue(undefined),
   deleteMessage: vi.fn().mockResolvedValue(undefined),
+  undoEdit: vi.fn().mockResolvedValue(undefined),
   isEditing: false,
   isRegenerating: false,
   draftId: null,
