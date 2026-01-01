@@ -57,6 +57,210 @@ interface JournalMainContentProps {
   onChangeDate?: (date: Date) => Promise<void>;
 }
 
+interface InitialConversation {
+  messages: ChatMessage[];
+  draftId: string | null;
+  entryId: string | null;
+}
+
+function getInitialConversation(
+  isDraftSelected: boolean,
+  isConversationEntrySelected: boolean,
+  selectedEntry: (JournalEntryData & { id: string }) | undefined
+): InitialConversation | null {
+  if (!selectedEntry) {
+    return null;
+  }
+
+  const messages = mapConversationHistory(selectedEntry.conversationHistory);
+  
+  if (isDraftSelected) {
+    return { messages, draftId: selectedEntry.id, entryId: null };
+  }
+  
+  if (isConversationEntrySelected) {
+    return { messages, draftId: null, entryId: selectedEntry.id };
+  }
+  
+  return null;
+}
+
+function createDraftSaveWrapper(
+  handleSaveDraft: JournalMainContentProps['handleSaveDraft'],
+  initialConversation: InitialConversation | null
+) {
+  return async (messages: ChatMessage[], draftId: string | null): Promise<string | null> => {
+    const conversationHistory = messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      timestamp: convertTimestampToDate(msg.timestamp),
+    }));
+    const entryId = initialConversation?.entryId || null;
+    return handleSaveDraft(conversationHistory, draftId, entryId);
+  };
+}
+
+function getCardClassName(shouldShowTabs: boolean): string {
+  const baseClasses =
+    "bg-card rounded-lg sm:rounded-xl border border-border shadow-sm flex flex-col transition-all duration-300 ease-in-out";
+  const minHeightClasses = shouldShowTabs
+    ? "min-h-[calc(100vh-12rem)] sm:min-h-[600px] lg:min-h-[650px]"
+    : "min-h-[calc(100vh-10rem)] sm:min-h-[500px] lg:min-h-[550px]";
+  return cn(baseClasses, minHeightClasses);
+}
+
+function renderChatContent({
+  onSummarize,
+  isGeneratingSummary,
+  dateKey,
+  onDraftSaveWrapper,
+  handleDeleteDraft,
+  initialConversation,
+}: {
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+}): React.JSX.Element {
+  return (
+    <JournalChat
+      onSummarize={onSummarize}
+      isLoadingSummary={isGeneratingSummary}
+      dateKey={dateKey}
+      onDraftSave={onDraftSaveWrapper}
+      onDraftDelete={handleDeleteDraft}
+      initialDraft={initialConversation}
+    />
+  );
+}
+
+function renderEntryContent({
+  selectedDate,
+  content,
+  title,
+  onContentChange,
+  onSave,
+  onDelete,
+  onChangeDate,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  selectedEntryId,
+  selectedEntry,
+  recentEntries,
+}: {
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+}): React.JSX.Element {
+  return (
+    <JournalEntry
+      date={selectedDate}
+      content={content}
+      title={title}
+      onContentChange={onContentChange}
+      onSave={onSave}
+      onDelete={onDelete}
+      onChangeDate={onChangeDate}
+      isLoading={isSaving}
+      isSaved={lastSavedAt !== null && !isSaving}
+      error={saveError}
+      hideDate={false}
+      canDelete={Boolean(selectedEntryId)}
+      recentEntries={recentEntries}
+      places={selectedEntry?.places}
+      characters={selectedEntry?.characters}
+      themes={selectedEntry?.themes}
+      themeEmojis={selectedEntry?.themeEmojis}
+      moods={selectedEntry?.moods}
+      moodEmojis={selectedEntry?.moodEmojis}
+    />
+  );
+}
+
+function renderContent({
+  shouldShowChat,
+  onSummarize,
+  isGeneratingSummary,
+  dateKey,
+  onDraftSaveWrapper,
+  handleDeleteDraft,
+  initialConversation,
+  selectedDate,
+  content,
+  title,
+  onContentChange,
+  onSave,
+  onDelete,
+  onChangeDate,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  selectedEntryId,
+  selectedEntry,
+  recentEntries,
+}: {
+  shouldShowChat: boolean;
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+}): React.JSX.Element {
+  if (shouldShowChat) {
+    return renderChatContent({
+      onSummarize,
+      isGeneratingSummary,
+      dateKey,
+      onDraftSaveWrapper,
+      handleDeleteDraft,
+      initialConversation,
+    });
+  }
+
+  return renderEntryContent({
+    selectedDate,
+    content,
+    title,
+    onContentChange,
+    onSave,
+    onDelete,
+    onChangeDate,
+    isSaving,
+    lastSavedAt,
+    saveError,
+    selectedEntryId,
+    selectedEntry,
+    recentEntries,
+  });
+}
+
 export function JournalMainContent({
   selectedDate,
   selectedEntryId,
@@ -93,37 +297,8 @@ export function JournalMainContent({
     selectedEntry,
   });
 
-  const getInitialConversation = () => {
-    if (isDraftSelected && selectedEntry) {
-      const messages = mapConversationHistory(selectedEntry.conversationHistory);
-      return {
-        messages,
-        draftId: selectedEntry.id,
-        entryId: null as string | null,
-      };
-    }
-    if (isConversationEntrySelected && selectedEntry) {
-      const messages = mapConversationHistory(selectedEntry.conversationHistory);
-      return {
-        messages,
-        draftId: null as string | null,
-        entryId: selectedEntry.id,
-      };
-    }
-    return null;
-  };
-
-  const initialConversation = getInitialConversation();
-
-  const onDraftSaveWrapper = async (messages: ChatMessage[], draftId: string | null): Promise<string | null> => {
-    const conversationHistory = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-      timestamp: convertTimestampToDate(msg.timestamp),
-    }));
-    const entryId = initialConversation?.entryId || null;
-    return handleSaveDraft(conversationHistory, draftId, entryId);
-  };
+  const initialConversation = getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry);
+  const onDraftSaveWrapper = createDraftSaveWrapper(handleSaveDraft, initialConversation);
 
   return (
     <div className="flex-1 flex flex-col bg-background">
@@ -143,13 +318,7 @@ export function JournalMainContent({
               />
             </div>
           )}
-          <div className={cn(
-            "bg-card rounded-lg sm:rounded-xl border border-border shadow-sm flex flex-col",
-            "transition-all duration-300 ease-in-out",
-            shouldShowTabs 
-              ? "min-h-[calc(100vh-12rem)] sm:min-h-[600px] lg:min-h-[650px]" 
-              : "min-h-[calc(100vh-10rem)] sm:min-h-[500px] lg:min-h-[550px]"
-          )}>
+          <div className={getCardClassName(shouldShowTabs)}>
             <div 
               key={viewMode}
               className={cn(
@@ -160,38 +329,28 @@ export function JournalMainContent({
               id={shouldShowChat ? "chat-panel" : "summary-panel"}
               aria-labelledby={shouldShowChat ? "chat-tab" : "summary-tab"}
             >
-              {shouldShowChat ? (
-                <JournalChat
-                  onSummarize={onSummarize}
-                  isLoadingSummary={isGeneratingSummary}
-                  dateKey={dateKey}
-                  onDraftSave={onDraftSaveWrapper}
-                  onDraftDelete={handleDeleteDraft}
-                  initialDraft={initialConversation}
-                />
-              ) : (
-                <JournalEntry
-                  date={selectedDate}
-                  content={content}
-                  title={title}
-                  onContentChange={onContentChange}
-                  onSave={onSave}
-                  onDelete={onDelete}
-                  onChangeDate={onChangeDate}
-                  isLoading={isSaving}
-                  isSaved={lastSavedAt !== null && !isSaving}
-                  error={saveError}
-                  hideDate={false}
-                  canDelete={Boolean(selectedEntryId)}
-                  recentEntries={recentEntries}
-                  places={selectedEntry?.places}
-                  characters={selectedEntry?.characters}
-                  themes={selectedEntry?.themes}
-                  themeEmojis={selectedEntry?.themeEmojis}
-                  moods={selectedEntry?.moods}
-                  moodEmojis={selectedEntry?.moodEmojis}
-                />
-              )}
+              {renderContent({
+                shouldShowChat,
+                onSummarize,
+                isGeneratingSummary,
+                dateKey,
+                onDraftSaveWrapper,
+                handleDeleteDraft,
+                initialConversation,
+                selectedDate,
+                content,
+                title,
+                onContentChange,
+                onSave,
+                onDelete,
+                onChangeDate,
+                isSaving,
+                lastSavedAt,
+                saveError,
+                selectedEntryId,
+                selectedEntry,
+                recentEntries,
+              })}
             </div>
           </div>
         </div>

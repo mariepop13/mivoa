@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
 
-export function UserMenu() {
+export function UserMenu(): React.JSX.Element {
   const { user, isLoading } = useUser();
   const auth = useAuth();
   const { t } = useTranslation();

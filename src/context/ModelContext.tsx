@@ -24,7 +24,7 @@ export const ModelContext = createContext<ModelContextType>({
   isLoading: true,
 });
 
-export function ModelProvider({ children }: { children: ReactNode }) {
+export function ModelProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
@@ -86,7 +86,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useModel() {
+export function useModel(): ModelContextType {
   return useContext(ModelContext);
 }
 

@@ -73,11 +73,15 @@ interface UseTemplateConversationParams {
   onError?: (error: Error) => void;
 }
 
+interface UseTemplateConversationResult {
+  createConversationFromPrompt: (prompt: string) => Promise<void>;
+}
+
 export function useTemplateConversation({
   selectedDate,
   onSuccess,
   onError,
-}: UseTemplateConversationParams) {
+}: UseTemplateConversationParams): UseTemplateConversationResult {
   const firestore = useFirestore();
   const { user } = useUser();
   const { apiKey } = useContext(OpenRouterApiKeyContext);
