@@ -13,49 +13,72 @@ interface UseOAuthCallbackResult {
   errorMessage: string | null;
 }
 
+interface OAuthCallbackHandlers {
+  setApiKey: (key: string) => Promise<void>;
+  setStatus: (status: OAuthCallbackStatus) => void;
+  setErrorMessage: (error: string | null) => void;
+  pushRoute: (path: string) => void;
+}
+
+interface OAuthCallbackParams {
+  code: string | null;
+  state: string | null;
+  error: string | null;
+}
+
+function validateOAuthParams(
+  params: OAuthCallbackParams,
+  t: (key: string) => string
+): { isValid: boolean; errorMessage?: string } {
+  if (params.error) {
+    return { isValid: false, errorMessage: params.error };
+  }
+  if (!params.code) {
+    return { isValid: false, errorMessage: t('noAuthorizationCode') };
+  }
+  return { isValid: true };
+}
+
+async function handleOAuthSuccess(
+  code: string,
+  state: string | null,
+  handlers: OAuthCallbackHandlers
+): Promise<NodeJS.Timeout> {
+  const apiKey = await exchangeAuthCodeForApiKey(code, state || undefined);
+  await handlers.setApiKey(apiKey);
+  handlers.setStatus('success');
+  
+  return setTimeout(() => {
+    handlers.pushRoute('/');
+  }, REDIRECT_DELAY_MS);
+}
+
 async function handleOAuthCallback({
   code,
   state,
   error,
-  setApiKey,
-  setStatus,
-  setErrorMessage,
+  handlers,
   t,
-  pushRoute,
 }: {
   code: string | null;
   state: string | null;
   error: string | null;
-  setApiKey: (key: string) => Promise<void>;
-  setStatus: (status: OAuthCallbackStatus) => void;
-  setErrorMessage: (error: string | null) => void;
+  handlers: OAuthCallbackHandlers;
   t: (key: string) => string;
-  pushRoute: (path: string) => void;
 }): Promise<NodeJS.Timeout | null> {
-  if (error) {
-    setErrorMessage(error);
-    setStatus('error');
-    return null;
-  }
-
-  if (!code) {
-    setErrorMessage(t('noAuthorizationCode'));
-    setStatus('error');
+  const validation = validateOAuthParams({ code, state, error }, t);
+  if (!validation.isValid) {
+    handlers.setErrorMessage(validation.errorMessage!);
+    handlers.setStatus('error');
     return null;
   }
 
   try {
-    const apiKey = await exchangeAuthCodeForApiKey(code, state || undefined);
-    await setApiKey(apiKey);
-    setStatus('success');
-
-    return setTimeout(() => {
-      pushRoute('/');
-    }, REDIRECT_DELAY_MS);
+    return await handleOAuthSuccess(code!, state, handlers);
   } catch (error) {
     console.error('Failed to exchange auth code:', error);
-    setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
-    setStatus('error');
+    handlers.setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+    handlers.setStatus('error');
     return null;
   }
 }
@@ -80,11 +103,13 @@ export function useOAuthCallback(): UseOAuthCallbackResult {
         code,
         state,
         error,
-        setApiKey,
-        setStatus,
-        setErrorMessage,
+        handlers: {
+          setApiKey,
+          setStatus,
+          setErrorMessage,
+          pushRoute: router.push.bind(router),
+        },
         t,
-        pushRoute: router.push.bind(router),
       });
     };
 
