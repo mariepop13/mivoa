@@ -10,7 +10,8 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { useEntryDates } from '@/hooks/use-entry-dates';
 import { useTranslation } from '@/hooks/use-translation';
 
-const DISPLAY_DATE_FORMAT = "EEEE, MMMM d, yyyy";
+const DISPLAY_DATE_FORMAT_EN = "EEEE, MMMM d, yyyy";
+const DISPLAY_DATE_FORMAT_FR = "EEEE, do MMMM yyyy";
 const INPUT_DATE_FORMAT = 'yyyy-MM-dd';
 const SHORT_DATE_FORMAT = "MMMM d, yyyy";
 const DATE_PARTS_COUNT = 3;
@@ -32,7 +33,8 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
   const [showDatesList, setShowDatesList] = useState(false);
   const dateLocale = language === 'fr' ? fr : enUS;
-  const formattedDate = format(value, DISPLAY_DATE_FORMAT, { locale: dateLocale });
+  const displayDateFormat = language === 'fr' ? DISPLAY_DATE_FORMAT_FR : DISPLAY_DATE_FORMAT_EN;
+  const formattedDate = format(value, displayDateFormat, { locale: dateLocale });
   const inputValue = format(value, INPUT_DATE_FORMAT);
   const entryDatesResult = useEntryDates();
   const { dates, isLoading: datesLoading } = enableDatesList ? entryDatesResult : { dates: [], isLoading: false };
