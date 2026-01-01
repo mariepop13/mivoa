@@ -79,11 +79,15 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     }
   }
 
+  const method = context.operation;
+  const path = `/databases/(default)/documents/${context.path}`;
+  const resource = context.requestResourceData ? { data: context.requestResourceData } : undefined;
+
   return {
     auth: authObject,
-    method: context.operation,
-    path: `/databases/(default)/documents/${context.path}`,
-    resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
+    method,
+    path,
+    resource,
   };
 }
 

@@ -32,6 +32,7 @@ interface JournalMainContentProps {
   selectedDate: Date;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  selectedEntryData: JournalEntryData | null;
   entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
@@ -55,6 +56,9 @@ interface JournalMainContentProps {
   handleDeleteDraft: (draftId: string) => Promise<void>;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
   onChangeDate?: (date: Date) => Promise<void>;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  setSelectedEntryId?: (id: string | null) => void;
+  onLinksUpdated?: () => void;
 }
 
 interface InitialConversation {
@@ -117,6 +121,7 @@ function renderChatContent({
   handleDeleteDraft,
   initialConversation,
   setViewMode,
+  selectedEntry,
 }: {
   onSummarize: JournalMainContentProps['onSummarize'];
   isGeneratingSummary: boolean;
@@ -125,6 +130,7 @@ function renderChatContent({
   handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
   initialConversation: InitialConversation | null;
   setViewMode: (mode: 'chat' | 'summary') => void;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
 }): React.JSX.Element {
   return (
     <JournalChat
@@ -135,6 +141,7 @@ function renderChatContent({
       onDraftDelete={handleDeleteDraft}
       initialDraft={initialConversation}
       onViewModeChange={setViewMode}
+      draftData={selectedEntry?.isDraft ? selectedEntry : null}
     />
   );
 }
@@ -168,8 +175,15 @@ function renderEntryContent({
   saveError,
   selectedEntryId,
   selectedEntry,
+  selectedEntryData,
   recentEntries,
-}: RenderEntryContentParams): React.JSX.Element {
+  onNavigateToEntry,
+  onLinksUpdated,
+}: RenderEntryContentParams & {
+  selectedEntryData: JournalEntryData | null;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
+}): React.JSX.Element {
   return (
     <JournalEntry
       date={selectedDate}
@@ -191,6 +205,10 @@ function renderEntryContent({
       themeEmojis={selectedEntry?.themeEmojis}
       moods={selectedEntry?.moods}
       moodEmojis={selectedEntry?.moodEmojis}
+      entryId={selectedEntryId}
+      linkedEntryIds={selectedEntryData?.linkedEntryIds || selectedEntry?.linkedEntryIds}
+      onNavigateToEntry={onNavigateToEntry}
+      onLinksUpdated={onLinksUpdated}
     />
   );
 }
@@ -239,9 +257,16 @@ function renderContent({
   saveError,
   selectedEntryId,
   selectedEntry,
+  selectedEntryData,
   recentEntries,
   setViewMode,
-}: RenderContentParams): React.JSX.Element {
+  onNavigateToEntry,
+  onLinksUpdated,
+}: RenderContentParams & {
+  selectedEntryData: JournalEntryData | null;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
+}): React.JSX.Element {
   if (shouldShowChat) {
     return renderChatContent({
       onSummarize,
@@ -251,6 +276,7 @@ function renderContent({
       handleDeleteDraft,
       initialConversation,
       setViewMode,
+      selectedEntry,
     });
   }
 
@@ -267,7 +293,10 @@ function renderContent({
     saveError,
     selectedEntryId,
     selectedEntry,
+    selectedEntryData,
     recentEntries,
+    onNavigateToEntry,
+    onLinksUpdated,
   });
 }
 
@@ -286,6 +315,7 @@ export function JournalMainContent({
   onDelete,
   onSummarize,
   selectedEntry,
+  selectedEntryData,
   entries,
   getEntryTitle,
   onSidebarToggle,
@@ -294,6 +324,9 @@ export function JournalMainContent({
   handleSaveDraft,
   handleDeleteDraft,
   onChangeDate,
+  onNavigateToEntry,
+  setSelectedEntryId: _setSelectedEntryId,
+  onLinksUpdated,
 }: JournalMainContentProps): React.JSX.Element {
   const {
     viewMode,
@@ -359,8 +392,11 @@ export function JournalMainContent({
                 saveError,
                 selectedEntryId,
                 selectedEntry,
+                selectedEntryData,
                 recentEntries,
                 setViewMode,
+                onNavigateToEntry,
+                onLinksUpdated,
               })}
             </div>
           </div>

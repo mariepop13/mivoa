@@ -1,15 +1,16 @@
 'use client';
 
-import { DatePicker } from '@/components/date-picker';
-import { SettingsMenu } from '@/components/settings-menu';
-import { UserMenu } from '@/components/user-menu';
 import { TemplatesDialog } from '@/components/templates-dialog';
-import { FileText } from 'lucide-react';
-import { useState } from 'react';
+import { DraftBulkActions } from '@/components/draft-bulk-actions';
+import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
+import { useDraftDeletion } from '@/hooks/use-draft-deletion';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
+import { SidebarHeader } from './journal-sidebar/sidebar-header';
+import { SidebarActions } from './journal-sidebar/sidebar-actions';
+import { EntriesList } from './journal-sidebar/entries-list';
 
 interface JournalSidebarProps {
   selectedDate: Date;
@@ -23,184 +24,7 @@ interface JournalSidebarProps {
   formatEntryTime: (entry: JournalEntryData & { id: string }) => string;
   onTemplateSelect?: (template: EntryTemplate) => void;
   onDateChange: (date: Date) => void;
-}
-
-function renderDateAndCloseButton(
-  selectedDate: Date,
-  onDateChange: (date: Date) => void,
-  onClose: () => void,
-  t: (key: string) => string
-): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-end gap-2 w-full">
-      <div className="flex justify-end min-w-0 [&_button]:!w-auto [&_button]:!justify-end [&_button]:!text-right">
-        <DatePicker value={selectedDate} onChange={onDateChange} />
-      </div>
-      <button
-        onClick={onClose}
-        aria-label={t('close')}
-        className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0"
-      >
-        <span className="text-2xl">×</span>
-      </button>
-    </div>
-  );
-}
-
-function renderEntriesCount(
-  entries: (JournalEntryData & { id: string })[] | null,
-  t: (key: string) => string
-): React.JSX.Element | null {
-  if (!entries || entries.length === 0) {
-    return null;
-  }
-  return (
-    <p className="text-xs sm:text-sm text-muted-foreground">
-      {entries.length} {entries.length === 1 ? t('entry') : t('entries')} {t('today')}
-    </p>
-  );
-}
-
-function SidebarHeader({
-  selectedDate,
-  entries,
-  onDateChange,
-  onClose,
-  t,
-}: {
-  selectedDate: Date;
-  entries: (JournalEntryData & { id: string })[] | null;
-  onDateChange: (date: Date) => void;
-  onClose: () => void;
-  t: (key: string) => string;
-}): React.JSX.Element {
-  return (
-    <div className="p-4 sm:p-6 border-b border-border">
-      <div className="flex flex-col gap-3 mb-2 items-end">
-        {renderDateAndCloseButton(selectedDate, onDateChange, onClose, t)}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <UserMenu />
-          <SettingsMenu />
-        </div>
-      </div>
-      {renderEntriesCount(entries, t)}
-    </div>
-  );
-}
-
-function renderNewEntryButton(
-  isSaving: boolean,
-  onNewEntry: () => void,
-  t: (key: string) => string
-): React.JSX.Element {
-  return (
-    <button
-      onClick={onNewEntry}
-      disabled={isSaving}
-      className={cn(
-        'w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg',
-        'hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed',
-        'transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md',
-        'active:scale-[0.98] flex items-center justify-center gap-2'
-      )}
-    >
-      <span>+</span>
-      <span>{t('newEntry')}</span>
-    </button>
-  );
-}
-
-function renderTemplatesButton(
-  isSaving: boolean,
-  setIsTemplatesDialogOpen: (open: boolean) => void,
-  t: (key: string) => string
-): React.JSX.Element {
-  return (
-    <button
-      onClick={() => setIsTemplatesDialogOpen(true)}
-      disabled={isSaving}
-      className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium border border-border flex items-center justify-center gap-2"
-    >
-      <FileText className="h-4 w-4" />
-      <span>{t('templates')}</span>
-    </button>
-  );
-}
-
-function SidebarActions({
-  isSaving,
-  onNewEntry,
-  onTemplateSelect,
-  setIsTemplatesDialogOpen,
-  t,
-}: {
-  isSaving: boolean;
-  onNewEntry: () => void;
-  onTemplateSelect?: (template: EntryTemplate) => void;
-  setIsTemplatesDialogOpen: (open: boolean) => void;
-  t: (key: string) => string;
-}): React.JSX.Element {
-  return (
-    <div className="p-4 sm:p-6 border-b border-border space-y-2">
-      {renderNewEntryButton(isSaving, onNewEntry, t)}
-      {onTemplateSelect && renderTemplatesButton(isSaving, setIsTemplatesDialogOpen, t)}
-    </div>
-  );
-}
-
-function EntriesList({
-  entries,
-  selectedEntryId,
-  onEntrySelect,
-  formatEntryTime,
-  t,
-}: {
-  entries: (JournalEntryData & { id: string })[] | null;
-  selectedEntryId: string | null;
-  onEntrySelect: (entryId: string) => void;
-  formatEntryTime: (entry: JournalEntryData & { id: string }) => string;
-  t: (key: string) => string;
-}): React.JSX.Element {
-  if (!entries || entries.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground text-sm py-8">
-        {t('noEntriesYet')}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {entries.map((entry) => (
-        <button
-          key={entry.id}
-          onClick={() => onEntrySelect(entry.id)}
-          className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            selectedEntryId === entry.id
-              ? 'bg-primary/10 text-primary border border-primary/20'
-              : 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground border border-transparent'
-          }`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="font-medium flex-1 min-w-0 truncate flex items-center gap-1.5">
-              {entry.subjectEmoji && (
-                <span className="flex-shrink-0" aria-hidden="true">{entry.subjectEmoji}</span>
-              )}
-              <span className="truncate">{entry.title || formatEntryTime(entry)}</span>
-              {entry.isDraft && (
-                <span className="flex-shrink-0 text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded border border-border">
-                  {t('draft')}
-                </span>
-              )}
-            </div>
-          </div>
-          {entry.title && (
-            <div className="text-xs text-muted-foreground mt-1">{formatEntryTime(entry)}</div>
-          )}
-        </button>
-      ))}
-    </div>
-  );
+  handleDeleteDraft: (draftId: string) => Promise<void>;
 }
 
 export function JournalSidebar({
@@ -215,9 +39,52 @@ export function JournalSidebar({
   formatEntryTime,
   onTemplateSelect,
   onDateChange,
+  handleDeleteDraft,
 }: JournalSidebarProps): React.JSX.Element {
   const { t } = useTranslation();
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [deletedDraftIds, setDeletedDraftIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const drafts = useMemo(() => entries?.filter(e => e.isDraft) || [], [entries]);
+
+  const { deleteDraft, deleteDrafts, isDeleting } = useDraftDeletion({
+    handleDeleteDraft,
+    selectedDate,
+    onOptimisticUpdate: (draftId) => {
+      setDeletedDraftIds(prev => new Set(prev).add(draftId));
+    },
+    onRestore: (draftId) => {
+      setDeletedDraftIds(prev => {
+        const next = new Set(prev);
+        next.delete(draftId);
+        return next;
+      });
+    },
+  });
+
+  const handleDeleteDraftClick = async (draftId: string, draftData: JournalEntryData & { id: string }) => {
+    await deleteDraft(draftId, draftData);
+  };
+
+  const handleBulkDelete = async (draftIds: string[], draftsData: (JournalEntryData & { id: string })[]) => {
+    await deleteDrafts(draftIds, draftsData);
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const toggleSelection = (draftId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(draftId)) {
+        next.delete(draftId);
+      } else {
+        next.add(draftId);
+      }
+      return next;
+    });
+  };
 
   return (
     <>
@@ -251,6 +118,24 @@ export function JournalSidebar({
           t={t}
         />
 
+        {drafts.length > 0 && (
+          <DraftBulkActions
+            drafts={drafts}
+            onDeleteSelected={handleBulkDelete}
+            isDeleting={isDeleting}
+            isSelectionMode={isSelectionMode}
+            onSelectionModeChange={setIsSelectionMode}
+            selectedIds={selectedIds}
+            onSelectAll={() => {
+              if (selectedIds.size === drafts.length) {
+                setSelectedIds(new Set());
+              } else {
+                setSelectedIds(new Set(drafts.map(d => d.id)));
+              }
+            }}
+          />
+        )}
+
         <div className="flex-1 overflow-y-auto p-4">
           <EntriesList
             entries={entries}
@@ -258,6 +143,12 @@ export function JournalSidebar({
             onEntrySelect={onEntrySelect}
             formatEntryTime={formatEntryTime}
             t={t}
+            onDeleteDraft={handleDeleteDraftClick}
+            isDeleting={isDeleting}
+            deletedDraftIds={deletedDraftIds}
+            isSelectionMode={isSelectionMode}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
           />
         </div>
       </div>

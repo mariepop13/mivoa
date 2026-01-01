@@ -44,6 +44,7 @@ export interface JournalEntryData extends Record<string, unknown> {
   summaryGeneratedAt?: Timestamp;
   conversationMode?: boolean;
   isDraft?: boolean;
+  linkedEntryIds?: string[];
 }
 
 interface UseJournalEntriesParams {
