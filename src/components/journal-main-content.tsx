@@ -120,6 +120,7 @@ function renderChatContent({
   onDraftSaveWrapper,
   handleDeleteDraft,
   initialConversation,
+  selectedEntry,
 }: {
   onSummarize: JournalMainContentProps['onSummarize'];
   isGeneratingSummary: boolean;
@@ -127,6 +128,7 @@ function renderChatContent({
   onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
   handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
   initialConversation: InitialConversation | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
 }): React.JSX.Element {
   return (
     <JournalChat
@@ -136,6 +138,7 @@ function renderChatContent({
       onDraftSave={onDraftSaveWrapper}
       onDraftDelete={handleDeleteDraft}
       initialDraft={initialConversation}
+      draftData={selectedEntry?.isDraft ? selectedEntry : null}
     />
   );
 }
@@ -261,6 +264,7 @@ function renderContent({
       onDraftSaveWrapper,
       handleDeleteDraft,
       initialConversation,
+      selectedEntry,
     });
   }
 

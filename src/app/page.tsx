@@ -70,6 +70,7 @@ function buildSidebarProps({
     formatEntryTime,
     onTemplateSelect: handleTemplateSelect,
     onDateChange,
+    handleDeleteDraft: journalEntries.handleDeleteDraft,
   };
 }
 
