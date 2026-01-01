@@ -57,3 +57,39 @@ export function generateInitialMessage(language: 'en' | 'fr'): string {
   return "Hello! I'm here to help you reflect on your day. What would you like to talk about today? What stood out to you or what's on your mind?";
 }
 
+interface RegenerateFromMessageOptions {
+  conversationHistory: ChatMessage[];
+  messageIndex: number;
+  apiKey: string;
+  language: 'en' | 'fr';
+  model?: string;
+}
+
+export async function regenerateFromMessage(
+  options: RegenerateFromMessageOptions
+): Promise<string> {
+  const { conversationHistory, messageIndex, apiKey, language, model } = options;
+
+  if (messageIndex < 0 || messageIndex >= conversationHistory.length) {
+    throw new Error('Invalid message index');
+  }
+
+  const truncatedHistory = conversationHistory.slice(0, messageIndex + 1);
+  const lastMessage = truncatedHistory[truncatedHistory.length - 1];
+
+  if (lastMessage.role !== 'user') {
+    throw new Error('Cannot regenerate from non-user message');
+  }
+
+  const messages = buildConversationMessages(truncatedHistory.slice(0, -1), language);
+  messages.push({ role: 'user', content: lastMessage.content });
+
+  const response = await generateChatCompletion(messages, apiKey, {
+    model,
+    temperature: CHAT_TEMPERATURE,
+    max_tokens: CHAT_MAX_TOKENS,
+  });
+
+  return response.trim();
+}
+
