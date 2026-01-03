@@ -243,9 +243,9 @@
     "publisher": "Informations sur l'éditeur",
     "publisherContent": "Mivoa est publié et exploité par mariepop13. Ce service est actuellement en développement alpha.",
     "hosting": "Informations sur l'hébergement",
-    "hostingContent": "Mivoa est hébergé sur [fournisseur d'hébergement à préciser]. Les données sont stockées à l'aide des services Firebase.",
+    "hostingContent": "Les informations d'hébergement de Mivoa sont disponibles sur demande. Les données sont stockées à l'aide des services Firebase.",
     "businessRegistration": "Inscription d'entreprise",
-    "businessRegistrationContent": "[Informations d'inscription d'entreprise à ajouter si applicable]",
+    "businessRegistrationContent": "Information disponible sur demande",
     "jurisdiction": "Juridiction",
     "jurisdictionContent": "Ce service est régi par les lois du Québec, Canada. Tout litige sera résolu devant les tribunaux du Québec."
   },

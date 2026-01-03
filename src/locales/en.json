@@ -243,9 +243,9 @@
     "publisher": "Publisher Information",
     "publisherContent": "Mivoa is published and operated by mariepop13. This service is currently in alpha development.",
     "hosting": "Hosting Information",
-    "hostingContent": "Mivoa is hosted on [hosting provider to be specified]. Data is stored using Firebase services.",
+    "hostingContent": "Mivoa hosting information is available upon request. Data is stored using Firebase services.",
     "businessRegistration": "Business Registration",
-    "businessRegistrationContent": "[Business registration information to be added if applicable]",
+    "businessRegistrationContent": "Information available upon request",
     "jurisdiction": "Jurisdiction",
     "jurisdictionContent": "This service is governed by the laws of Quebec, Canada. Any disputes shall be resolved in the courts of Quebec."
   },
