@@ -12,7 +12,7 @@ interface UseTranslationResult {
 
 export function useTranslation(): UseTranslationResult {
   const { language } = useContext(LanguageContext);
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translations, setTranslations] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -45,9 +45,39 @@ export function useTranslation(): UseTranslationResult {
     loadTranslations();
   }, [language]);
 
+  const getNestedValue = useCallback((obj: Record<string, unknown>, path: string): string | undefined => {
+    const keys = path.split('.');
+    let current: unknown = obj;
+    
+    for (const key of keys) {
+      if (current && typeof current === 'object' && current !== null && !Array.isArray(current)) {
+        const record = current as Record<string, unknown>;
+        if (key in record) {
+          current = record[key];
+        } else {
+          return undefined;
+        }
+      } else {
+        return undefined;
+      }
+    }
+    
+    return typeof current === 'string' ? current : undefined;
+  }, []);
+
   const t = useCallback(
-    (key: string, fallback?: string): string => translations[key] || fallback || key,
-    [translations]
+    (key: string, fallback?: string): string => {
+      if (key.includes('.')) {
+        const nestedValue = getNestedValue(translations, key);
+        if (nestedValue) return nestedValue;
+      }
+      
+      const flatValue = translations[key];
+      if (typeof flatValue === 'string') return flatValue;
+      
+      return fallback || key;
+    },
+    [translations, getNestedValue]
   );
 
   return { t, language, isLoading, error };

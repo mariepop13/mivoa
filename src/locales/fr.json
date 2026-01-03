@@ -212,6 +212,77 @@
   "andMoreMessages": "+ {{count}} messages supplémentaires",
   "selected": "sélectionné",
   "selectedDraft": "{{count}} brouillon sélectionné",
-  "selectedDrafts": "{{count}} brouillons sélectionnés"
+  "selectedDrafts": "{{count}} brouillons sélectionnés",
+  "backToHome": "Retour à l'accueil",
+  "footer": {
+    "alphaNotice": "Ce site est actuellement en version alpha. Les fonctionnalités peuvent changer ou être indisponibles.",
+    "copyright": "© {year} mariepop13",
+    "privacy": "Politique de confidentialité",
+    "legal": "Mentions légales",
+    "contact": "Contact",
+    "about": "À propos",
+    "terms": "Conditions d'utilisation"
+  },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "introduction": "Introduction",
+    "introductionContent": "Cette Politique de confidentialité décrit comment Mivoa collecte, utilise et protège vos informations personnelles. En utilisant ce service, vous acceptez la collecte et l'utilisation d'informations conformément à cette politique.",
+    "dataCollection": "Collecte de données",
+    "dataCollectionContent": "Nous collectons les informations que vous nous fournissez directement, y compris les entrées de journal, les informations de compte et les données d'utilisation. Ces informations sont stockées de manière sécurisée à l'aide des services Firebase.",
+    "thirdPartyServices": "Services tiers",
+    "thirdPartyServicesContent": "Mivoa utilise les services tiers suivants : Firebase (authentification et stockage de données) et OpenRouter (services de modèles IA). Ces services ont leurs propres politiques de confidentialité régissant l'utilisation de vos données.",
+    "userRights": "Vos droits",
+    "userRightsContent": "En vertu des lois canadiennes sur la protection de la vie privée, y compris la LPRPDE, vous avez le droit d'accéder, de corriger ou de supprimer vos informations personnelles. Vous pouvez nous contacter à tout moment pour exercer ces droits.",
+    "cookies": "Cookies et suivi",
+    "cookiesContent": "Nous utilisons des cookies et des technologies de suivi similaires pour maintenir votre session et améliorer votre expérience. Vous pouvez contrôler les préférences de cookies via les paramètres de votre navigateur.",
+    "contactPrivacy": "Contact pour les questions de confidentialité",
+    "contactPrivacyContent": "Pour toute question concernant cette Politique de confidentialité ou pour exercer vos droits en matière de protection de la vie privée, veuillez nous contacter en utilisant les informations de contact fournies sur notre page Contact."
+  },
+  "legal": {
+    "title": "Mentions légales",
+    "publisher": "Informations sur l'éditeur",
+    "publisherContent": "Mivoa est publié et exploité par mariepop13. Ce service est actuellement en développement alpha.",
+    "hosting": "Informations sur l'hébergement",
+    "hostingContent": "Mivoa est hébergé sur [fournisseur d'hébergement à préciser]. Les données sont stockées à l'aide des services Firebase.",
+    "businessRegistration": "Inscription d'entreprise",
+    "businessRegistrationContent": "[Informations d'inscription d'entreprise à ajouter si applicable]",
+    "jurisdiction": "Juridiction",
+    "jurisdictionContent": "Ce service est régi par les lois du Québec, Canada. Tout litige sera résolu devant les tribunaux du Québec."
+  },
+  "contact": {
+    "title": "Contact",
+    "description": "Contactez-nous",
+    "email": "Courriel",
+    "emailAddress": "contact@mivoa.ai",
+    "emailDescription": "Pour toute question générale, veuillez nous contacter à l'adresse courriel ci-dessus.",
+    "privacyInquiries": "Questions de confidentialité",
+    "privacyInquiriesDescription": "Pour les questions liées à la confidentialité ou pour exercer vos droits en matière de protection de la vie privée, veuillez utiliser les informations de contact fournies dans notre Politique de confidentialité."
+  },
+  "about": {
+    "title": "À propos de Mivoa",
+    "description": "Description du projet",
+    "descriptionContent": "Mivoa est une application de journalisation assistée par IA conçue pour vous aider à réfléchir sur vos pensées, vos expériences et votre croissance personnelle. L'application combine le journalisation traditionnelle avec une conversation alimentée par l'IA pour améliorer votre expérience d'écriture.",
+    "creator": "Créateur",
+    "creatorContent": "Mivoa est créé et maintenu par mariepop13.",
+    "mission": "Mission",
+    "missionContent": "Notre mission est de fournir une expérience de journalisation réfléchie, privée et intelligente qui aide les utilisateurs à explorer leurs pensées et leurs expériences grâce à la conversation avec l'IA.",
+    "alphaStatus": "Statut alpha",
+    "alphaStatusContent": "Mivoa est actuellement en version alpha. Les fonctionnalités peuvent changer, être ajoutées ou supprimées. Certaines fonctionnalités peuvent être indisponibles ou instables. Nous apprécions votre patience alors que nous continuons à développer et améliorer le service."
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "introduction": "Introduction",
+    "introductionContent": "En accédant et en utilisant Mivoa, vous acceptez et convenez d'être lié par ces Conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser ce service.",
+    "usageConditions": "Conditions d'utilisation",
+    "usageConditionsContent": "Vous acceptez d'utiliser Mivoa uniquement à des fins légales et conformément à ces Conditions. Vous êtes responsable de maintenir la confidentialité de votre compte et de toutes les activités qui se produisent sous votre compte.",
+    "intellectualProperty": "Propriété intellectuelle",
+    "intellectualPropertyContent": "Tout le contenu, les fonctionnalités et les fonctions de Mivoa appartiennent à mariepop13 et sont protégés par les lois sur le droit d'auteur, les marques de commerce et autres lois sur la propriété intellectuelle. Vos entrées de journal restent votre propriété, mais vous nous accordez une licence pour les stocker et les traiter selon les besoins pour fournir le service.",
+    "limitationOfLiability": "Limitation de responsabilité",
+    "limitationOfLiabilityContent": "Mivoa est fourni 'tel quel' sans garanties d'aucune sorte. Nous ne sommes pas responsables des dommages résultant de votre utilisation du service. Comme il s'agit d'un service alpha, des pertes de données ou des interruptions de service peuvent survenir.",
+    "jurisdiction": "Juridiction",
+    "jurisdictionContent": "Ces Conditions sont régies par les lois du Québec, Canada. Tout litige sera résolu devant les tribunaux du Québec.",
+    "alphaDisclaimer": "Avertissement alpha",
+    "alphaDisclaimerContent": "Mivoa est actuellement en version alpha. Le service peut être instable, les fonctionnalités peuvent changer sans préavis et les données peuvent être perdues. Utilisez à vos propres risques. Nous recommandons de sauvegarder les informations importantes."
+  }
 }
 
