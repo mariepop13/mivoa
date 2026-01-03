@@ -120,6 +120,47 @@ export async function getSubscriptionWithUsage(
   };
 }
 
+function buildDefaultUsageStats(entriesPerMonth: number): UsageStats {
+  const { lastResetDate, nextResetDate } = calculateUsageResetDate(null);
+  return {
+    entriesUsed: 0,
+    entriesLimit: entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : entriesPerMonth,
+    lastResetDate,
+    nextResetDate,
+    modelUsage: {},
+  };
+}
+
+function buildUsageStatsFromData(
+  data: Record<string, unknown>,
+  entriesPerMonth: number
+): UsageStats {
+  const lastResetDateField = data.lastResetDate as { toDate?: () => Date } | undefined;
+  const lastReset = lastResetDateField?.toDate?.() || null;
+  const { lastResetDate, nextResetDate } = calculateUsageResetDate(lastReset);
+
+  return {
+    entriesUsed: (data.entriesUsed as number | undefined) || 0,
+    entriesLimit: entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : entriesPerMonth,
+    lastResetDate,
+    nextResetDate,
+    modelUsage: (data.modelUsage as Record<string, number> | undefined) || {},
+  };
+}
+
+function logUsageStatsFetchError(
+  userId: string,
+  plan: SubscriptionPlan,
+  error: unknown
+): void {
+  console.error('Failed to fetch usage stats from Firestore', {
+    userId,
+    plan,
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
+}
+
 async function getUsageStats(
   userId: string,
   plan: SubscriptionPlan
@@ -133,41 +174,13 @@ async function getUsageStats(
     const data = usageSnap.data();
 
     if (!data) {
-      const { lastResetDate, nextResetDate } = calculateUsageResetDate(null);
-      return {
-        entriesUsed: 0,
-        entriesLimit: limits.entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : limits.entriesPerMonth,
-        lastResetDate,
-        nextResetDate,
-        modelUsage: {},
-      };
+      return buildDefaultUsageStats(limits.entriesPerMonth);
     }
 
-    const lastReset = data.lastResetDate?.toDate() || null;
-    const { lastResetDate, nextResetDate } = calculateUsageResetDate(lastReset);
-
-    return {
-      entriesUsed: data.entriesUsed || 0,
-      entriesLimit: limits.entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : limits.entriesPerMonth,
-      lastResetDate,
-      nextResetDate,
-      modelUsage: data.modelUsage || {},
-    };
+    return buildUsageStatsFromData(data, limits.entriesPerMonth);
   } catch (error) {
-    console.error('Failed to fetch usage stats from Firestore', {
-      userId,
-      plan,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    const { lastResetDate, nextResetDate } = calculateUsageResetDate(null);
-    return {
-      entriesUsed: 0,
-      entriesLimit: limits.entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : limits.entriesPerMonth,
-      lastResetDate,
-      nextResetDate,
-      modelUsage: {},
-    };
+    logUsageStatsFetchError(userId, plan, error);
+    return buildDefaultUsageStats(limits.entriesPerMonth);
   }
 }
 

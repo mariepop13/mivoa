@@ -26,7 +26,14 @@ describe('stripe-client', () => {
     it('should throw error when STRIPE_SECRET_KEY has invalid format', () => {
       process.env.STRIPE_SECRET_KEY = 'invalid-key';
       expect(() => getStripeClient()).toThrow(
-        'Invalid STRIPE_SECRET_KEY format. Stripe secret keys must start with "sk_" or "sk_test_".'
+        "Invalid STRIPE_SECRET_KEY format. Stripe secret keys must start with 'sk_live_' or 'sk_test_'."
+      );
+    });
+
+    it('should throw error for key starting with sk_ but not sk_live_ or sk_test_', () => {
+      process.env.STRIPE_SECRET_KEY = 'sk_invalid_key_1234567890';
+      expect(() => getStripeClient()).toThrow(
+        "Invalid STRIPE_SECRET_KEY format. Stripe secret keys must start with 'sk_live_' or 'sk_test_'."
       );
     });
 
