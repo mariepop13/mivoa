@@ -23,6 +23,16 @@ service cloud.firestore {
         allow update: if isOwner(userId);
         allow delete: if isOwner(userId);
       }
+
+      match /subscription/status {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /subscription/usage {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
   }
 }
