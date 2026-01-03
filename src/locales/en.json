@@ -212,6 +212,77 @@
   "andMoreMessages": "+ {{count}} more messages",
   "selected": "selected",
   "selectedDraft": "{{count}} draft selected",
-  "selectedDrafts": "{{count}} drafts selected"
+  "selectedDrafts": "{{count}} drafts selected",
+  "backToHome": "Back to Home",
+  "footer": {
+    "alphaNotice": "This site is currently in alpha. Features may change or be unavailable.",
+    "copyright": "© {year} mariepop13",
+    "privacy": "Privacy Policy",
+    "legal": "Legal",
+    "contact": "Contact",
+    "about": "About",
+    "terms": "Terms of Service"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "introduction": "Introduction",
+    "introductionContent": "This Privacy Policy describes how Mivoa collects, uses, and protects your personal information. By using this service, you agree to the collection and use of information in accordance with this policy.",
+    "dataCollection": "Data Collection",
+    "dataCollectionContent": "We collect information that you provide directly to us, including journal entries, account information, and usage data. This information is stored securely using Firebase services.",
+    "thirdPartyServices": "Third-Party Services",
+    "thirdPartyServicesContent": "Mivoa uses the following third-party services: Firebase (authentication and data storage) and OpenRouter (AI model services). These services have their own privacy policies governing the use of your data.",
+    "userRights": "Your Rights",
+    "userRightsContent": "Under Canadian privacy laws, including PIPEDA, you have the right to access, correct, or delete your personal information. You may contact us at any time to exercise these rights.",
+    "cookies": "Cookies and Tracking",
+    "cookiesContent": "We use cookies and similar tracking technologies to maintain your session and improve your experience. You can control cookie preferences through your browser settings.",
+    "contactPrivacy": "Contact for Privacy Inquiries",
+    "contactPrivacyContent": "For questions about this Privacy Policy or to exercise your privacy rights, please contact us using the contact information provided on our Contact page."
+  },
+  "legal": {
+    "title": "Legal Information",
+    "publisher": "Publisher Information",
+    "publisherContent": "Mivoa is published and operated by mariepop13. This service is currently in alpha development.",
+    "hosting": "Hosting Information",
+    "hostingContent": "Mivoa is hosted on [hosting provider to be specified]. Data is stored using Firebase services.",
+    "businessRegistration": "Business Registration",
+    "businessRegistrationContent": "[Business registration information to be added if applicable]",
+    "jurisdiction": "Jurisdiction",
+    "jurisdictionContent": "This service is governed by the laws of Quebec, Canada. Any disputes shall be resolved in the courts of Quebec."
+  },
+  "contact": {
+    "title": "Contact",
+    "description": "Get in touch with us",
+    "email": "Email",
+    "emailAddress": "contact@mivoa.ai",
+    "emailDescription": "For general inquiries, please contact us at the email address above.",
+    "privacyInquiries": "Privacy Inquiries",
+    "privacyInquiriesDescription": "For privacy-related questions or to exercise your privacy rights, please use the contact information provided in our Privacy Policy."
+  },
+  "about": {
+    "title": "About Mivoa",
+    "description": "Project Description",
+    "descriptionContent": "Mivoa is an AI-assisted journaling application designed to help you reflect on your thoughts, experiences, and personal growth. The application combines traditional journaling with AI-powered conversation to enhance your writing experience.",
+    "creator": "Creator",
+    "creatorContent": "Mivoa is created and maintained by mariepop13.",
+    "mission": "Mission",
+    "missionContent": "Our mission is to provide a thoughtful, private, and intelligent journaling experience that helps users explore their thoughts and experiences through conversation with AI.",
+    "alphaStatus": "Alpha Status",
+    "alphaStatusContent": "Mivoa is currently in alpha. Features may change, be added, or removed. Some functionality may be unavailable or unstable. We appreciate your patience as we continue to develop and improve the service."
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "introduction": "Introduction",
+    "introductionContent": "By accessing and using Mivoa, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use this service.",
+    "usageConditions": "Usage Conditions",
+    "usageConditionsContent": "You agree to use Mivoa only for lawful purposes and in accordance with these Terms. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account.",
+    "intellectualProperty": "Intellectual Property",
+    "intellectualPropertyContent": "All content, features, and functionality of Mivoa are owned by mariepop13 and are protected by copyright, trademark, and other intellectual property laws. Your journal entries remain your property, but you grant us a license to store and process them as necessary to provide the service.",
+    "limitationOfLiability": "Limitation of Liability",
+    "limitationOfLiabilityContent": "Mivoa is provided 'as is' without warranties of any kind. We are not liable for any damages arising from your use of the service. As this is an alpha service, data loss or service interruptions may occur.",
+    "jurisdiction": "Jurisdiction",
+    "jurisdictionContent": "These Terms are governed by the laws of Quebec, Canada. Any disputes shall be resolved in the courts of Quebec.",
+    "alphaDisclaimer": "Alpha Disclaimer",
+    "alphaDisclaimerContent": "Mivoa is currently in alpha. The service may be unstable, features may change without notice, and data may be lost. Use at your own risk. We recommend backing up important information."
+  }
 }
 
