@@ -37,8 +37,7 @@ describe('OpenRouterApiKeySetup', () => {
     global.confirm = vi.fn(() => true);
   });
 
-  const renderWithContext = (apiKey: string | null) => {
-    return render(
+  const renderWithContext = (apiKey: string | null) => render(
       <OpenRouterApiKeyContext.Provider
         value={{
           apiKey,
@@ -50,7 +49,6 @@ describe('OpenRouterApiKeySetup', () => {
         <OpenRouterApiKeySetup onCompletion={mockOnCompletion} />
       </OpenRouterApiKeyContext.Provider>
     );
-  };
 
   it('should render ApiKeyStatus', () => {
     renderWithContext(null);

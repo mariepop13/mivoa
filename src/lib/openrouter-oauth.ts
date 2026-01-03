@@ -57,56 +57,71 @@ export async function initiateOAuthFlow(callbackUrl: string): Promise<void> {
   }
 }
 
-export async function exchangeAuthCodeForApiKey(
-  code: string,
-  state?: string
-): Promise<string> {
+function validateAuthCode(code: string): void {
   if (typeof code !== 'string' || code.trim() === '') {
     throw new TypeError('code must be a non-empty string');
   }
+}
 
-  const storedState = sessionStorage.getItem(STORAGE_KEY_STATE);
-  const storedPKCE = sessionStorage.getItem(STORAGE_KEY_PKCE);
-
+function validateState(state: string | undefined, storedState: string | null): void {
   if (state && storedState !== state) {
     throw new Error('Invalid state parameter');
   }
+}
 
+function parseStoredPKCE(storedPKCE: string | null): PKCEPair {
   if (!storedPKCE) {
     throw new Error('PKCE data not found. Please restart the OAuth flow.');
   }
 
-  let pkce: PKCEPair;
   try {
-    pkce = JSON.parse(storedPKCE);
+    return JSON.parse(storedPKCE);
   } catch {
     throw new Error('Failed to parse stored PKCE data. Please restart the OAuth flow.');
   }
+}
+
+async function exchangeCodeWithAPI(code: string, pkce: PKCEPair): Promise<string> {
+  const response = await fetch(`${OPENROUTER_AUTH_BASE_URL}/api/v1/auth/keys`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      code,
+      code_verifier: pkce.codeVerifier,
+      code_challenge_method: pkce.codeChallengeMethod,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to exchange auth code: ${response.status} ${errorText}`);
+  }
+
+  const data: ExchangeResponse = await response.json();
+  return data.key;
+}
+
+export async function exchangeAuthCodeForApiKey(
+  code: string,
+  state?: string
+): Promise<string> {
+  validateAuthCode(code);
+
+  const storedState = sessionStorage.getItem(STORAGE_KEY_STATE);
+  const storedPKCE = sessionStorage.getItem(STORAGE_KEY_PKCE);
+
+  validateState(state, storedState);
+  const pkce = parseStoredPKCE(storedPKCE);
 
   try {
-    const response = await fetch(`${OPENROUTER_AUTH_BASE_URL}/api/v1/auth/keys`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        code,
-        code_verifier: pkce.codeVerifier,
-        code_challenge_method: pkce.codeChallengeMethod,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to exchange auth code: ${response.status} ${errorText}`);
-    }
-
-    const data: ExchangeResponse = await response.json();
+    const apiKey = await exchangeCodeWithAPI(code, pkce);
     
     sessionStorage.removeItem(STORAGE_KEY_PKCE);
     sessionStorage.removeItem(STORAGE_KEY_STATE);
     
-    return data.key;
+    return apiKey;
   } catch (error) {
     console.error('Failed to exchange auth code:', {
       error,

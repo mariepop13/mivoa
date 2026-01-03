@@ -43,7 +43,7 @@ function validateFirebaseEnv(): FirebaseConfig {
 
 export { validateFirebaseEnv };
 
-function createFirebaseConfig() {
+function createFirebaseConfig(): FirebaseConfig {
   return validateFirebaseEnv();
 }
 

@@ -39,11 +39,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const servicesAvailable = areServicesAvailable !== undefined 
       ? areServicesAvailable 
       : Boolean(firebaseApp && firestore && auth);
+    
+    if (!servicesAvailable) {
+      return {
+        areServicesAvailable: false,
+        firebaseApp: null,
+        firestore: null,
+        auth: null,
+      };
+    }
+    
     return {
-      areServicesAvailable: servicesAvailable,
-      firebaseApp: servicesAvailable ? (firebaseApp ?? null) : null,
-      firestore: servicesAvailable ? (firestore ?? null) : null,
-      auth: servicesAvailable ? (auth ?? null) : null,
+      areServicesAvailable: true,
+      firebaseApp: firebaseApp ?? null,
+      firestore: firestore ?? null,
+      auth: auth ?? null,
     };
   }, [areServicesAvailable, firebaseApp, firestore, auth]);
 

@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useModel } from '@/context/ModelContext';
 import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
+import { useMessageEditing } from '@/hooks/use-message-editing';
 import type { ChatMessage } from '@/ai/types/chat';
 
 interface UseChatConversationParams {
@@ -18,9 +19,18 @@ interface UseChatConversationResult {
   sendMessage: (content: string) => Promise<void>;
   resetConversation: () => Promise<void>;
   loadConversation: (messages: ChatMessage[], draftId?: string | null) => void;
+  editMessage: (messageIndex: number, newContent: string) => Promise<void>;
+  regenerateFrom: (messageIndex: number) => Promise<void>;
+  deleteMessage: (messageIndex: number) => Promise<void>;
+  undoEdit: (messageIndex: number) => Promise<void>;
+  isEditing: boolean;
+  isRegenerating: boolean;
   draftId: string | null;
 }
 
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
+
+// eslint-disable-next-line max-lines-per-function
 export function useChatConversation(params?: UseChatConversationParams): UseChatConversationResult {
   const { dateKey, onDraftSave, onDraftDelete } = params || {};
   const { apiKey } = useContext(OpenRouterApiKeyContext);
@@ -30,22 +40,98 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const hasInitializedRef = useRef(false);
+  // Tracks the draft ID or entry ID for which initialization has occurred.
+  // Changed from boolean to string | null to properly handle draft/entry switching
+  // and prevent re-initialization when switching between drafts and entries.
+  const hasInitializedRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const lang = (language || 'en') as 'en' | 'fr';
 
+  const conversationHistory = useMemo(() => messages, [messages]);
+
+  const scheduleDraftSave = useCallback((finalMessages: ChatMessage[]) => {
+    if (!onDraftSave || !dateKey || finalMessages.length === 0) {
+      return;
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const savedDraftId = await onDraftSave(finalMessages, draftId);
+        if (savedDraftId) {
+          setDraftId(savedDraftId);
+        }
+      } catch (err) {
+        console.error('Failed to save draft:', err);
+      }
+    }, DRAFT_SAVE_DEBOUNCE_MS);
+  }, [onDraftSave, dateKey, draftId]);
+
+  const handleDraftSave = useCallback(async (updatedMessages: ChatMessage[]) => {
+    if (!onDraftSave || !dateKey || updatedMessages.length === 0) {
+      return;
+    }
+    try {
+      const savedDraftId = await onDraftSave(updatedMessages, draftId);
+      if (savedDraftId) {
+        setDraftId(savedDraftId);
+      }
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+    }
+  }, [onDraftSave, dateKey, draftId]);
+
+  const handleMessagesUpdate = useCallback((updatedMessages: ChatMessage[]) => {
+    setMessages(updatedMessages);
+    scheduleDraftSave(updatedMessages);
+  }, [scheduleDraftSave]);
+
+  const {
+    editMessage: editMessageInternal,
+    regenerateFrom: regenerateFromInternal,
+    deleteMessage: deleteMessageInternal,
+    undoEdit: undoEditInternal,
+    isEditing,
+    isRegenerating,
+    error: editingError,
+  } = useMessageEditing({
+    messages,
+    onMessagesUpdate: handleMessagesUpdate,
+    onDraftSave: handleDraftSave,
+  });
+
   useEffect(() => {
-    if (!hasInitializedRef.current) {
+    const currentDraftKey = draftId || '';
+    const isInitialized = hasInitializedRef.current !== null;
+    if (!draftId && !isInitialized && messages.length === 0) {
+      const initialMessageContent = generateInitialMessage(lang);
       const initialMessage: ChatMessage = {
         role: 'assistant',
-        content: generateInitialMessage(lang),
+        content: initialMessageContent,
         timestamp: new Date(),
       };
       setMessages([initialMessage]);
-      hasInitializedRef.current = true;
+      hasInitializedRef.current = currentDraftKey;
     }
-  }, [lang]);
+  }, [draftId, messages.length, lang, selectedModel]);
+
+  const loadConversation = useCallback((loadedMessages: ChatMessage[], loadedDraftId?: string | null): void => {
+    if (loadedDraftId !== undefined) {
+      const draftKey = loadedDraftId || '';
+      hasInitializedRef.current = draftKey;
+      setDraftId(loadedDraftId);
+    } else {
+      hasInitializedRef.current = loadedMessages.length > 0 ? '' : null;
+      setDraftId(null);
+    }
+    setMessages(loadedMessages);
+    setError(null);
+    setIsTyping(false);
+  }, []);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!apiKey) {
@@ -70,7 +156,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
     try {
       const response = await sendChatMessage({
-        conversationHistory: updatedMessages.filter((msg) => msg.timestamp < userMessage.timestamp),
+        conversationHistory,
         userMessage: userMessage.content,
         apiKey,
         language: lang,
@@ -85,22 +171,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
 
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
-
-      if (onDraftSave && dateKey && finalMessages.length > 0) {
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
-        saveTimeoutRef.current = setTimeout(async () => {
-          try {
-            const savedDraftId = await onDraftSave(finalMessages, draftId);
-            if (savedDraftId) {
-              setDraftId(savedDraftId);
-            }
-          } catch (err) {
-            console.error('Failed to save draft:', err);
-          }
-        }, 500);
-      }
+      scheduleDraftSave(finalMessages);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
@@ -108,7 +179,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     } finally {
       setIsTyping(false);
     }
-  }, [apiKey, messages, lang, selectedModel, onDraftSave, dateKey, draftId]);
+  }, [apiKey, messages, lang, selectedModel, scheduleDraftSave, conversationHistory]);
 
   const resetConversation = useCallback(async (): Promise<void> => {
     if (saveTimeoutRef.current) {
@@ -121,7 +192,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     setError(null);
     setIsTyping(false);
     setDraftId(null);
-    hasInitializedRef.current = false;
+    hasInitializedRef.current = '';
 
     if (currentDraftId && onDraftDelete) {
       try {
@@ -132,31 +203,25 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     }
   }, [draftId, onDraftDelete]);
 
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const loadConversation = useCallback((loadedMessages: ChatMessage[], loadedDraftId?: string | null): void => {
-    setMessages(loadedMessages);
-    setError(null);
-    setIsTyping(false);
-    if (loadedDraftId !== undefined) {
-      setDraftId(loadedDraftId);
+  useEffect(() => () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
-    hasInitializedRef.current = true;
   }, []);
 
   return {
     messages,
-    isTyping,
-    error,
+    isTyping: isTyping || isRegenerating,
+    error: error || editingError,
     sendMessage,
     resetConversation,
     loadConversation,
+    editMessage: editMessageInternal,
+    regenerateFrom: regenerateFromInternal,
+    deleteMessage: deleteMessageInternal,
+    undoEdit: undoEditInternal,
+    isEditing,
+    isRegenerating,
     draftId,
   };
 }

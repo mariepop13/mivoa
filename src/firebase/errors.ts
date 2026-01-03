@@ -4,7 +4,7 @@ import { getAuth, type User } from 'firebase/auth';
 type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
-  requestResourceData?: any;
+  requestResourceData?: Record<string, unknown>;
 };
 
 interface FirebaseAuthToken {
@@ -30,7 +30,7 @@ interface SecurityRuleRequest {
   method: string;
   path: string;
   resource?: {
-    data: any;
+    data: Record<string, unknown>;
   };
 }
 
@@ -79,11 +79,15 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     }
   }
 
+  const method = context.operation;
+  const path = `/databases/(default)/documents/${context.path}`;
+  const resource = context.requestResourceData ? { data: context.requestResourceData } : undefined;
+
   return {
     auth: authObject,
-    method: context.operation,
-    path: `/databases/(default)/documents/${context.path}`,
-    resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
+    method,
+    path,
+    resource,
   };
 }
 
@@ -94,9 +98,9 @@ ${JSON.stringify(requestObject, null, 2)}`;
 
 export class FirestorePermissionError extends Error {
   public readonly request: SecurityRuleRequest;
-  public readonly cause?: any;
+  public readonly cause?: unknown;
 
-  constructor(context: SecurityRuleContext, cause?: any) {
+  constructor(context: SecurityRuleContext, cause?: unknown) {
     const requestObject = buildRequestObject(context);
     super(buildErrorMessage(requestObject));
     this.name = 'FirestorePermissionError';

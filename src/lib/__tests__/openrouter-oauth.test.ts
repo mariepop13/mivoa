@@ -7,6 +7,13 @@ import { generatePKCEPair } from '../pkce';
 
 vi.mock('../pkce');
 
+type MockFetchResponse = {
+  ok: boolean;
+  json?: () => Promise<unknown>;
+  text?: () => Promise<string>;
+  status?: number;
+};
+
 const mockSessionStorage = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -18,6 +25,7 @@ const mockWindowLocation = {
   origin: 'https://example.com',
 };
 
+// eslint-disable-next-line max-lines-per-function
 describe('openrouter-oauth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,6 +50,7 @@ describe('openrouter-oauth', () => {
 
   describe('initiateOAuthFlow', () => {
     it('should validate callbackUrl is a string', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(initiateOAuthFlow('' as any)).rejects.toThrow('non-empty string');
     });
 
@@ -134,10 +143,11 @@ describe('openrouter-oauth', () => {
     });
 
     it('should accept matching state parameter', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      const mockResponse: MockFetchResponse = {
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
-      } as any);
+      };
+      vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
       const result = await exchangeAuthCodeForApiKey('code', 'stored-state');
 
@@ -160,10 +170,11 @@ describe('openrouter-oauth', () => {
     });
 
     it('should call OpenRouter API with correct parameters', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      const mockResponse: MockFetchResponse = {
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
-      } as any);
+      };
+      vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
       await exchangeAuthCodeForApiKey('auth-code');
 
@@ -184,10 +195,11 @@ describe('openrouter-oauth', () => {
     });
 
     it('should return API key on successful exchange', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      const mockResponse: MockFetchResponse = {
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
-      } as any);
+      };
+      vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
       const result = await exchangeAuthCodeForApiKey('code');
 
@@ -195,10 +207,11 @@ describe('openrouter-oauth', () => {
     });
 
     it('should remove PKCE and state from sessionStorage after success', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      const mockResponse: MockFetchResponse = {
         ok: true,
         json: vi.fn().mockResolvedValue({ key: 'api-key-123' }),
-      } as any);
+      };
+      vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
       await exchangeAuthCodeForApiKey('code');
 
@@ -207,11 +220,12 @@ describe('openrouter-oauth', () => {
     });
 
     it('should handle API errors', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      const mockResponse: MockFetchResponse = {
         ok: false,
         status: 400,
         text: vi.fn().mockResolvedValue('Bad Request'),
-      } as any);
+      };
+      vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
       await expect(exchangeAuthCodeForApiKey('code')).rejects.toThrow('Failed to exchange');
     });

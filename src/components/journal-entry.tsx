@@ -6,7 +6,9 @@ import { JournalEntryActions } from '@/components/journal-entry-actions';
 import { EntryDateHeader } from '@/components/entry-date-header';
 import { EntryContentForm } from '@/components/entry-content-form';
 import { EntryDetections } from '@/components/entry-detections';
+import { EntryLinksList } from '@/components/entry-links-list';
 import type { RecentEntry } from '@/ai/types/journal';
+import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 interface JournalEntryProps {
   date: Date;
@@ -15,6 +17,7 @@ interface JournalEntryProps {
   onContentChange: (content: string) => void;
   onSave: () => void;
   onDelete?: () => void;
+  onChangeDate?: (date: Date) => void;
   isLoading?: boolean;
   isSaved?: boolean;
   error?: string | null;
@@ -27,6 +30,10 @@ interface JournalEntryProps {
   themeEmojis?: Record<string, string>;
   moods?: string[];
   moodEmojis?: Record<string, string>;
+  entryId?: string | null;
+  linkedEntryIds?: string[];
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
 }
 
 function JournalEntryComponent({
@@ -36,6 +43,7 @@ function JournalEntryComponent({
   onContentChange,
   onSave,
   onDelete,
+  onChangeDate,
   isLoading = false,
   isSaved = false,
   error = null,
@@ -48,6 +56,10 @@ function JournalEntryComponent({
   themeEmojis,
   moods,
   moodEmojis,
+  entryId,
+  linkedEntryIds,
+  onNavigateToEntry,
+  onLinksUpdated,
 }: JournalEntryProps): React.JSX.Element {
   const [localContent, setLocalContent] = useState(content);
 
@@ -69,7 +81,22 @@ function JournalEntryComponent({
         recentEntries={recentEntries}
         onContentChange={handleContentChange}
       />
-      <EntryDetections places={places} characters={characters} themes={themes} themeEmojis={themeEmojis} moods={moods} moodEmojis={moodEmojis} />
+      <EntryDetections
+        places={places}
+        characters={characters}
+        themes={themes}
+        themeEmojis={themeEmojis}
+        moods={moods}
+        moodEmojis={moodEmojis}
+      />
+      {entryId && onNavigateToEntry && (
+        <EntryLinksList
+          entryId={entryId}
+          linkedEntryIds={linkedEntryIds}
+          onNavigateToEntry={onNavigateToEntry}
+          onLinksUpdated={onLinksUpdated}
+        />
+      )}
       <div className="mt-5 sm:mt-6 lg:mt-8 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-5 lg:pb-6 pt-4 sm:pt-5 lg:pt-6 border-t 
         border-border/60 bg-muted/40 backdrop-blur-sm flex flex-col sm:flex-row items-start sm:items-center 
         justify-between gap-3 sm:gap-4">
@@ -79,8 +106,13 @@ function JournalEntryComponent({
         <JournalEntryActions 
           onSave={onSave} 
           onDelete={onDelete} 
+          onChangeDate={onChangeDate}
           isLoading={isLoading} 
-          canDelete={canDelete} 
+          canDelete={canDelete}
+          currentDate={date}
+          entryId={entryId}
+          linkedEntryIds={linkedEntryIds}
+          onLinksUpdated={onLinksUpdated}
         />
       </div>
     </div>

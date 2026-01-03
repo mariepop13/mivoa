@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useChatConversation } from '../use-chat-conversation';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
@@ -47,7 +47,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('User message');
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(chatService.sendChatMessage).toHaveBeenCalledWith({
@@ -70,7 +72,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('User message');
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe('API Error');
@@ -84,7 +88,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    await result.current.sendMessage('   ');
+    await act(async () => {
+      await result.current.sendMessage('   ');
+    });
 
     expect(chatService.sendChatMessage).not.toHaveBeenCalled();
   });
@@ -96,7 +102,9 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    result.current.resetConversation();
+    act(() => {
+      result.current.resetConversation();
+    });
 
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(0);
@@ -118,17 +126,144 @@ describe('useChatConversation', () => {
       expect(result.current.messages.length).toBeGreaterThan(0);
     });
 
-    const sendPromise = result.current.sendMessage('User message');
+    let sendPromise: Promise<void> | undefined;
+    await act(async () => {
+      sendPromise = result.current.sendMessage('User message');
+    });
 
     await waitFor(() => {
       expect(result.current.isTyping).toBe(true);
     });
 
     resolvePromise!();
-    await sendPromise;
+    await sendPromise!;
 
     await waitFor(() => {
       expect(result.current.isTyping).toBe(false);
+    });
+  });
+
+  it('sets error when apiKey is not configured', async () => {
+    const wrapperWithoutApiKey = ({ children }: { children: React.ReactNode }) => (
+      <OpenRouterApiKeyContext.Provider value={{ apiKey: null, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
+        <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+          <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
+            {children}
+          </ModelContext.Provider>
+        </LanguageContext.Provider>
+      </OpenRouterApiKeyContext.Provider>
+    );
+
+    const { result } = renderHook(() => useChatConversation(), { wrapper: wrapperWithoutApiKey });
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('User message');
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('API key not configured');
+    });
+  });
+
+  it('loads conversation with messages and draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const testMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+      { role: 'assistant' as const, content: 'Hi there', timestamp: new Date() },
+    ];
+
+    act(() => {
+      result.current.loadConversation(testMessages, 'draft-123');
+    });
+
+    expect(result.current.messages).toEqual(testMessages);
+    expect(result.current.draftId).toBe('draft-123');
+    expect(result.current.error).toBeNull();
+    expect(result.current.isTyping).toBe(false);
+  });
+
+  it('loads conversation with messages but no draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const testMessages = [
+      { role: 'user' as const, content: 'Hello', timestamp: new Date() },
+    ];
+
+    act(() => {
+      result.current.loadConversation(testMessages);
+    });
+
+    expect(result.current.messages).toEqual(testMessages);
+    expect(result.current.draftId).toBeNull();
+  });
+
+  it('loads empty conversation and resets draftId', async () => {
+    const { result } = renderHook(() => useChatConversation(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      result.current.loadConversation([], null);
+    });
+
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.draftId).toBeNull();
+  });
+
+  it('schedules draft save when onDraftSave is provided', async () => {
+    const mockOnDraftSave = vi.fn().mockResolvedValue('saved-draft-id');
+    const dateKey = '2024-01-15';
+
+    const { result } = renderHook(
+      () => useChatConversation({ dateKey, onDraftSave: mockOnDraftSave }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Test message');
+    });
+
+    await waitFor(
+      () => {
+        expect(mockOnDraftSave).toHaveBeenCalled();
+      },
+      { timeout: 1000 }
+    );
+  });
+
+  it('deletes draft when resetConversation is called with onDraftDelete', async () => {
+    const mockOnDraftDelete = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(
+      () => useChatConversation({ onDraftDelete: mockOnDraftDelete }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      result.current.loadConversation(
+        [{ role: 'user' as const, content: 'Test', timestamp: new Date() }],
+        'draft-to-delete'
+      );
+    });
+
+    await act(async () => {
+      await result.current.resetConversation();
+    });
+
+    await waitFor(() => {
+      expect(mockOnDraftDelete).toHaveBeenCalledWith('draft-to-delete');
     });
   });
 });

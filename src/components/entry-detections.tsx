@@ -28,99 +28,129 @@ const RAINBOW_COLORS = [
 
 const RAINBOW_COLORS_LENGTH = RAINBOW_COLORS.length;
 
+type SectionKey = 'moods' | 'themes' | 'characters' | 'places';
+
+interface SectionConfig {
+  key: SectionKey;
+  hasData: boolean;
+  icon: LucideIcon;
+  translationKey: string;
+}
+
+interface BuildSectionParams {
+  key: string;
+  icon: LucideIcon;
+  translationKey: string;
+  badgeComponent: React.ReactNode;
+}
 
 function buildDetectionSection(
-  key: string,
-  hasData: boolean,
-  icon: LucideIcon,
-  translationKey: string,
-  badgeComponent: React.ReactNode,
+  params: BuildSectionParams,
   t: (key: string) => string
 ): React.ReactNode | null {
-  if (!hasData) {
-    return null;
-  }
-
-  const Icon = icon;
+  const Icon = params.icon;
 
   return (
-    <div className="space-y-1.5" key={key}>
+    <div className="space-y-1.5" key={params.key}>
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-        <span>{t(translationKey)}</span>
+        <span>{t(params.translationKey)}</span>
       </div>
-      {badgeComponent}
+      {params.badgeComponent}
     </div>
   );
 }
 
-function EntryDetectionsComponent({ places, characters, themes, themeEmojis, moods, moodEmojis, className }: EntryDetectionsProps): React.JSX.Element | null {
-  const { t } = useTranslation();
-  const hasPlaces = places && places.length > 0;
-  const hasCharacters = characters && characters.length > 0;
-  const hasThemes = themes && themes.length > 0;
-  const hasMoods = moods && moods.length > 0;
+function createBadgeForSection(
+  key: SectionKey,
+  index: number,
+  props: EntryDetectionsProps
+): React.ReactNode {
+  const colorClass = RAINBOW_COLORS[index % RAINBOW_COLORS_LENGTH];
+  
+  switch (key) {
+    case 'moods':
+      return <MoodsBadge moods={props.moods} moodEmojis={props.moodEmojis} colorClass={colorClass} />;
+    case 'themes':
+      return <ThemesBadge themes={props.themes} themeEmojis={props.themeEmojis} colorClass={colorClass} />;
+    case 'characters':
+      return <CharactersBadge characters={props.characters} colorClass={colorClass} />;
+    case 'places':
+      return <PlacesBadge places={props.places} colorClass={colorClass} />;
+    default:
+      return null;
+  }
+}
 
-  if (!hasPlaces && !hasCharacters && !hasThemes && !hasMoods) {
+function hasDataForSection(key: SectionKey, props: EntryDetectionsProps): boolean {
+  switch (key) {
+    case 'moods':
+      return Boolean(props.moods && props.moods.length > 0);
+    case 'themes':
+      return Boolean(props.themes && props.themes.length > 0);
+    case 'characters':
+      return Boolean(props.characters && props.characters.length > 0);
+    case 'places':
+      return Boolean(props.places && props.places.length > 0);
+    default:
+      return false;
+  }
+}
+
+function buildSectionConfigs(props: EntryDetectionsProps): SectionConfig[] {
+  return [
+    { key: 'moods', hasData: hasDataForSection('moods', props), icon: Smile, translationKey: 'moods' },
+    { key: 'themes', hasData: hasDataForSection('themes', props), icon: Tag, translationKey: 'themes' },
+    { key: 'characters', hasData: hasDataForSection('characters', props), icon: Users, translationKey: 'characters' },
+    { key: 'places', hasData: hasDataForSection('places', props), icon: MapPin, translationKey: 'places' },
+  ];
+}
+
+function renderSections(
+  configs: SectionConfig[],
+  props: EntryDetectionsProps,
+  t: (key: string) => string
+): React.JSX.Element[] {
+  return configs.map((config, index) => {
+    const badge = createBadgeForSection(config.key, index, props);
+    return buildDetectionSection(
+      {
+        key: config.key,
+        icon: config.icon,
+        translationKey: config.translationKey,
+        badgeComponent: badge,
+      },
+      t
+    ) as React.JSX.Element;
+  });
+}
+
+function EntryDetectionsComponent({
+  places,
+  characters,
+  themes,
+  themeEmojis,
+  moods,
+  moodEmojis,
+  className,
+}: EntryDetectionsProps): React.JSX.Element | null {
+  const { t } = useTranslation();
+  const props = { places, characters, themes, themeEmojis, moods, moodEmojis };
+  const sectionConfigs = buildSectionConfigs(props);
+  const sectionsWithData = sectionConfigs.filter(config => config.hasData);
+  
+  if (sectionsWithData.length === 0) {
     return null;
   }
 
-  const sections: React.ReactNode[] = [];
-  let sectionIndex = 0;
-
-  const moodsSection = buildDetectionSection(
-    'moods',
-    Boolean(hasMoods),
-    Smile,
-    'moods',
-    <MoodsBadge moods={moods} moodEmojis={moodEmojis} colorClass={RAINBOW_COLORS[sectionIndex % RAINBOW_COLORS_LENGTH]} />,
-    t
+  const sections = renderSections(sectionsWithData, props, t);
+  const containerClassName = cn(
+    'px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-muted/20 space-y-3',
+    className
   );
-  if (moodsSection) {
-    sections.push(moodsSection);
-    sectionIndex++;
-  }
-
-  const themesSection = buildDetectionSection(
-    'themes',
-    Boolean(hasThemes),
-    Tag,
-    'themes',
-    <ThemesBadge themes={themes} themeEmojis={themeEmojis} colorClass={RAINBOW_COLORS[sectionIndex % RAINBOW_COLORS_LENGTH]} />,
-    t
-  );
-  if (themesSection) {
-    sections.push(themesSection);
-    sectionIndex++;
-  }
-
-  const charactersSection = buildDetectionSection(
-    'characters',
-    Boolean(hasCharacters),
-    Users,
-    'characters',
-    <CharactersBadge characters={characters} colorClass={RAINBOW_COLORS[sectionIndex % RAINBOW_COLORS_LENGTH]} />,
-    t
-  );
-  if (charactersSection) {
-    sections.push(charactersSection);
-    sectionIndex++;
-  }
-
-  const placesSection = buildDetectionSection(
-    'places',
-    Boolean(hasPlaces),
-    MapPin,
-    'places',
-    <PlacesBadge places={places} colorClass={RAINBOW_COLORS[sectionIndex % RAINBOW_COLORS_LENGTH]} />,
-    t
-  );
-  if (placesSection) {
-    sections.push(placesSection);
-  }
 
   return (
-    <div className={cn('px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-muted/20 space-y-3', className)}>
+    <div className={containerClassName}>
       {sections}
     </div>
   );

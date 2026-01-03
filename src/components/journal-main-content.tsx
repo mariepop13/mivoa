@@ -1,19 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { JournalChat } from '@/components/journal-chat';
 import { JournalMobileHeader } from '@/components/journal-mobile-header';
 import { JournalViewTabs } from '@/components/journal-view-tabs';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import { useViewMode } from '@/hooks/use-view-mode';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
+import { convertTimestampToDate } from '@/utils/journal-utils';
+
+function mapConversationHistory(
+  conversationHistory: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Timestamp | Date | string;
+  }> | undefined
+): ChatMessage[] {
+  if (!conversationHistory) {
+    return [];
+  }
+  return conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: convertTimestampToDate(msg.timestamp),
+  }));
+}
 
 interface JournalMainContentProps {
   selectedDate: Date;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  selectedEntryData: JournalEntryData | null;
   entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
@@ -35,8 +54,250 @@ interface JournalMainContentProps {
   dateKey: string;
   handleSaveDraft: (messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>, draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
-  draftForDate: (JournalEntryData & { id: string }) | null;
   conversationEntryForDate: (JournalEntryData & { id: string }) | null;
+  onChangeDate?: (date: Date) => Promise<void>;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  setSelectedEntryId?: (id: string | null) => void;
+  onLinksUpdated?: () => void;
+}
+
+interface InitialConversation {
+  messages: ChatMessage[];
+  draftId: string | null;
+  entryId: string | null;
+}
+
+function getInitialConversation(
+  isDraftSelected: boolean,
+  isConversationEntrySelected: boolean,
+  selectedEntry: (JournalEntryData & { id: string }) | undefined
+): InitialConversation | null {
+  if (!selectedEntry) {
+    return null;
+  }
+
+  const messages = mapConversationHistory(selectedEntry.conversationHistory);
+  
+  if (isDraftSelected) {
+    return { messages, draftId: selectedEntry.id, entryId: null };
+  }
+  
+  if (isConversationEntrySelected) {
+    return { messages, draftId: null, entryId: selectedEntry.id };
+  }
+  
+  return null;
+}
+
+function createDraftSaveWrapper(
+  handleSaveDraft: JournalMainContentProps['handleSaveDraft'],
+  initialConversation: InitialConversation | null
+) {
+  return async (messages: ChatMessage[], draftId: string | null): Promise<string | null> => {
+    const conversationHistory = messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      timestamp: convertTimestampToDate(msg.timestamp),
+    }));
+    const entryId = initialConversation?.entryId || null;
+    return handleSaveDraft(conversationHistory, draftId, entryId);
+  };
+}
+
+function getCardClassName(shouldShowTabs: boolean): string {
+  const baseClasses =
+    "bg-card rounded-lg sm:rounded-xl border border-border shadow-sm flex flex-col transition-all duration-300 ease-in-out";
+  const minHeightClasses = shouldShowTabs
+    ? "min-h-[calc(100vh-12rem)] sm:min-h-[600px] lg:min-h-[650px]"
+    : "min-h-[calc(100vh-10rem)] sm:min-h-[500px] lg:min-h-[550px]";
+  return cn(baseClasses, minHeightClasses);
+}
+
+function renderChatContent({
+  onSummarize,
+  isGeneratingSummary,
+  dateKey,
+  onDraftSaveWrapper,
+  handleDeleteDraft,
+  initialConversation,
+  setViewMode,
+  selectedEntry,
+}: {
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+  setViewMode: (mode: 'chat' | 'summary') => void;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+}): React.JSX.Element {
+  return (
+    <JournalChat
+      onSummarize={onSummarize}
+      isLoadingSummary={isGeneratingSummary}
+      dateKey={dateKey}
+      onDraftSave={onDraftSaveWrapper}
+      onDraftDelete={handleDeleteDraft}
+      initialDraft={initialConversation}
+      onViewModeChange={setViewMode}
+      draftData={selectedEntry?.isDraft ? selectedEntry : null}
+    />
+  );
+}
+
+interface RenderEntryContentParams {
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+}
+
+function renderEntryContent({
+  selectedDate,
+  content,
+  title,
+  onContentChange,
+  onSave,
+  onDelete,
+  onChangeDate,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  selectedEntryId,
+  selectedEntry,
+  selectedEntryData,
+  recentEntries,
+  onNavigateToEntry,
+  onLinksUpdated,
+}: RenderEntryContentParams & {
+  selectedEntryData: JournalEntryData | null;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
+}): React.JSX.Element {
+  return (
+    <JournalEntry
+      date={selectedDate}
+      content={content}
+      title={title}
+      onContentChange={onContentChange}
+      onSave={onSave}
+      onDelete={onDelete}
+      onChangeDate={onChangeDate}
+      isLoading={isSaving}
+      isSaved={lastSavedAt !== null && !isSaving}
+      error={saveError}
+      hideDate={false}
+      canDelete={Boolean(selectedEntryId)}
+      recentEntries={recentEntries}
+      places={selectedEntry?.places}
+      characters={selectedEntry?.characters}
+      themes={selectedEntry?.themes}
+      themeEmojis={selectedEntry?.themeEmojis}
+      moods={selectedEntry?.moods}
+      moodEmojis={selectedEntry?.moodEmojis}
+      entryId={selectedEntryId}
+      linkedEntryIds={selectedEntryData?.linkedEntryIds || selectedEntry?.linkedEntryIds}
+      onNavigateToEntry={onNavigateToEntry}
+      onLinksUpdated={onLinksUpdated}
+    />
+  );
+}
+
+interface RenderContentParams {
+  shouldShowChat: boolean;
+  onSummarize: JournalMainContentProps['onSummarize'];
+  isGeneratingSummary: boolean;
+  dateKey: string;
+  onDraftSaveWrapper: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
+  handleDeleteDraft: JournalMainContentProps['handleDeleteDraft'];
+  initialConversation: InitialConversation | null;
+  selectedDate: Date;
+  content: string;
+  title: string;
+  onContentChange: (content: string) => void;
+  onSave: () => void;
+  onDelete: () => Promise<void>;
+  onChangeDate?: (date: Date) => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: Date | null;
+  saveError: string | null;
+  selectedEntryId: string | null;
+  selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  setViewMode: (mode: 'chat' | 'summary') => void;
+}
+
+function renderContent({
+  shouldShowChat,
+  onSummarize,
+  isGeneratingSummary,
+  dateKey,
+  onDraftSaveWrapper,
+  handleDeleteDraft,
+  initialConversation,
+  selectedDate,
+  content,
+  title,
+  onContentChange,
+  onSave,
+  onDelete,
+  onChangeDate,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  selectedEntryId,
+  selectedEntry,
+  selectedEntryData,
+  recentEntries,
+  setViewMode,
+  onNavigateToEntry,
+  onLinksUpdated,
+}: RenderContentParams & {
+  selectedEntryData: JournalEntryData | null;
+  onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
+  onLinksUpdated?: () => void;
+}): React.JSX.Element {
+  if (shouldShowChat) {
+    return renderChatContent({
+      onSummarize,
+      isGeneratingSummary,
+      dateKey,
+      onDraftSaveWrapper,
+      handleDeleteDraft,
+      initialConversation,
+      setViewMode,
+      selectedEntry,
+    });
+  }
+
+  return renderEntryContent({
+    selectedDate,
+    content,
+    title,
+    onContentChange,
+    onSave,
+    onDelete,
+    onChangeDate,
+    isSaving,
+    lastSavedAt,
+    saveError,
+    selectedEntryId,
+    selectedEntry,
+    selectedEntryData,
+    recentEntries,
+    onNavigateToEntry,
+    onLinksUpdated,
+  });
 }
 
 export function JournalMainContent({
@@ -54,6 +315,7 @@ export function JournalMainContent({
   onDelete,
   onSummarize,
   selectedEntry,
+  selectedEntryData,
   entries,
   getEntryTitle,
   onSidebarToggle,
@@ -61,68 +323,25 @@ export function JournalMainContent({
   dateKey,
   handleSaveDraft,
   handleDeleteDraft,
-  draftForDate,
+  onChangeDate,
+  onNavigateToEntry,
+  setSelectedEntryId: _setSelectedEntryId,
+  onLinksUpdated,
 }: JournalMainContentProps): React.JSX.Element {
-  const [viewMode, setViewMode] = useState<'chat' | 'summary'>('chat');
-  const previousEntryIdRef = useRef<string | null>(null);
-  
-  const isDraftSelected = selectedEntry?.isDraft === true;
-  const isConversationEntrySelected = selectedEntry?.conversationMode === true && selectedEntry?.isDraft !== true;
-  const shouldShowTabs = isConversationEntrySelected && !isDraftSelected;
-  
-  useEffect(() => {
-    if (selectedEntryId && previousEntryIdRef.current !== selectedEntryId) {
-      if (isConversationEntrySelected) {
-        setViewMode('summary');
-      } else if (isDraftSelected) {
-        setViewMode('chat');
-      }
-      previousEntryIdRef.current = selectedEntryId;
-    } else if (!selectedEntryId) {
-      setViewMode('chat');
-      previousEntryIdRef.current = null;
-    }
-  }, [isConversationEntrySelected, isDraftSelected, selectedEntryId]);
-  
-  const shouldShowChat = !selectedEntryId || isDraftSelected || (isConversationEntrySelected && viewMode === 'chat');
+  const {
+    viewMode,
+    setViewMode,
+    isDraftSelected,
+    isConversationEntrySelected,
+    shouldShowTabs,
+    shouldShowChat,
+  } = useViewMode({
+    selectedEntryId,
+    selectedEntry,
+  });
 
-  const getInitialConversation = () => {
-    if (isDraftSelected && draftForDate) {
-      return {
-        messages: (draftForDate.conversationHistory || []).map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-        })) as ChatMessage[],
-        draftId: draftForDate.id,
-        entryId: null as string | null,
-      };
-    }
-    if (isConversationEntrySelected && selectedEntry) {
-      return {
-        messages: (selectedEntry.conversationHistory || []).map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp : new Date(msg.timestamp as string),
-        })) as ChatMessage[],
-        draftId: null as string | null,
-        entryId: selectedEntry.id,
-      };
-    }
-    return null;
-  };
-
-  const initialConversation = getInitialConversation();
-
-  const onDraftSaveWrapper = async (messages: ChatMessage[], draftId: string | null): Promise<string | null> => {
-    const conversationHistory = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-      timestamp: msg.timestamp instanceof Date ? msg.timestamp : (msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : new Date()),
-    }));
-    const entryId = initialConversation?.entryId || null;
-    return handleSaveDraft(conversationHistory, draftId, entryId);
-  };
+  const initialConversation = getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry);
+  const onDraftSaveWrapper = createDraftSaveWrapper(handleSaveDraft, initialConversation);
 
   return (
     <div className="flex-1 flex flex-col bg-background">
@@ -142,13 +361,7 @@ export function JournalMainContent({
               />
             </div>
           )}
-          <div className={cn(
-            "bg-card rounded-lg sm:rounded-xl border border-border shadow-sm flex flex-col",
-            "transition-all duration-300 ease-in-out",
-            shouldShowTabs 
-              ? "min-h-[calc(100vh-12rem)] sm:min-h-[600px] lg:min-h-[650px]" 
-              : "min-h-[calc(100vh-10rem)] sm:min-h-[500px] lg:min-h-[550px]"
-          )}>
+          <div className={getCardClassName(shouldShowTabs)}>
             <div 
               key={viewMode}
               className={cn(
@@ -159,37 +372,32 @@ export function JournalMainContent({
               id={shouldShowChat ? "chat-panel" : "summary-panel"}
               aria-labelledby={shouldShowChat ? "chat-tab" : "summary-tab"}
             >
-              {shouldShowChat ? (
-                <JournalChat
-                  onSummarize={onSummarize}
-                  isLoadingSummary={isGeneratingSummary}
-                  dateKey={dateKey}
-                  onDraftSave={onDraftSaveWrapper}
-                  onDraftDelete={handleDeleteDraft}
-                  initialDraft={initialConversation}
-                />
-              ) : (
-                <JournalEntry
-                  date={selectedDate}
-                  content={content}
-                  title={title}
-                  onContentChange={onContentChange}
-                  onSave={onSave}
-                  onDelete={onDelete}
-                  isLoading={isSaving}
-                  isSaved={lastSavedAt !== null && !isSaving}
-                  error={saveError}
-                  hideDate={true}
-                  canDelete={Boolean(selectedEntryId)}
-                  recentEntries={recentEntries}
-                  places={selectedEntry?.places}
-                  characters={selectedEntry?.characters}
-                  themes={selectedEntry?.themes}
-                  themeEmojis={selectedEntry?.themeEmojis}
-                  moods={selectedEntry?.moods}
-                  moodEmojis={selectedEntry?.moodEmojis}
-                />
-              )}
+              {renderContent({
+                shouldShowChat,
+                onSummarize,
+                isGeneratingSummary,
+                dateKey,
+                onDraftSaveWrapper,
+                handleDeleteDraft,
+                initialConversation,
+                selectedDate,
+                content,
+                title,
+                onContentChange,
+                onSave,
+                onDelete,
+                onChangeDate,
+                isSaving,
+                lastSavedAt,
+                saveError,
+                selectedEntryId,
+                selectedEntry,
+                selectedEntryData,
+                recentEntries,
+                setViewMode,
+                onNavigateToEntry,
+                onLinksUpdated,
+              })}
             </div>
           </div>
         </div>

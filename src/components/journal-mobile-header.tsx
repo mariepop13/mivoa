@@ -8,7 +8,11 @@ interface JournalMobileHeaderProps {
   isSidebarOpen: boolean;
 }
 
-export function JournalMobileHeader({ title, onSidebarToggle, isSidebarOpen }: JournalMobileHeaderProps): React.JSX.Element {
+export function JournalMobileHeader({
+  title,
+  onSidebarToggle,
+  isSidebarOpen,
+}: JournalMobileHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
   
   return (

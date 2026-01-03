@@ -26,8 +26,7 @@ describe('SettingsLanguageSection', () => {
     });
   });
 
-  const renderWithContext = (language: 'en' | 'fr') => {
-    return render(
+  const renderWithContext = (language: 'en' | 'fr') => render(
       <LanguageContext.Provider
         value={{
           language,
@@ -43,7 +42,6 @@ describe('SettingsLanguageSection', () => {
         </DropdownMenu>
       </LanguageContext.Provider>
     );
-  };
 
   it('should render label', async () => {
     const user = userEvent.setup();

@@ -11,7 +11,35 @@ interface AiPromptSuggestionProps {
   onPromptSelected?: (prompt: string) => void;
 }
 
-export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiPromptSuggestionProps): React.JSX.Element | null {
+function renderHeaderSection(
+  isLoading: boolean,
+  regenerate: () => void,
+  t: (key: string) => string
+): React.JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-2 mb-2">
+      <p className="text-sm font-medium text-foreground">
+        {t('aiPromptSuggestion')}
+      </p>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={regenerate}
+        disabled={isLoading}
+        className="h-7 px-2 text-xs"
+      >
+        <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+        {t('regenerate')}
+      </Button>
+    </div>
+  );
+}
+
+export function AiPromptSuggestion({
+  recentEntries = [],
+  onPromptSelected,
+}: AiPromptSuggestionProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const { prompt, isLoading, error, regenerate } = useJournalPrompts(recentEntries);
 
@@ -36,23 +64,7 @@ export function AiPromptSuggestion({ recentEntries = [], onPromptSelected }: AiP
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="text-sm font-medium text-foreground">
-              {t('aiPromptSuggestion')}
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={regenerate}
-              disabled={isLoading}
-              className="h-7 px-2 text-xs"
-            >
-              <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              {t('regenerate')}
-            </Button>
-          </div>
-          
+          {renderHeaderSection(isLoading, regenerate, t)}
           {renderPromptContent({ prompt, isLoading, onPromptSelected, handleUsePrompt, t })}
         </div>
       </div>

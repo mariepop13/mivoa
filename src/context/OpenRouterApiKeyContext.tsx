@@ -23,7 +23,7 @@ export const OpenRouterApiKeyContext = createContext<OpenRouterApiKeyContextType
   isLoading: true,
 });
 
-export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }) {
+export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 

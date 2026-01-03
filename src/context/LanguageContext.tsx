@@ -28,7 +28,7 @@ interface LanguageProviderProps {
   children: ReactNode;
 }
 
-export function LanguageProvider({ children }: LanguageProviderProps) {
+export function LanguageProvider({ children }: LanguageProviderProps): React.JSX.Element {
   const [language, setLanguageState] = useState<SupportedLanguage>('en');
 
   useEffect(() => {
