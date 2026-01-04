@@ -88,6 +88,47 @@ describe('stripe-helpers', () => {
       });
     });
 
+    it('should fall back to email lookup when customer from Firestore is deleted', async () => {
+      const mockDeletedCustomer = { id: 'cus_deleted', email: 'deleted@example.com', deleted: true };
+      const mockExistingCustomer = { id: 'cus_existing', email: 'test@example.com' };
+      const mockStripe = {
+        customers: {
+          retrieve: vi.fn().mockResolvedValue(mockDeletedCustomer),
+          list: vi.fn().mockResolvedValue({ data: [mockExistingCustomer] }),
+          create: vi.fn(),
+        },
+      };
+
+      const mockSubscriptionDoc = {
+        exists: true,
+        data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_deleted' }),
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
+      vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
+
+      const customer = await getOrCreateStripeCustomer('user-id', 'test@example.com');
+
+      expect(customer).toBe(mockExistingCustomer);
+      expect(mockStripe.customers.retrieve).toHaveBeenCalledWith('cus_deleted');
+      expect(mockStripe.customers.list).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        limit: 1,
+      });
+    });
+
     it('should fall back to email lookup when no customer in Firestore', async () => {
       const mockCustomer = { id: 'cus_existing', email: 'test@example.com' };
       const mockStripe = {
@@ -283,6 +324,43 @@ describe('stripe-helpers', () => {
         currentPeriodStart: undefined,
         currentPeriodEnd: undefined,
         cancelAtPeriodEnd: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const result = formatSubscriptionResponse(data);
+
+      expect(result.currentPeriodStart).toBeNull();
+      expect(result.currentPeriodEnd).toBeNull();
+    });
+
+    it('should default cancelAtPeriodEnd to false when undefined', () => {
+      const now = new Date();
+      const data: SubscriptionData = {
+        userId: 'user-id',
+        plan: 'basic',
+        status: 'active',
+        billingCycle: 'monthly',
+        cancelAtPeriodEnd: undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const result = formatSubscriptionResponse(data);
+
+      expect(result.cancelAtPeriodEnd).toBe(false);
+    });
+
+    it('should handle null dates in formatDate', () => {
+      const now = new Date();
+      const data: SubscriptionData = {
+        userId: 'user-id',
+        plan: 'pro',
+        status: 'active',
+        billingCycle: 'annual',
+        currentPeriodStart: null as any,
+        currentPeriodEnd: null as any,
+        cancelAtPeriodEnd: true,
         createdAt: now,
         updatedAt: now,
       };

@@ -138,6 +138,24 @@ describe('plans route', () => {
     expect(data.plans[1].features).toBeInstanceOf(Array);
     expect(data.plans[1].features.length).toBeGreaterThan(0);
   });
+
+  it('should handle locale parameter with en value', async () => {
+    const request = createRequest({ locale: 'en' });
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.plans[0].name).toBe('Free');
+  });
+
+  it('should handle case-insensitive currency parameter', async () => {
+    const request = createRequest({ currency: 'cad' });
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.plans[1].currency).toBe('CAD');
+  });
 });
 
 

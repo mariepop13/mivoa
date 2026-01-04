@@ -134,6 +134,74 @@ describe('create-portal route', () => {
       return_url: 'http://localhost:3000/subscription',
     });
   });
+
+  it('should return 500 when unexpected error occurs', async () => {
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+
+    const mockCollection = {
+      doc: vi.fn().mockReturnValue({
+        get: vi.fn().mockRejectedValue(new Error('Database error')),
+      }),
+    };
+    const mockFirestore = {
+      collection: vi.fn().mockReturnValue({
+        doc: vi.fn().mockReturnValue({
+          collection: vi.fn().mockReturnValue(mockCollection),
+        }),
+      }),
+    };
+    vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
+
+    const request = createRequest();
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.error).toBe('Internal server error');
+  });
+
+  it('should use request origin when NEXT_PUBLIC_APP_URL is not set', async () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+
+    const mockDoc = {
+      exists: true,
+      data: vi.fn().mockReturnValue({
+        stripeCustomerId: 'cus_test',
+      }),
+    };
+    const mockCollection = {
+      doc: vi.fn().mockReturnValue({
+        get: vi.fn().mockResolvedValue(mockDoc),
+      }),
+    };
+    const mockFirestore = {
+      collection: vi.fn().mockReturnValue({
+        doc: vi.fn().mockReturnValue({
+          collection: vi.fn().mockReturnValue(mockCollection),
+        }),
+      }),
+    };
+    vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
+
+    const mockSession = { url: 'https://billing.stripe.com/test' };
+    const mockStripe = {
+      billingPortal: {
+        sessions: {
+          create: vi.fn().mockResolvedValue(mockSession),
+        },
+      },
+    };
+    vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+
+    const request = createRequest();
+    await POST(request);
+
+    expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith({
+      customer: 'cus_test',
+      return_url: 'http://localhost:3000/subscription',
+    });
+  });
 });
 
 

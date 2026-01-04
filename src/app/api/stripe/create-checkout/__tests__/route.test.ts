@@ -166,6 +166,134 @@ describe('create-checkout route', () => {
     expect(response.status).toBe(200);
     expect(getStripePriceId).toHaveBeenCalledWith('pro', 'annual', 'USD');
   });
+
+  it('should return 500 when session URL is missing', async () => {
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+    vi.mocked(getAdminAuth).mockReturnValue({
+      getUser: vi.fn().mockResolvedValue({ email: 'test@example.com' }),
+    } as any);
+
+    const mockCustomer = { id: 'cus_test' };
+    vi.mocked(getOrCreateStripeCustomer).mockResolvedValue(mockCustomer as any);
+    vi.mocked(getStripePriceId).mockReturnValue('price_test');
+
+    const mockSession = { url: null };
+    const mockStripe = {
+      checkout: {
+        sessions: {
+          create: vi.fn().mockResolvedValue(mockSession),
+        },
+      },
+    };
+    vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+
+    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.error).toBe('Failed to create checkout session');
+  });
+
+  it('should return 500 when unexpected error occurs', async () => {
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+    vi.mocked(getAdminAuth).mockReturnValue({
+      getUser: vi.fn().mockRejectedValue(new Error('Database error')),
+    } as any);
+
+    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.error).toBe('Internal server error');
+  });
+
+  it('should use request origin when NEXT_PUBLIC_APP_URL is not set', async () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+    vi.mocked(getAdminAuth).mockReturnValue({
+      getUser: vi.fn().mockResolvedValue({ email: 'test@example.com' }),
+    } as any);
+
+    const mockCustomer = { id: 'cus_test' };
+    vi.mocked(getOrCreateStripeCustomer).mockResolvedValue(mockCustomer as any);
+    vi.mocked(getStripePriceId).mockReturnValue('price_test');
+
+    const mockSession = { url: 'https://checkout.stripe.com/test' };
+    const mockStripe = {
+      checkout: {
+        sessions: {
+          create: vi.fn().mockResolvedValue(mockSession),
+        },
+      },
+    };
+    vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+
+    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    await POST(request);
+
+    expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success_url: expect.stringContaining('http://localhost:3000'),
+        cancel_url: expect.stringContaining('http://localhost:3000'),
+      })
+    );
+  });
+
+  it('should handle CAD currency', async () => {
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+    vi.mocked(getAdminAuth).mockReturnValue({
+      getUser: vi.fn().mockResolvedValue({ email: 'test@example.com' }),
+    } as any);
+
+    const mockCustomer = { id: 'cus_test' };
+    vi.mocked(getOrCreateStripeCustomer).mockResolvedValue(mockCustomer as any);
+    vi.mocked(getStripePriceId).mockReturnValue('price_test_cad');
+
+    const mockSession = { url: 'https://checkout.stripe.com/test' };
+    const mockStripe = {
+      checkout: {
+        sessions: {
+          create: vi.fn().mockResolvedValue(mockSession),
+        },
+      },
+    };
+    vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+
+    const request = createRequest({ planId: 'pro', billingCycle: 'monthly', currency: 'CAD' });
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(getStripePriceId).toHaveBeenCalledWith('pro', 'monthly', 'CAD');
+  });
+
+  it('should handle case-insensitive currency', async () => {
+    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
+    vi.mocked(getAdminAuth).mockReturnValue({
+      getUser: vi.fn().mockResolvedValue({ email: 'test@example.com' }),
+    } as any);
+
+    const mockCustomer = { id: 'cus_test' };
+    vi.mocked(getOrCreateStripeCustomer).mockResolvedValue(mockCustomer as any);
+    vi.mocked(getStripePriceId).mockReturnValue('price_test');
+
+    const mockSession = { url: 'https://checkout.stripe.com/test' };
+    const mockStripe = {
+      checkout: {
+        sessions: {
+          create: vi.fn().mockResolvedValue(mockSession),
+        },
+      },
+    };
+    vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+
+    const request = createRequest({ planId: 'basic', billingCycle: 'annual', currency: 'usd' });
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(getStripePriceId).toHaveBeenCalledWith('basic', 'annual', 'USD');
+  });
 });
 
 

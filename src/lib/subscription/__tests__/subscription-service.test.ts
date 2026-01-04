@@ -6,6 +6,8 @@ import {
   calculateUsageResetDate,
   getDefaultSubscription,
   getSubscriptionWithUsage,
+  validatePlanId,
+  validateBillingCycle,
 } from '../subscription-service';
 import type { SubscriptionData, SubscriptionPlan } from '../types';
 import { UNLIMITED_ENTRIES } from '../constants';
@@ -195,6 +197,23 @@ describe('subscription-service', () => {
       expectedNextReset.setHours(0, 0, 0, 0);
       expect(result.nextResetDate).toEqual(expectedNextReset);
     });
+
+    it('should use lastResetNextMonth when it is greater than nextReset', () => {
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const futureDate = new Date(currentMonth);
+      futureDate.setMonth(futureDate.getMonth() + 2);
+      futureDate.setDate(15);
+      futureDate.setHours(0, 0, 0, 0);
+      
+      const result = calculateUsageResetDate(futureDate);
+      expect(result.lastResetDate).toEqual(futureDate);
+      const expectedNextReset = new Date(futureDate);
+      expectedNextReset.setMonth(expectedNextReset.getMonth() + 1);
+      expectedNextReset.setDate(1);
+      expectedNextReset.setHours(0, 0, 0, 0);
+      expect(result.nextResetDate.getTime()).toBeGreaterThanOrEqual(expectedNextReset.getTime());
+    });
   });
 
   describe('fetchSubscription', () => {
@@ -232,6 +251,91 @@ describe('subscription-service', () => {
       expect(result?.plan).toBe('basic');
       expect(result?.status).toBe('active');
       expect(result?.stripeCustomerId).toBe('cus_123');
+    });
+
+    it('should handle subscription data with all optional fields', async () => {
+      const { getDoc } = await import('firebase/firestore');
+      const mockDate = {
+        toDate: () => new Date('2024-01-01T00:00:00Z'),
+      };
+
+      vi.mocked(getDoc).mockResolvedValue({
+        exists: vi.fn(() => true),
+        data: vi.fn(() => ({
+          plan: 'pro',
+          status: 'active',
+          stripeCustomerId: 'cus_123',
+          stripeSubscriptionId: 'sub_123',
+          stripePriceId: 'price_123',
+          currentPeriodStart: mockDate,
+          currentPeriodEnd: mockDate,
+          cancelAtPeriodEnd: true,
+          canceledAt: mockDate,
+          trialEnd: mockDate,
+          billingCycle: 'annual',
+          createdAt: mockDate,
+          updatedAt: mockDate,
+        })),
+      } as any);
+
+      const result = await fetchSubscription('user123');
+      expect(result).not.toBeNull();
+      expect(result?.plan).toBe('pro');
+      expect(result?.status).toBe('active');
+      expect(result?.stripePriceId).toBe('price_123');
+      expect(result?.cancelAtPeriodEnd).toBe(true);
+      expect(result?.billingCycle).toBe('annual');
+      expect(result?.currentPeriodStart).toBeInstanceOf(Date);
+      expect(result?.currentPeriodEnd).toBeInstanceOf(Date);
+      expect(result?.canceledAt).toBeInstanceOf(Date);
+      expect(result?.trialEnd).toBeInstanceOf(Date);
+    });
+
+    it('should handle subscription data with missing optional fields', async () => {
+      const { getDoc } = await import('firebase/firestore');
+      const mockDate = {
+        toDate: () => new Date('2024-01-01T00:00:00Z'),
+      };
+
+      vi.mocked(getDoc).mockResolvedValue({
+        exists: vi.fn(() => true),
+        data: vi.fn(() => ({
+          plan: 'basic',
+          status: 'free',
+          createdAt: mockDate,
+          updatedAt: mockDate,
+        })),
+      } as any);
+
+      const result = await fetchSubscription('user123');
+      expect(result).not.toBeNull();
+      expect(result?.plan).toBe('basic');
+      expect(result?.status).toBe('free');
+      expect(result?.stripeCustomerId).toBeUndefined();
+      expect(result?.stripeSubscriptionId).toBeUndefined();
+      expect(result?.currentPeriodStart).toBeUndefined();
+      expect(result?.currentPeriodEnd).toBeUndefined();
+      expect(result?.cancelAtPeriodEnd).toBeUndefined();
+    });
+
+    it('should default to free plan and status when missing', async () => {
+      const { getDoc } = await import('firebase/firestore');
+      const mockDate = {
+        toDate: () => new Date('2024-01-01T00:00:00Z'),
+      };
+
+      vi.mocked(getDoc).mockResolvedValue({
+        exists: vi.fn(() => true),
+        data: vi.fn(() => ({
+          createdAt: mockDate,
+          updatedAt: mockDate,
+        })),
+      } as any);
+
+      const result = await fetchSubscription('user123');
+      expect(result).not.toBeNull();
+      expect(result?.plan).toBe('free');
+      expect(result?.status).toBe('free');
     });
 
     it('should handle Firestore errors when fetching subscription', async () => {
@@ -361,6 +465,73 @@ describe('subscription-service', () => {
       );
 
       consoleErrorSpy.mockRestore();
+    });
+
+    it('should handle non-Error exceptions in getUsageStats', async () => {
+      const { getDoc } = await import('firebase/firestore');
+      const mockDate = {
+        toDate: () => new Date('2024-01-01T00:00:00Z'),
+      };
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      vi.mocked(getDoc)
+        .mockResolvedValueOnce({
+          exists: vi.fn(() => true),
+          data: vi.fn(() => ({
+            plan: 'basic',
+            status: 'active',
+            stripeSubscriptionId: 'sub_123',
+            createdAt: mockDate,
+            updatedAt: mockDate,
+          })),
+        } as any)
+        .mockRejectedValueOnce('String error');
+
+      const result = await getSubscriptionWithUsage('user123');
+
+      expect(result.plan).toBe('basic');
+      expect(result.usage.entriesUsed).toBe(0);
+      expect(result.usage.entriesLimit).toBe(100);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to fetch usage stats from Firestore',
+        expect.objectContaining({
+          userId: 'user123',
+          plan: 'basic',
+          error: 'String error',
+        })
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('validatePlanId', () => {
+    it('should return true for valid plan IDs', () => {
+      expect(validatePlanId('free')).toBe(true);
+      expect(validatePlanId('basic')).toBe(true);
+      expect(validatePlanId('pro')).toBe(true);
+    });
+
+    it('should return false for invalid plan IDs', () => {
+      expect(validatePlanId('invalid')).toBe(false);
+      expect(validatePlanId('premium')).toBe(false);
+      expect(validatePlanId('')).toBe(false);
+      expect(validatePlanId('FREE')).toBe(false);
+    });
+  });
+
+  describe('validateBillingCycle', () => {
+    it('should return true for valid billing cycles', () => {
+      expect(validateBillingCycle('monthly')).toBe(true);
+      expect(validateBillingCycle('annual')).toBe(true);
+    });
+
+    it('should return false for invalid billing cycles', () => {
+      expect(validateBillingCycle('invalid')).toBe(false);
+      expect(validateBillingCycle('month')).toBe(false);
+      expect(validateBillingCycle('year')).toBe(false);
+      expect(validateBillingCycle('')).toBe(false);
+      expect(validateBillingCycle('MONTHLY')).toBe(false);
     });
   });
 });

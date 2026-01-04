@@ -6,6 +6,7 @@ import {
   PLAN_FEATURES,
   STRIPE_PRICE_ID_ENV_VARS,
   UNLIMITED_ENTRIES,
+  getPriceId,
 } from '../constants';
 
 describe('subscription constants', () => {
@@ -118,6 +119,57 @@ describe('subscription constants', () => {
       expect(STRIPE_PRICE_ID_ENV_VARS.pro.annual.CAD).toBe(
         'STRIPE_PRICE_ID_PRO_ANNUAL_CAD'
       );
+    });
+  });
+
+  describe('getPriceId', () => {
+    it('should return price ID from environment variable for basic monthly USD', () => {
+      process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = 'price_basic_monthly_usd';
+      const priceId = getPriceId('basic', 'monthly', 'USD');
+      expect(priceId).toBe('price_basic_monthly_usd');
+      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+    });
+
+    it('should return price ID from environment variable for pro annual CAD', () => {
+      process.env.STRIPE_PRICE_ID_PRO_ANNUAL_CAD = 'price_pro_annual_cad';
+      const priceId = getPriceId('pro', 'annual', 'CAD');
+      expect(priceId).toBe('price_pro_annual_cad');
+      delete process.env.STRIPE_PRICE_ID_PRO_ANNUAL_CAD;
+    });
+
+    it('should default to USD when currency not specified', () => {
+      process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = 'price_basic_monthly_usd';
+      const priceId = getPriceId('basic', 'monthly');
+      expect(priceId).toBe('price_basic_monthly_usd');
+      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+    });
+
+    it('should throw error when environment variable is missing', () => {
+      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+      expect(() => getPriceId('basic', 'monthly', 'USD')).toThrow(
+        'Missing environment variable: STRIPE_PRICE_ID_BASIC_MONTHLY_USD'
+      );
+    });
+
+    it('should handle all plan, cycle, and currency combinations', () => {
+      const combinations = [
+        { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_USD' },
+        { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_CAD' },
+        { plan: 'basic' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_ANNUAL_USD' },
+        { plan: 'basic' as const, cycle: 'annual' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_BASIC_ANNUAL_CAD' },
+        { plan: 'pro' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD' },
+        { plan: 'pro' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_PRO_MONTHLY_CAD' },
+        { plan: 'pro' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_PRO_ANNUAL_USD' },
+        { plan: 'pro' as const, cycle: 'annual' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_PRO_ANNUAL_CAD' },
+      ];
+
+      combinations.forEach(({ plan, cycle, currency, env }) => {
+        const mockPriceId = `price_${plan}_${cycle}_${currency}`;
+        process.env[env] = mockPriceId;
+        const priceId = getPriceId(plan, cycle, currency);
+        expect(priceId).toBe(mockPriceId);
+        delete process.env[env];
+      });
     });
   });
 });

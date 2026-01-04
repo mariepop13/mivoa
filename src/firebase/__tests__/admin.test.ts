@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getAdminAuth, getAdminFirestore } from '../admin';
 
+const mockInitializeApp = vi.fn();
+const mockGetApps = vi.fn().mockReturnValue([]);
+const mockCert = vi.fn();
+
 vi.mock('firebase-admin/app', () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn().mockReturnValue([]),
+  initializeApp: (...args: unknown[]) => mockInitializeApp(...args),
+  getApps: () => mockGetApps(),
+  cert: (...args: unknown[]) => mockCert(...args),
 }));
 
 vi.mock('firebase-admin/auth', () => ({
@@ -82,6 +87,38 @@ describe('firebase admin', () => {
 
       expect(firestore1).toBe(firestore2);
       expect(getFirestore).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getAdminAuth edge cases', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockGetApps.mockReturnValue([]);
+    });
+
+    it('should use existing app when apps already exist', async () => {
+      const mockExistingApp = { name: 'existing-app' } as any;
+      mockGetApps.mockReturnValue([mockExistingApp]);
+      const { getAuth } = await import('firebase-admin/auth');
+      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      vi.mocked(getAuth).mockReturnValue(mockAuth);
+
+      const auth1 = getAdminAuth();
+      const auth2 = getAdminAuth();
+
+      expect(mockInitializeApp).not.toHaveBeenCalled();
+      expect(auth1).toBe(auth2);
+    });
+
+    it('should use NEXT_PUBLIC_FIREBASE_PROJECT_ID when FIREBASE_PROJECT_ID is missing', async () => {
+      delete process.env.FIREBASE_PROJECT_ID;
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'public-project-id';
+      mockGetApps.mockReturnValue([]);
+      const { getAuth } = await import('firebase-admin/auth');
+      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      vi.mocked(getAuth).mockReturnValue(mockAuth);
+
+      expect(() => getAdminAuth()).not.toThrow();
     });
   });
 });
