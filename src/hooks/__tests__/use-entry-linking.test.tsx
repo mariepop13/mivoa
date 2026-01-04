@@ -14,24 +14,20 @@ vi.mock('@/firebase/auth/use-user');
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/utils/entry-linking-utils');
 
-vi.mock('firebase/firestore', () => {
-  return {
+vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn(),
-  };
-});
+  }));
 
 const mockFirestore = { id: 'mock-firestore' } as any;
 const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
 
-const createMockDocSnapshot = (id: string, data: JournalEntryData | null) => {
-  return {
+const createMockDocSnapshot = (id: string, data: JournalEntryData | null) => ({
     id,
     exists: () => data !== null,
     data: () => data,
-  } as any;
-};
+  } as any);
 
 describe('useEntryLinking', () => {
   beforeEach(() => {

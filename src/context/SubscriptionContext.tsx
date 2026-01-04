@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, ReactNode, useMemo, useContext, useCallback } from 'react';
+import { createContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type {
@@ -15,7 +15,7 @@ import {
   getPlanLimits,
   calculateUsageResetDate,
 } from '@/lib/subscription/subscription-service';
-import { PLAN_LIMITS, UNLIMITED_ENTRIES } from '@/lib/subscription/constants';
+import { UNLIMITED_ENTRIES } from '@/lib/subscription/constants';
 
 interface SubscriptionFirestoreData extends Record<string, unknown> {
   plan?: SubscriptionPlan;
