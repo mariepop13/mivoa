@@ -53,12 +53,12 @@ export const PLAN_PRICING: Record<
     annual: { USD: 0, CAD: 0 },
   },
   basic: {
-    monthly: { USD: 990, CAD: 1390 },
-    annual: { USD: 9900, CAD: 13900 },
+    monthly: { USD: 999, CAD: 1399 },
+    annual: { USD: 9999, CAD: 13999 },
   },
   pro: {
-    monthly: { USD: 1990, CAD: 2790 },
-    annual: { USD: 19900, CAD: 27900 },
+    monthly: { USD: 1999, CAD: 2799 },
+    annual: { USD: 19999, CAD: 27999 },
   },
 };
 
@@ -121,3 +121,18 @@ export const STRIPE_PRICE_ID_ENV_VARS: Record<
     },
   },
 };
+
+function getPriceIdEnvKey(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD'): string {
+  return `STRIPE_PRICE_ID_${plan.toUpperCase()}_${cycle.toUpperCase()}_${currency}`;
+}
+
+export function getPriceId(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
+  const envKey = getPriceIdEnvKey(plan, cycle, currency);
+  const priceId = process.env[envKey];
+  
+  if (!priceId) {
+    throw new Error(`Missing environment variable: ${envKey}`);
+  }
+  
+  return priceId;
+}

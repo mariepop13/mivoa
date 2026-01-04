@@ -47,3 +47,4 @@ export function getStripeClient(): Stripe {
 export function resetStripeClient(): void {
   stripeClient = null;
 }
+

@@ -52,3 +52,4 @@ export interface SubscriptionWithUsage extends SubscriptionData {
 }
 
 export type Currency = 'USD' | 'CAD';
+
