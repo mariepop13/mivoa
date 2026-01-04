@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
 import { getPriceId } from '@/lib/subscription/constants';
+import { getAdminFirestore } from '@/firebase/admin';
 import type { SubscriptionPlan, BillingCycle, Currency, SubscriptionData, SubscriptionStatus } from '@/lib/subscription/types';
 
 export async function getOrCreateStripeCustomer(
@@ -8,6 +9,31 @@ export async function getOrCreateStripeCustomer(
   email: string | null | undefined
 ): Promise<Stripe.Customer> {
   const stripe = getStripeClient();
+  const adminFirestore = getAdminFirestore();
+
+  const subscriptionRef = adminFirestore
+    .collection('users')
+    .doc(userId)
+    .collection('subscription')
+    .doc('status');
+
+  const subscriptionSnap = await subscriptionRef.get();
+
+  if (subscriptionSnap.exists) {
+    const subscriptionData = subscriptionSnap.data();
+    const stripeCustomerId = subscriptionData?.stripeCustomerId as string | undefined;
+
+    if (stripeCustomerId) {
+      try {
+        const customer = await stripe.customers.retrieve(stripeCustomerId);
+        if (customer && !customer.deleted) {
+          return customer as Stripe.Customer;
+        }
+      } catch (error) {
+        console.warn('Failed to retrieve customer from Stripe by ID, falling back to email lookup:', error);
+      }
+    }
+  }
 
   const existingCustomers = await stripe.customers.list({
     email: email || undefined,

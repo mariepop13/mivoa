@@ -10,6 +10,25 @@ function createErrorResponse(message: string, status: number): NextResponse {
   return NextResponse.json({ error: message }, { status });
 }
 
+function buildFreeSubscriptionResponse(): NextResponse {
+  return NextResponse.json(
+    {
+      plan: 'free' as const,
+      status: 'free' as const,
+      billingCycle: null,
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    },
+    {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=60',
+      },
+    }
+  );
+}
+
 export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     const userId = await requireAuthenticatedUserId();
@@ -23,42 +42,12 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       .get();
 
     if (!subscriptionDoc.exists) {
-      return NextResponse.json(
-        {
-          plan: 'free' as const,
-          status: 'free' as const,
-          billingCycle: null,
-          currentPeriodStart: null,
-          currentPeriodEnd: null,
-          cancelAtPeriodEnd: false,
-        },
-        {
-          status: 200,
-          headers: {
-            'Cache-Control': 'private, max-age=60',
-          },
-        }
-      );
+      return buildFreeSubscriptionResponse();
     }
 
     const rawData = subscriptionDoc.data();
     if (!rawData) {
-      return NextResponse.json(
-        {
-          plan: 'free' as const,
-          status: 'free' as const,
-          billingCycle: null,
-          currentPeriodStart: null,
-          currentPeriodEnd: null,
-          cancelAtPeriodEnd: false,
-        },
-        {
-          status: 200,
-          headers: {
-            'Cache-Control': 'private, max-age=60',
-          },
-        }
-      );
+      return buildFreeSubscriptionResponse();
     }
 
     const subscriptionData: SubscriptionData = {

@@ -58,7 +58,7 @@ export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
 }
 
 export function validatePlanId(planId: string): planId is SubscriptionPlan {
-  return planId === 'free' || planId === 'basic' || planId === 'pro';
+  return SUBSCRIPTION_PLANS.includes(planId as SubscriptionPlan);
 }
 
 export function validateBillingCycle(billingCycle: string): billingCycle is 'monthly' | 'annual' {

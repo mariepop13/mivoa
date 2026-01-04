@@ -22,6 +22,7 @@ function mapStripeStatusToSubscriptionStatus(stripeStatus: string): Subscription
     trialing: 'trialing',
     incomplete: 'incomplete',
     incomplete_expired: 'incomplete_expired',
+    unpaid: 'unpaid',
   };
 
   return statusMap[stripeStatus] || 'free';
@@ -79,7 +80,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
     .doc(userId)
     .collection('subscription')
     .doc('status')
-    .set(subscriptionData, { merge: false });
+    .set(subscriptionData, { merge: true });
 
 }
 
@@ -116,7 +117,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     .doc(userId)
     .collection('subscription')
     .doc('status')
-    .update(updateData);
+    .set(updateData, { merge: true });
 
 }
 
@@ -139,7 +140,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
     .doc(userId)
     .collection('subscription')
     .doc('status')
-    .update(updateData);
+    .set(updateData, { merge: true });
 
 }
 

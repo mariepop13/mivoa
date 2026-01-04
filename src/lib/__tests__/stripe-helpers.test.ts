@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getOrCreateStripeCustomer, getStripePriceId, formatSubscriptionResponse } from '../stripe-helpers';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
+import { getAdminFirestore } from '@/firebase/admin';
 import type { SubscriptionData } from '@/lib/subscription/types';
 
 vi.mock('@/lib/subscription/stripe-client');
+vi.mock('@/firebase/admin');
 vi.mock('@/lib/subscription/constants', () => ({
   getPriceId: vi.fn((plan, cycle, currency) => `price_${plan}_${cycle}_${currency}`),
 }));
@@ -14,15 +16,68 @@ describe('stripe-helpers', () => {
   });
 
   describe('getOrCreateStripeCustomer', () => {
-    it('should return existing customer when found', async () => {
+    it('should return customer from Stripe when found in Firestore', async () => {
+      const mockCustomer = { id: 'cus_existing', email: 'test@example.com', deleted: false };
+      const mockStripe = {
+        customers: {
+          retrieve: vi.fn().mockResolvedValue(mockCustomer),
+        },
+      };
+
+      const mockSubscriptionDoc = {
+        exists: true,
+        data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_existing' }),
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
+      vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
+
+      const customer = await getOrCreateStripeCustomer('user-id', 'test@example.com');
+
+      expect(customer).toBe(mockCustomer);
+      expect(mockStripe.customers.retrieve).toHaveBeenCalledWith('cus_existing');
+    });
+
+    it('should fall back to email lookup when Firestore customer retrieval fails', async () => {
       const mockCustomer = { id: 'cus_existing', email: 'test@example.com' };
       const mockStripe = {
         customers: {
+          retrieve: vi.fn().mockRejectedValue(new Error('Customer not found')),
           list: vi.fn().mockResolvedValue({ data: [mockCustomer] }),
         },
       };
 
+      const mockSubscriptionDoc = {
+        exists: true,
+        data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_existing' }),
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
       vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
 
       const customer = await getOrCreateStripeCustomer('user-id', 'test@example.com');
 
@@ -33,7 +88,43 @@ describe('stripe-helpers', () => {
       });
     });
 
-    it('should create new customer when not found', async () => {
+    it('should fall back to email lookup when no customer in Firestore', async () => {
+      const mockCustomer = { id: 'cus_existing', email: 'test@example.com' };
+      const mockStripe = {
+        customers: {
+          list: vi.fn().mockResolvedValue({ data: [mockCustomer] }),
+        },
+      };
+
+      const mockSubscriptionDoc = {
+        exists: false,
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
+      vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
+
+      const customer = await getOrCreateStripeCustomer('user-id', 'test@example.com');
+
+      expect(customer).toBe(mockCustomer);
+      expect(mockStripe.customers.list).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        limit: 1,
+      });
+    });
+
+    it('should create new customer when not found in Firestore or email lookup', async () => {
       const mockNewCustomer = { id: 'cus_new', email: 'test@example.com' };
       const mockStripe = {
         customers: {
@@ -42,7 +133,24 @@ describe('stripe-helpers', () => {
         },
       };
 
+      const mockSubscriptionDoc = {
+        exists: false,
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
       vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
 
       const customer = await getOrCreateStripeCustomer('user-id', 'test@example.com');
 
@@ -62,7 +170,24 @@ describe('stripe-helpers', () => {
         },
       };
 
+      const mockSubscriptionDoc = {
+        exists: false,
+      };
+      const mockCollection = {
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+        }),
+      };
+      const mockFirestore = {
+        collection: vi.fn().mockReturnValue({
+          doc: vi.fn().mockReturnValue({
+            collection: vi.fn().mockReturnValue(mockCollection),
+          }),
+        }),
+      };
+
       vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
+      vi.mocked(getAdminFirestore).mockReturnValue(mockFirestore as any);
 
       const customer = await getOrCreateStripeCustomer('user-id', null);
 
