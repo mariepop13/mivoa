@@ -38,9 +38,7 @@ export function EntryLinksList({
   const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
   const [entryToUnlink, setEntryToUnlink] = useState<string | null>(null);
 
-  const linkedEntryIdsKey = useMemo(() => {
-    return linkedEntryIds.length > 0 ? linkedEntryIds.sort().join(',') : '';
-  }, [linkedEntryIds]);
+  const linkedEntryIdsKey = useMemo(() => linkedEntryIds.length > 0 ? linkedEntryIds.sort().join(',') : '', [linkedEntryIds]);
 
   useEffect(() => {
     if (!entryId || linkedEntryIds.length === 0) {

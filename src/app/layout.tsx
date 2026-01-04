@@ -5,6 +5,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { OpenRouterApiKeyProvider } from '@/context/OpenRouterApiKeyContext';
 import { ModelProvider } from '@/context/ModelContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -47,13 +48,15 @@ export default function RootLayout({
         >
           <LanguageProvider>
           <FirebaseClientProvider>
-              <OpenRouterApiKeyProvider>
-                <ModelProvider>
-                  {children}
-                  <Footer />
-                  <Toaster />
-                </ModelProvider>
-              </OpenRouterApiKeyProvider>
+              <SubscriptionProvider>
+                <OpenRouterApiKeyProvider>
+                  <ModelProvider>
+                    {children}
+                    <Footer />
+                    <Toaster />
+                  </ModelProvider>
+                </OpenRouterApiKeyProvider>
+              </SubscriptionProvider>
           </FirebaseClientProvider>
           </LanguageProvider>
         </ThemeProvider>
