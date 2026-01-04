@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatEntryTime, getEntryTitle } from '../journal-utils';
+import { formatEntryTime, getEntryTitle, convertTimestampToDate } from '../journal-utils';
+import { Timestamp } from 'firebase/firestore';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 describe('journal-utils', () => {
@@ -142,6 +143,38 @@ describe('journal-utils', () => {
       const result = getEntryTitle(entry, []);
 
       expect(result).toBe('Custom Title');
+    });
+  });
+
+  describe('convertTimestampToDate', () => {
+    it('should return Date object when input is Date', () => {
+      const date = new Date('2024-01-15T14:30:00Z');
+      const result = convertTimestampToDate(date);
+      
+      expect(result).toBeInstanceOf(Date);
+      expect(result.getTime()).toBe(date.getTime());
+    });
+
+    it('should convert Timestamp to Date', () => {
+      const timestamp = Timestamp.fromDate(new Date('2024-01-15T14:30:00Z'));
+      const result = convertTimestampToDate(timestamp);
+      
+      expect(result).toBeInstanceOf(Date);
+      expect(result.getTime()).toBe(timestamp.toDate().getTime());
+    });
+
+    it('should convert string to Date', () => {
+      const dateString = '2024-01-15T14:30:00Z';
+      const result = convertTimestampToDate(dateString);
+      
+      expect(result).toBeInstanceOf(Date);
+      expect(result.getTime()).toBe(new Date(dateString).getTime());
+    });
+
+    it('should return new Date for invalid input', () => {
+      const result = convertTimestampToDate(null as any);
+      
+      expect(result).toBeInstanceOf(Date);
     });
   });
 });

@@ -94,5 +94,50 @@ describe('validateOpenRouterApiKey', () => {
     const result = await validateOpenRouterApiKey('test-key-1234567890');
     expect(result).toBe(false);
   });
+
+  it('should log error when debug is true and response is not ok', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    } as Response);
+
+    const result = await validateOpenRouterApiKey('test-key-1234567890', true);
+    
+    expect(result).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'OpenRouter API key validation request failed:',
+      500
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should log error when debug is true and fetch fails', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const testError = new Error('Network error');
+    global.fetch = vi.fn().mockRejectedValue(testError);
+
+    const result = await validateOpenRouterApiKey('test-key-1234567890', true);
+    
+    expect(result).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'OpenRouter API key validation failed:',
+      testError
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should not log error when debug is false', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    await validateOpenRouterApiKey('test-key-1234567890', false);
+    
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
 });
 

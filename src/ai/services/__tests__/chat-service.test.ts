@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendChatMessage, generateInitialMessage } from '../chat-service';
+import { sendChatMessage, generateInitialMessage, regenerateFromMessage } from '../chat-service';
 import * as openrouterClient from '../openrouter-client';
 
 vi.mock('../openrouter-client');
@@ -97,6 +97,92 @@ describe('chat-service', () => {
       const message = generateInitialMessage('fr');
       expect(message).toContain('Bonjour');
       expect(message).toContain('réfléchir');
+    });
+  });
+
+  describe('regenerateFromMessage', () => {
+    it('should regenerate message from valid user message index', async () => {
+      const mockResponse = 'Regenerated response';
+      vi.spyOn(openrouterClient, 'generateChatCompletion').mockResolvedValue(mockResponse);
+
+      const conversationHistory = [
+        { role: 'user' as const, content: 'First message', timestamp: new Date() },
+        { role: 'assistant' as const, content: 'First response', timestamp: new Date() },
+        { role: 'user' as const, content: 'Second message', timestamp: new Date() },
+      ];
+
+      const result = await regenerateFromMessage({
+        conversationHistory,
+        messageIndex: 2,
+        apiKey: 'test-key',
+        language: 'en' as const,
+        model: 'test-model',
+      });
+
+      expect(result).toBe(mockResponse.trim());
+      expect(openrouterClient.generateChatCompletion).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ role: 'system' }),
+          expect.objectContaining({ role: 'user', content: 'First message' }),
+          expect.objectContaining({ role: 'assistant', content: 'First response' }),
+          expect.objectContaining({ role: 'user', content: 'Second message' }),
+        ]),
+        'test-key',
+        expect.objectContaining({
+          model: 'test-model',
+          temperature: 0.8,
+          max_tokens: 1000,
+        })
+      );
+    });
+
+    it('should throw error for invalid message index (negative)', async () => {
+      const conversationHistory = [
+        { role: 'user' as const, content: 'Message', timestamp: new Date() },
+      ];
+
+      await expect(
+        regenerateFromMessage({
+          conversationHistory,
+          messageIndex: -1,
+          apiKey: 'test-key',
+          language: 'en' as const,
+          model: 'test-model',
+        })
+      ).rejects.toThrow('Invalid message index');
+    });
+
+    it('should throw error for invalid message index (out of bounds)', async () => {
+      const conversationHistory = [
+        { role: 'user' as const, content: 'Message', timestamp: new Date() },
+      ];
+
+      await expect(
+        regenerateFromMessage({
+          conversationHistory,
+          messageIndex: 5,
+          apiKey: 'test-key',
+          language: 'en' as const,
+          model: 'test-model',
+        })
+      ).rejects.toThrow('Invalid message index');
+    });
+
+    it('should throw error when trying to regenerate from non-user message', async () => {
+      const conversationHistory = [
+        { role: 'user' as const, content: 'First message', timestamp: new Date() },
+        { role: 'assistant' as const, content: 'Response', timestamp: new Date() },
+      ];
+
+      await expect(
+        regenerateFromMessage({
+          conversationHistory,
+          messageIndex: 1,
+          apiKey: 'test-key',
+          language: 'en' as const,
+          model: 'test-model',
+        })
+      ).rejects.toThrow('Cannot regenerate from non-user message');
     });
   });
 });

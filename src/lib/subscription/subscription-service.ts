@@ -57,6 +57,14 @@ export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
   return PLAN_LIMITS[plan];
 }
 
+export function validatePlanId(planId: string): planId is SubscriptionPlan {
+  return SUBSCRIPTION_PLANS.includes(planId as SubscriptionPlan);
+}
+
+export function validateBillingCycle(billingCycle: string): billingCycle is 'monthly' | 'annual' {
+  return billingCycle === 'monthly' || billingCycle === 'annual';
+}
+
 export function calculateUsageResetDate(
   lastReset: Date | null
 ): { lastResetDate: Date; nextResetDate: Date } {
