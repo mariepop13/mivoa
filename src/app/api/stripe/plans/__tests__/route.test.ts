@@ -156,6 +156,24 @@ describe('plans route', () => {
     expect(response.status).toBe(200);
     expect(data.plans[1].currency).toBe('CAD');
   });
+
+  it('should handle errors and return 500 status', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mapSpy = vi.spyOn(Array.prototype, 'map').mockImplementation(() => {
+      throw new Error('Test error');
+    });
+
+    const request = createRequest();
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.error).toBe('Internal server error');
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to get plans:', expect.any(Error));
+
+    mapSpy.mockRestore();
+    consoleSpy.mockRestore();
+  });
 });
 
 
