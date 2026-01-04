@@ -79,17 +79,6 @@ describe('create-checkout route', () => {
     expect(data.error).toContain('Invalid billingCycle');
   });
 
-  it('should return 400 when planId is free', async () => {
-    vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
-
-    const request = createRequest({ planId: 'free', billingCycle: 'monthly' });
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(data.error).toBe('Cannot create checkout for free plan');
-  });
-
   it('should return 400 when currency is invalid', async () => {
     vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
 

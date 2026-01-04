@@ -4,6 +4,18 @@ import { getPriceId } from '@/lib/subscription/constants';
 import { getAdminFirestore } from '@/firebase/admin';
 import type { SubscriptionPlan, BillingCycle, Currency, SubscriptionData, SubscriptionStatus } from '@/lib/subscription/types';
 
+async function retrieveCustomerById(stripe: Stripe, customerId: string): Promise<Stripe.Customer | null> {
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer && !customer.deleted) {
+      return customer as Stripe.Customer;
+    }
+  } catch (error) {
+    console.warn('Failed to retrieve customer from Stripe by ID, falling back to email lookup:', error);
+  }
+  return null;
+}
+
 export async function getOrCreateStripeCustomer(
   userId: string,
   email: string | null | undefined
@@ -24,13 +36,9 @@ export async function getOrCreateStripeCustomer(
     const stripeCustomerId = subscriptionData?.stripeCustomerId as string | undefined;
 
     if (stripeCustomerId) {
-      try {
-        const customer = await stripe.customers.retrieve(stripeCustomerId);
-        if (customer && !customer.deleted) {
-          return customer as Stripe.Customer;
-        }
-      } catch (error) {
-        console.warn('Failed to retrieve customer from Stripe by ID, falling back to email lookup:', error);
+      const customer = await retrieveCustomerById(stripe, stripeCustomerId);
+      if (customer) {
+        return customer;
       }
     }
   }
@@ -44,14 +52,12 @@ export async function getOrCreateStripeCustomer(
     return existingCustomers.data[0];
   }
 
-  const customer = await stripe.customers.create({
+  return await stripe.customers.create({
     email: email || undefined,
     metadata: {
       userId,
     },
   });
-
-  return customer;
 }
 
 export function getStripePriceId(
@@ -90,4 +96,3 @@ export function formatSubscriptionResponse(
     cancelAtPeriodEnd: data.cancelAtPeriodEnd ?? false,
   };
 }
-

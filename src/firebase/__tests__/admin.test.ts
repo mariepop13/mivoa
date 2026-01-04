@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getAdminAuth, getAdminFirestore } from '../admin';
+import type { App } from 'firebase-admin/app';
+import type { Auth } from 'firebase-admin/auth';
 
 const mockInitializeApp = vi.fn();
 const mockGetApps = vi.fn().mockReturnValue([]);
@@ -42,7 +44,7 @@ describe('firebase admin', () => {
     });
 
     it('should return auth instance when project ID is set', async () => {
-      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
       const { getAuth } = await import('firebase-admin/auth');
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
@@ -53,7 +55,7 @@ describe('firebase admin', () => {
     });
 
     it('should return same auth instance on subsequent calls', async () => {
-      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
       const { getAuth } = await import('firebase-admin/auth');
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
@@ -97,10 +99,10 @@ describe('firebase admin', () => {
     });
 
     it('should use existing app when apps already exist', async () => {
-      const mockExistingApp = { name: 'existing-app' } as any;
+      const mockExistingApp = { name: 'existing-app' } as unknown as App;
       mockGetApps.mockReturnValue([mockExistingApp]);
       const { getAuth } = await import('firebase-admin/auth');
-      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
       const auth1 = getAdminAuth();
@@ -115,10 +117,37 @@ describe('firebase admin', () => {
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'public-project-id';
       mockGetApps.mockReturnValue([]);
       const { getAuth } = await import('firebase-admin/auth');
-      const mockAuth = { verifySessionCookie: vi.fn() } as any;
+      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
       expect(() => getAdminAuth()).not.toThrow();
+    });
+
+    it('should initialize app with credentials when env vars are set', async () => {
+      vi.resetModules();
+      process.env.FIREBASE_ADMIN_PRIVATE_KEY = 'test-private-key';
+      process.env.FIREBASE_ADMIN_CLIENT_EMAIL = 'test@example.com';
+      mockGetApps.mockReturnValue([]);
+      const mockCredential = { projectId: 'test-project' };
+      mockCert.mockReturnValue(mockCredential);
+      const mockApp = { name: 'test-app' } as unknown as App;
+      mockInitializeApp.mockReturnValue(mockApp);
+      const { getAuth } = await import('firebase-admin/auth');
+      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
+      vi.mocked(getAuth).mockReturnValue(mockAuth);
+      const { getAdminAuth: getAdminAuthAfterReset } = await import('../admin');
+
+      getAdminAuthAfterReset();
+
+      expect(mockCert).toHaveBeenCalledWith({
+        projectId: 'test-project',
+        privateKey: 'test-private-key',
+        clientEmail: 'test@example.com',
+      });
+      expect(mockInitializeApp).toHaveBeenCalledWith({
+        credential: mockCredential,
+        projectId: 'test-project',
+      });
     });
   });
 });
