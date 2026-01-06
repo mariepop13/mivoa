@@ -46,8 +46,9 @@ export function useSubscriptionLimits(): UseSubscriptionLimitsReturn {
     }
 
     try {
-      if (usage?.lastResetDate) {
-        await checkAndResetIfNeeded(user.uid, usage.lastResetDate);
+      const lastResetDate = usage?.lastResetDate;
+      if (lastResetDate) {
+        await checkAndResetIfNeeded(user.uid, lastResetDate);
       }
       
       await incrementEntryUsage(user.uid);
@@ -56,7 +57,7 @@ export function useSubscriptionLimits(): UseSubscriptionLimitsReturn {
       console.error('Failed to track entry usage:', error);
       return false;
     }
-  }, [user, canCreate, usage?.lastResetDate]);
+  }, [user, canCreate, usage]);
 
   return {
     canCreateEntry: canCreate,
