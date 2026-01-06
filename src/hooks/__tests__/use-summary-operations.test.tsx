@@ -16,6 +16,9 @@ vi.mock('@/firebase/auth/use-user');
 vi.mock('../use-entry-analysis');
 vi.mock('@/ai/services/conversation-summary-service');
 vi.mock('@/app/handlers/journal-handlers');
+vi.mock('../use-subscription', () => ({
+  useSubscription: vi.fn(() => ({ plan: 'free' })),
+}));
 
 describe('useSummaryOperations', () => {
   const mockFirestore = { id: 'mock-firestore' } as any;
