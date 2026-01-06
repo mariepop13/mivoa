@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/date-picker';
 import { EntryLinkButton } from '@/components/entry-link-button';
+import { EntryExportButton } from '@/components/entry-export-button';
+import { format } from 'date-fns';
 
 interface JournalEntryActionsProps {
   onSave: () => void;
@@ -35,6 +37,8 @@ interface JournalEntryActionsProps {
   entryId?: string | null;
   linkedEntryIds?: string[];
   onLinksUpdated?: () => void;
+  content?: string;
+  title?: string;
 }
 
 const DELETE_BUTTON_CLASSES = [
@@ -249,6 +253,8 @@ export function JournalEntryActions({
   entryId,
   linkedEntryIds,
   onLinksUpdated,
+  content = '',
+  title,
 }: JournalEntryActionsProps): React.JSX.Element {
   const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -264,6 +270,8 @@ export function JournalEntryActions({
     }
   };
 
+  const dateKey = currentDate ? format(currentDate, 'yyyy-MM-dd') : '';
+
   return (
     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
       {entryId && (
@@ -271,6 +279,15 @@ export function JournalEntryActions({
           entryId={entryId}
           linkedEntryIds={linkedEntryIds}
           onLinksUpdated={onLinksUpdated}
+        />
+      )}
+      {entryId && (
+        <EntryExportButton
+          entryId={entryId}
+          content={content}
+          title={title}
+          date={dateKey}
+          disabled={isLoading}
         />
       )}
       {onChangeDate && currentDate && (

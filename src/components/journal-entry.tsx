@@ -113,6 +113,8 @@ function JournalEntryComponent({
           entryId={entryId}
           linkedEntryIds={linkedEntryIds}
           onLinksUpdated={onLinksUpdated}
+          content={localContent}
+          title={title}
         />
       </div>
     </div>
