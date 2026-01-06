@@ -5,10 +5,10 @@ import type {
   SubscriptionStatus,
   SubscriptionData,
   SubscriptionWithUsage,
-  PlanLimits,
   UsageStats,
 } from './types';
-import { PLAN_LIMITS, SUBSCRIPTION_PLANS, UNLIMITED_ENTRIES } from './constants';
+import { SUBSCRIPTION_PLANS, UNLIMITED_ENTRIES } from './constants';
+import { getPlanLimits } from './feature-gate';
 
 const FIRESTORE_SUBSCRIPTION_PATH = 'subscription/status';
 
@@ -53,9 +53,6 @@ export function validateSubscription(
   return true;
 }
 
-export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
-  return PLAN_LIMITS[plan];
-}
 
 export function validatePlanId(planId: string): planId is SubscriptionPlan {
   return SUBSCRIPTION_PLANS.includes(planId as SubscriptionPlan);

@@ -12,9 +12,9 @@ import type {
 } from '@/lib/subscription/types';
 import {
   getDefaultSubscription,
-  getPlanLimits,
   calculateUsageResetDate,
 } from '@/lib/subscription/subscription-service';
+import { getPlanLimits } from '@/lib/subscription/feature-gate';
 import { UNLIMITED_ENTRIES } from '@/lib/subscription/constants';
 
 interface SubscriptionFirestoreData extends Record<string, unknown> {
