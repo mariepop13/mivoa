@@ -328,6 +328,10 @@
     "cancelDescription": "Votre session de paiement a été annulée",
     "cancelMessage": "Vous pouvez revenir voir nos plans à tout moment",
     "viewPlans": "Voir les plans",
+    "limitReached": "Limite d'entrées atteinte",
+    "upgradeToUnlock": "Mettez à niveau pour débloquer cette fonctionnalité",
+    "export": "Exporter",
+    "entriesRemaining": "{{count}} entrées restantes",
     "status": {
       "free": "Gratuit",
       "active": "Actif",

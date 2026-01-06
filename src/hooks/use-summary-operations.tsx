@@ -7,6 +7,7 @@ import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useModel } from '@/context/ModelContext';
 import { useEntryAnalysis } from './use-entry-analysis';
+import { useSubscription } from './use-subscription';
 import type { ChatMessage } from '@/ai/types/chat';
 import type { User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
@@ -45,6 +46,7 @@ async function performSummarization({
   selectedModel,
   analyze,
   updateEntryState,
+  plan,
 }: {
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
   draftId?: string | null;
@@ -56,6 +58,7 @@ async function performSummarization({
   selectedModel: string | undefined;
   analyze: ReturnType<typeof useEntryAnalysis>['analyze'];
   updateEntryState: (entryId: string, newContent: string, newTitle: string) => void;
+  plan: import('@/lib/subscription/types').SubscriptionPlan;
 }): Promise<void> {
   const lang = (language || 'en') as 'en' | 'fr';
   const chatMessages = convertToChatMessages(conversationHistory);
@@ -71,7 +74,7 @@ async function performSummarization({
     draftId,
   });
   updateEntryState(entryId, summary.content, summary.title);
-  triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
+  triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, plan, analyze });
 }
 
 export function useSummaryOperations({
@@ -86,6 +89,7 @@ export function useSummaryOperations({
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { selectedModel } = useModel();
   const { analyze } = useEntryAnalysis();
+  const { plan } = useSubscription();
 
   const handleSummarizeConversation = useCallback(async (
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
@@ -109,6 +113,7 @@ export function useSummaryOperations({
         selectedModel,
         analyze,
         updateEntryState,
+        plan,
       });
     } catch (error) {
       console.error('Failed to generate summary:', error);
@@ -125,6 +130,7 @@ export function useSummaryOperations({
     updateEntryState,
     analyze,
     selectedModel,
+    plan,
     setIsGeneratingSummary,
     setSaveError,
   ]);

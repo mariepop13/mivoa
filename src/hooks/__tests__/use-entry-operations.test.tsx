@@ -12,6 +12,24 @@ vi.mock('@/firebase');
 vi.mock('@/firebase/auth/use-user');
 vi.mock('../use-entry-analysis');
 vi.mock('@/app/handlers/journal-handlers');
+vi.mock('../use-subscription', () => ({
+  useSubscription: vi.fn(() => ({
+    plan: 'free',
+    usage: { entriesUsed: 0 },
+    limits: { entriesPerMonth: 10 },
+    isLoading: false,
+  })),
+}));
+vi.mock('../use-subscription-limits', () => ({
+  useSubscriptionLimits: vi.fn(() => ({
+    canCreateEntry: true,
+    checkBeforeCreate: vi.fn().mockResolvedValue(true),
+    entriesRemaining: 10,
+    entriesUsed: 0,
+    entriesLimit: 10,
+    isLoading: false,
+  })),
+}));
 vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => ({ _methodName: 'serverTimestamp' })),
 }));

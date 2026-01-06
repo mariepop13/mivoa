@@ -44,6 +44,24 @@ vi.mock('@/hooks/use-entry-analysis', () => ({
     analyze: vi.fn().mockResolvedValue({ mood: 'happy', themes: [], keyTakeaways: [] }),
   }),
 }));
+vi.mock('../use-subscription', () => ({
+  useSubscription: vi.fn(() => ({
+    plan: 'free',
+    usage: { entriesUsed: 0 },
+    limits: { entriesPerMonth: 10 },
+    isLoading: false,
+  })),
+}));
+vi.mock('../use-subscription-limits', () => ({
+  useSubscriptionLimits: vi.fn(() => ({
+    canCreateEntry: true,
+    checkBeforeCreate: vi.fn().mockResolvedValue(true),
+    entriesRemaining: 10,
+    entriesUsed: 0,
+    entriesLimit: 10,
+    isLoading: false,
+  })),
+}));
 
 const mockFirestore = { id: 'mock-firestore' } as any;
 const mockUser = { uid: 'test-user-id' } as Partial<User> as User;

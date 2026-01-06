@@ -185,6 +185,7 @@ describe('changeEntryDate', () => {
         entryId: mockEntryId,
         firestore: mockFirestore,
         user: mockUser,
+        plan: 'free',
         analyze: mockAnalyze,
       });
 
@@ -204,6 +205,7 @@ describe('changeEntryDate', () => {
         entryId: mockEntryId,
         firestore: mockFirestore,
         user: mockUser,
+        plan: 'free',
         analyze: mockAnalyze,
       });
 
@@ -225,6 +227,7 @@ describe('changeEntryDate', () => {
         entryId: mockEntryId,
         firestore: mockFirestore,
         user: mockUser,
+        plan: 'free',
         analyze: mockAnalyze,
       });
 
@@ -248,6 +251,7 @@ describe('changeEntryDate', () => {
         entryId: mockEntryId,
         firestore: mockFirestore,
         user: mockUser,
+        plan: 'free',
         analyze: mockAnalyze,
       });
 

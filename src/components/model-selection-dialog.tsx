@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useModel } from '@/context/ModelContext';
 import { useModelLoader } from '@/hooks/use-model-loader';
 import { useModelSearch } from '@/hooks/use-model-search';
+import { useSubscription } from '@/hooks/use-subscription';
+import { filterAvailableModels } from '@/lib/subscription/feature-gate';
 
 interface ModelSelectionDialogProps {
   open: boolean;
@@ -23,10 +25,15 @@ interface ModelSelectionDialogProps {
 export function ModelSelectionDialog({ open, onOpenChange }: ModelSelectionDialogProps): React.JSX.Element {
   const { t } = useTranslation();
   const { selectedModel, setSelectedModel } = useModel();
+  const { plan } = useSubscription();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { models, isLoading, error } = useModelLoader(open);
-  const filteredModels = useModelSearch({ models, searchQuery });
+  const availableModels = useMemo(() => {
+    if (!models) return [];
+    return filterAvailableModels(plan, models);
+  }, [models, plan]);
+  const filteredModels = useModelSearch({ models: availableModels, searchQuery });
 
   const handleSelectModel = async (modelId: string) => {
     try {

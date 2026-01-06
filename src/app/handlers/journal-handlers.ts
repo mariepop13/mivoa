@@ -1,6 +1,8 @@
 import { doc, serverTimestamp, Timestamp, type Firestore, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { getAnalysisLevel } from '@/lib/subscription/feature-gate';
+import type { SubscriptionPlan } from '@/lib/subscription/types';
 
 const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
 
@@ -28,6 +30,7 @@ interface TriggerAnalysisParams {
   entryId: string;
   firestore: Firestore;
   user: { uid: string };
+  plan: SubscriptionPlan;
   analyze: (content: string) => Promise<{
     moods?: string[];
     moodEmojis?: Record<string, string>;
@@ -41,9 +44,11 @@ interface TriggerAnalysisParams {
 }
 
 export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
-  const { content, entryId, firestore, user, analyze } = params;
+  const { content, entryId, firestore, user, plan, analyze } = params;
   
   if (content.trim().length <= MIN_CONTENT_LENGTH_FOR_ANALYSIS) return;
+
+  const analysisLevel = getAnalysisLevel(plan);
 
   analyze(content).then((analysis) => {
     if (!analysis) return;
@@ -54,11 +59,15 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
       subjectEmoji: analysis.subjectEmoji,
       themes: analysis.themes,
       themeEmojis: analysis.themeEmojis,
-      keyTakeaways: analysis.keyTakeaways,
-      places: analysis.places,
-      characters: analysis.characters,
       aiProcessedAt: serverTimestamp(),
     };
+
+    if (analysisLevel === 'enhanced' || analysisLevel === 'full') {
+      analysisData.keyTakeaways = analysis.keyTakeaways;
+      analysisData.places = analysis.places;
+      analysisData.characters = analysis.characters;
+    }
+
     const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
     updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
       console.error('Failed to save entry analysis:', {

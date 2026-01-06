@@ -328,6 +328,10 @@
     "cancelDescription": "Your checkout session was cancelled",
     "cancelMessage": "You can return to view our plans anytime",
     "viewPlans": "View Plans",
+    "limitReached": "Entry limit reached",
+    "upgradeToUnlock": "Upgrade to unlock this feature",
+    "export": "Export",
+    "entriesRemaining": "{{count}} entries remaining",
     "status": {
       "free": "Free",
       "active": "Active",

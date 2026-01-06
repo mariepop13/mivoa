@@ -4,6 +4,8 @@ import { useUser } from '@/firebase/auth/use-user';
 import { serverTimestamp } from 'firebase/firestore';
 import { generateEntryId, createEntryDocument, triggerEntryAnalysis, changeEntryDate } from '@/app/handlers/journal-handlers';
 import { useEntryAnalysis } from './use-entry-analysis';
+import { useSubscriptionLimits } from './use-subscription-limits';
+import { useSubscription } from './use-subscription';
 import type { JournalEntryData } from './use-journal-entries';
 
 function getNextEntryId(
@@ -63,6 +65,8 @@ export function useEntryOperations({
   const firestore = useFirestore();
   const { user } = useUser();
   const { analyze } = useEntryAnalysis();
+  const { checkBeforeCreate, canCreateEntry } = useSubscriptionLimits();
+  const { plan } = useSubscription();
 
   const createNewEntry = useCallback(async (initialContent: string = '', initialTitle: string = '') => {
     if (!user || !firestore) {
@@ -70,10 +74,22 @@ export function useEntryOperations({
       return;
     }
 
+    if (!canCreateEntry) {
+      setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+      return;
+    }
+
     setIsSaving(true);
     setSaveError(null);
 
     try {
+      const canCreate = await checkBeforeCreate();
+      if (!canCreate) {
+        setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+        setIsSaving(false);
+        return;
+      }
+
       const entryId = generateEntryId(dateKey);
       await createEntryDocument({
         entryId,
@@ -85,7 +101,7 @@ export function useEntryOperations({
       });
       
       updateEntryState(entryId, initialContent, initialTitle);
-      triggerEntryAnalysis({ content: initialContent, entryId, firestore, user, analyze });
+      triggerEntryAnalysis({ content: initialContent, entryId, firestore, user, plan, analyze });
     } catch (error) {
       console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
@@ -93,7 +109,7 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [user, firestore, dateKey, updateEntryState, analyze, setIsSaving, setSaveError]);
+  }, [user, firestore, dateKey, updateEntryState, analyze, setIsSaving, setSaveError, canCreateEntry, checkBeforeCreate, plan]);
 
   const saveEntry = useCallback(async (newContent: string) => {
     if (!selectedEntryDocRef || !user) {

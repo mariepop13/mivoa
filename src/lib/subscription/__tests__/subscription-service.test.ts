@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchSubscription,
   validateSubscription,
-  getPlanLimits,
   calculateUsageResetDate,
   getDefaultSubscription,
   getSubscriptionWithUsage,
   validatePlanId,
   validateBillingCycle,
 } from '../subscription-service';
+import { getPlanLimits } from '../feature-gate';
 import type { SubscriptionData, SubscriptionPlan } from '../types';
 import { UNLIMITED_ENTRIES } from '../constants';
 
