@@ -17,6 +17,7 @@ import { SettingsThemeSection } from '@/components/settings-theme-section';
 import { SettingsLanguageSection } from '@/components/settings-language-section';
 import { SettingsModelSection } from '@/components/settings-model-section';
 import { SettingsApiKeySection } from '@/components/settings-api-key-section';
+import { SettingsSubscriptionSection } from '@/components/subscription/SettingsSubscriptionSection';
 
 export function SettingsMenu(): React.JSX.Element {
   const { t } = useTranslation();
@@ -72,6 +73,10 @@ export function SettingsMenu(): React.JSX.Element {
         <DropdownMenuSeparator />
 
         <SettingsApiKeySection onOpenDialog={() => setIsOpenRouterDialogOpen(true)} />
+
+        <DropdownMenuSeparator />
+
+        <SettingsSubscriptionSection />
       </DropdownMenuContent>
       <OpenRouterApiKeyDialog 
         open={isOpenRouterDialogOpen} 

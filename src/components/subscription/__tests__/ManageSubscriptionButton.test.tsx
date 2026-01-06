@@ -1,0 +1,237 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ManageSubscriptionButton } from '../ManageSubscriptionButton';
+import { useSubscription } from '@/hooks/use-subscription';
+import { useTranslation } from '@/hooks/use-translation';
+
+vi.mock('@/hooks/use-subscription');
+vi.mock('@/hooks/use-translation');
+
+global.fetch = vi.fn();
+global.window.location.href = '';
+
+describe('ManageSubscriptionButton', () => {
+  const mockT = vi.fn((key: string) => key);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useTranslation).mockReturnValue({
+      t: mockT,
+      language: 'en',
+      isLoading: false,
+      error: null,
+    });
+    global.window.location.href = '';
+  });
+
+  it('should return null for free plan', () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'free',
+      status: 'free',
+      usage: null,
+      limits: {
+        entriesPerMonth: 10,
+        modelsAccess: [],
+        exportEnabled: false,
+        exportResolution: 'standard',
+        advancedAnalysis: false,
+        customTemplates: false,
+      },
+      isLoading: false,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: false,
+      isPro: false,
+    });
+
+    const { container } = render(<ManageSubscriptionButton />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('should show loading state when subscription is loading', () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'basic',
+      status: 'active',
+      usage: null,
+      limits: {
+        entriesPerMonth: 100,
+        modelsAccess: [],
+        exportEnabled: true,
+        exportResolution: 'standard',
+        advancedAnalysis: true,
+        customTemplates: false,
+      },
+      isLoading: true,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: true,
+      isPro: false,
+    });
+
+    render(<ManageSubscriptionButton />);
+    expect(screen.getByText('loading')).toBeInTheDocument();
+  });
+
+  it('should call portal API and redirect on success', async () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'basic',
+      status: 'active',
+      usage: null,
+      limits: {
+        entriesPerMonth: 100,
+        modelsAccess: [],
+        exportEnabled: true,
+        exportResolution: 'standard',
+        advancedAnalysis: true,
+        customTemplates: false,
+      },
+      isLoading: false,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: true,
+      isPro: false,
+    });
+
+    const mockFetch = vi.mocked(global.fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ url: 'https://billing.stripe.com/portal' }),
+    } as Response);
+
+    const user = userEvent.setup();
+    render(<ManageSubscriptionButton />);
+
+    const button = screen.getByText('subscription.manageSubscription');
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith('/api/stripe/create-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    });
+  });
+
+  it('should show error message on API failure', async () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'basic',
+      status: 'active',
+      usage: null,
+      limits: {
+        entriesPerMonth: 100,
+        modelsAccess: [],
+        exportEnabled: true,
+        exportResolution: 'standard',
+        advancedAnalysis: true,
+        customTemplates: false,
+      },
+      isLoading: false,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: true,
+      isPro: false,
+    });
+
+    const mockFetch = vi.mocked(global.fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'Portal creation failed' }),
+    } as Response);
+
+    const user = userEvent.setup();
+    render(<ManageSubscriptionButton />);
+
+    const button = screen.getByText('subscription.manageSubscription');
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText('Portal creation failed')).toBeInTheDocument();
+    });
+  });
+
+  it('should show loading state during portal creation', async () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'basic',
+      status: 'active',
+      usage: null,
+      limits: {
+        entriesPerMonth: 100,
+        modelsAccess: [],
+        exportEnabled: true,
+        exportResolution: 'standard',
+        advancedAnalysis: true,
+        customTemplates: false,
+      },
+      isLoading: false,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: true,
+      isPro: false,
+    });
+
+    const mockFetch = vi.mocked(global.fetch);
+    let resolveFetch: (value: Response) => void;
+    const fetchPromise = new Promise<Response>((resolve) => {
+      resolveFetch = resolve;
+    });
+    mockFetch.mockReturnValueOnce(fetchPromise);
+
+    const user = userEvent.setup();
+    render(<ManageSubscriptionButton />);
+
+    const button = screen.getByText('subscription.manageSubscription');
+    await user.click(button);
+
+    expect(screen.getByText('subscription.openingPortal')).toBeInTheDocument();
+
+    resolveFetch!({
+      ok: true,
+      json: async () => ({ url: 'https://billing.stripe.com/portal' }),
+    } as Response);
+  });
+
+  it('should handle network errors', async () => {
+    vi.mocked(useSubscription).mockReturnValue({
+      plan: 'basic',
+      status: 'active',
+      usage: null,
+      limits: {
+        entriesPerMonth: 100,
+        modelsAccess: [],
+        exportEnabled: true,
+        exportResolution: 'standard',
+        advancedAnalysis: true,
+        customTemplates: false,
+      },
+      isLoading: false,
+      error: null,
+      refreshSubscription: vi.fn(),
+      isPremium: false,
+      isBasic: true,
+      isPro: false,
+    });
+
+    const mockFetch = vi.mocked(global.fetch);
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+    const user = userEvent.setup();
+    render(<ManageSubscriptionButton />);
+
+    const button = screen.getByText('subscription.manageSubscription');
+    await user.click(button);
+
+    await waitFor(() => {
+      const errorElement = screen.queryByText('Network error') || screen.queryByText('subscription.portalError');
+      expect(errorElement).toBeInTheDocument();
+    });
+  });
+});
+
