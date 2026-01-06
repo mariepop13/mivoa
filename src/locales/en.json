@@ -283,6 +283,12 @@
     "jurisdictionContent": "These Terms are governed by the laws of Quebec, Canada. Any disputes shall be resolved in the courts of Quebec.",
     "alphaDisclaimer": "Alpha Disclaimer",
     "alphaDisclaimerContent": "Mivoa is currently in alpha. The service may be unstable, features may change without notice, and data may be lost. Use at your own risk. We recommend backing up important information."
+  },
+  "subscription": {
+    "limitReached": "Entry limit reached",
+    "upgradeToUnlock": "Upgrade to unlock this feature",
+    "export": "Export",
+    "entriesRemaining": "{{count}} entries remaining"
   }
 }
 

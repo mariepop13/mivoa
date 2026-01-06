@@ -283,6 +283,12 @@
     "jurisdictionContent": "Ces Conditions sont régies par les lois du Québec, Canada. Tout litige sera résolu devant les tribunaux du Québec.",
     "alphaDisclaimer": "Avertissement alpha",
     "alphaDisclaimerContent": "Mivoa est actuellement en version alpha. Le service peut être instable, les fonctionnalités peuvent changer sans préavis et les données peuvent être perdues. Utilisez à vos propres risques. Nous recommandons de sauvegarder les informations importantes."
+  },
+  "subscription": {
+    "limitReached": "Limite d'entrées atteinte",
+    "upgradeToUnlock": "Mettez à niveau pour débloquer cette fonctionnalité",
+    "export": "Exporter",
+    "entriesRemaining": "{{count}} entrées restantes"
   }
 }
 
