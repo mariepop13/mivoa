@@ -508,6 +508,7 @@ describe('subscription-service', () => {
   describe('validatePlanId', () => {
     it('should return true for valid plan IDs', () => {
       expect(validatePlanId('free')).toBe(true);
+      expect(validatePlanId('supporter')).toBe(true);
       expect(validatePlanId('basic')).toBe(true);
       expect(validatePlanId('pro')).toBe(true);
     });

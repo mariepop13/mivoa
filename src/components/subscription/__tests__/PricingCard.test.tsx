@@ -27,7 +27,7 @@ describe('PricingCard', () => {
 
   it('should render monthly price by default', () => {
     render(<PricingCard plan="basic" />);
-    expect(screen.getByText(/\$9\.99/)).toBeInTheDocument();
+    expect(screen.getByText(/\$6\.99/)).toBeInTheDocument();
   });
 
   it('should switch to annual pricing when clicked', async () => {
@@ -37,7 +37,7 @@ describe('PricingCard', () => {
     const annualButton = screen.getByText('subscription.annual');
     await user.click(annualButton);
     
-    expect(screen.getByText(/\$99\.99/)).toBeInTheDocument();
+    expect(screen.getByText(/\$69\.99/)).toBeInTheDocument();
   });
 
   it('should call onUpgrade when upgrade button is clicked', async () => {

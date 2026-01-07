@@ -9,6 +9,9 @@ import {
   isLimitReached,
   getMaxResolution,
   getFeatureLevel,
+  hasSupporterBadge,
+  getSupporterAccentColors,
+  getSupporterCosmetics,
 } from '../feature-gate';
 import { UNLIMITED_ENTRIES } from '../constants';
 import type { OpenRouterModel } from '@/ai/types/model';
@@ -103,6 +106,10 @@ describe('feature-gate', () => {
   describe('getAnalysisLevel', () => {
     it('should return basic for free plan', () => {
       expect(getAnalysisLevel('free')).toBe('basic');
+    });
+
+    it('should return basic for supporter plan', () => {
+      expect(getAnalysisLevel('supporter')).toBe('basic');
     });
 
     it('should return enhanced for basic plan', () => {
@@ -241,12 +248,66 @@ describe('feature-gate', () => {
       expect(getFeatureLevel('free')).toBe('basic');
     });
 
+    it('should return basic for supporter plan', () => {
+      expect(getFeatureLevel('supporter')).toBe('basic');
+    });
+
     it('should return intermediate for basic plan', () => {
       expect(getFeatureLevel('basic')).toBe('intermediate');
     });
 
     it('should return advanced for pro plan', () => {
       expect(getFeatureLevel('pro')).toBe('advanced');
+    });
+  });
+
+  describe('supporter cosmetics', () => {
+    it('should return false for free plan badge', () => {
+      expect(hasSupporterBadge('free')).toBe(false);
+    });
+
+    it('should return true for supporter plan badge', () => {
+      expect(hasSupporterBadge('supporter')).toBe(true);
+    });
+
+    it('should return true for basic plan badge', () => {
+      expect(hasSupporterBadge('basic')).toBe(true);
+    });
+
+    it('should return true for pro plan badge', () => {
+      expect(hasSupporterBadge('pro')).toBe(true);
+    });
+
+    it('should return empty array for free plan accent colors', () => {
+      expect(getSupporterAccentColors('free')).toEqual([]);
+    });
+
+    it('should return accent colors for supporter plan', () => {
+      const colors = getSupporterAccentColors('supporter');
+      expect(colors.length).toBeGreaterThan(0);
+      expect(colors[0]).toMatch(/^#[0-9A-F]{6}$/i);
+    });
+
+    it('should return accent colors for basic plan', () => {
+      const colors = getSupporterAccentColors('basic');
+      expect(colors.length).toBeGreaterThan(0);
+    });
+
+    it('should return accent colors for pro plan', () => {
+      const colors = getSupporterAccentColors('pro');
+      expect(colors.length).toBeGreaterThan(0);
+    });
+
+    it('should return cosmetics for free plan', () => {
+      const cosmetics = getSupporterCosmetics('free');
+      expect(cosmetics.badge).toBe(false);
+      expect(cosmetics.accentColors).toEqual([]);
+    });
+
+    it('should return cosmetics for supporter plan', () => {
+      const cosmetics = getSupporterCosmetics('supporter');
+      expect(cosmetics.badge).toBe(true);
+      expect(cosmetics.accentColors.length).toBeGreaterThan(0);
     });
   });
 });
