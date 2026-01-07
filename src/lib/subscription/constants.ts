@@ -122,11 +122,24 @@ export const STRIPE_PRICE_ID_ENV_VARS: Record<
   },
 };
 
+function isBuildTime(): boolean {
+  return typeof window === 'undefined' && (
+    process.env.NODE_ENV === 'test' ||
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.NEXT_PHASE === 'phase-development-build' ||
+    process.env.CI === 'true'
+  );
+}
+
 function getPriceIdEnvKey(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD'): string {
   return `STRIPE_PRICE_ID_${plan.toUpperCase()}_${cycle.toUpperCase()}_${currency}`;
 }
 
 export function getPriceId(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
+  if (isBuildTime()) {
+    return '';
+  }
+
   const envKey = getPriceIdEnvKey(plan, cycle, currency);
   const priceId = process.env[envKey];
   
