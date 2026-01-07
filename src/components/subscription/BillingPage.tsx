@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SubscriptionStatus } from './SubscriptionStatus';
 import { UsageIndicator } from './UsageIndicator';
 import { ManageSubscriptionButton } from './ManageSubscriptionButton';
@@ -9,6 +10,7 @@ import { PricingCard } from './PricingCard';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
+import { PLAN_LIMITS, UNLIMITED_ENTRIES } from '@/lib/subscription/constants';
 import { Loader2 } from 'lucide-react';
 
 interface PlanData {
@@ -128,6 +130,62 @@ export function BillingPage(): React.JSX.Element {
           </div>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('subscription.planComparison')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('subscription.feature')}</TableHead>
+                <TableHead className="text-center">{t('subscription.free')}</TableHead>
+                <TableHead className="text-center">{t('subscription.supporter')}</TableHead>
+                <TableHead className="text-center">{t('subscription.basic')}</TableHead>
+                <TableHead className="text-center">{t('subscription.pro')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>{t('subscription.comparison.entriesPerMonth')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.free.entriesPerMonth}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.supporter.entriesPerMonth}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.basic.entriesPerMonth}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.pro.entriesPerMonth === UNLIMITED_ENTRIES ? t('subscription.comparison.unlimited') : PLAN_LIMITS.pro.entriesPerMonth}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>{t('subscription.comparison.aiModels')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.free.modelsAccess.length}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.supporter.modelsAccess.length}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.basic.modelsAccess.length}</TableCell>
+                <TableCell className="text-center">{t('subscription.comparison.all')}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>{t('subscription.comparison.export')}</TableCell>
+                <TableCell className="text-center">{t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.basic.exportEnabled ? t('subscription.comparison.standard') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.pro.exportEnabled ? t('subscription.comparison.high') : t('subscription.comparison.no')}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>{t('subscription.comparison.advancedAnalysis')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.free.advancedAnalysis ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.supporter.advancedAnalysis ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.basic.advancedAnalysis ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.pro.advancedAnalysis ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>{t('subscription.comparison.customTemplates')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.free.customTemplates ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.supporter.customTemplates ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.basic.customTemplates ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+                <TableCell className="text-center">{PLAN_LIMITS.pro.customTemplates ? t('subscription.comparison.yes') : t('subscription.comparison.no')}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
