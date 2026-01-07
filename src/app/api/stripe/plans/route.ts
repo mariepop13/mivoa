@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 const PLAN_NAMES: Record<SubscriptionPlan, { en: string; fr: string }> = {
   free: { en: 'Free', fr: 'Gratuit' },
+  supporter: { en: 'Supporter', fr: 'Supporter' },
   basic: { en: 'Basic', fr: 'Basique' },
   pro: { en: 'Pro', fr: 'Pro' },
 };
@@ -14,6 +15,10 @@ const PLAN_FEATURES: Record<SubscriptionPlan, { en: string[]; fr: string[] }> = 
   free: {
     en: ['10 entries per month', 'Basic AI models', 'Standard resolution'],
     fr: ['10 entrées par mois', 'Modèles IA de base', 'Résolution standard'],
+  },
+  supporter: {
+    en: ['Support the project', 'Supporter badge', 'Exclusive accent colors', '10 entries per month'],
+    fr: ['Soutenir le projet', 'Badge Supporter', 'Couleurs accent exclusives', '10 entrées par mois'],
   },
   basic: {
     en: [
@@ -93,9 +98,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const locale = getLocale(request);
 
-    const plans = (['free', 'basic', 'pro'] as SubscriptionPlan[]).map((planId) => {
+    const plans = (['free', 'supporter', 'basic', 'pro'] as SubscriptionPlan[]).map((planId) => {
       const limits = PLAN_LIMITS[planId];
-      const pricing = PLAN_PRICING[planId as 'basic' | 'pro'] || { monthly: { USD: 0, CAD: 0 }, annual: { USD: 0, CAD: 0 } };
+      const pricing = PLAN_PRICING[planId] || { monthly: { USD: 0, CAD: 0 }, annual: { USD: 0, CAD: 0 } };
 
       const monthlyPrice = pricing.monthly[currency] / 100;
       const annualPrice = pricing.annual[currency] / 100;
