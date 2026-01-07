@@ -7,6 +7,7 @@ import {
   STRIPE_PRICE_ID_ENV_VARS,
   UNLIMITED_ENTRIES,
   getPriceId,
+  getPlanLimitsWithCache,
 } from '../constants';
 
 describe('subscription constants', () => {
@@ -43,6 +44,34 @@ describe('subscription constants', () => {
       expect(PLAN_LIMITS.basic.modelsAccess.length).toBeLessThanOrEqual(
         PLAN_LIMITS.pro.modelsAccess.length
       );
+    });
+  });
+
+  describe('getPlanLimitsWithCache', () => {
+    it('should return limits for free plan', () => {
+      const limits = getPlanLimitsWithCache('free');
+      expect(limits.entriesPerMonth).toBe(10);
+      expect(limits.exportEnabled).toBe(false);
+    });
+
+    it('should return limits for basic plan', () => {
+      const limits = getPlanLimitsWithCache('basic');
+      expect(limits.entriesPerMonth).toBe(100);
+      expect(limits.exportEnabled).toBe(true);
+    });
+
+    it('should return limits for pro plan', () => {
+      const limits = getPlanLimitsWithCache('pro');
+      expect(limits.entriesPerMonth).toBe(UNLIMITED_ENTRIES);
+      expect(limits.exportEnabled).toBe(true);
+    });
+
+    it('should return same limits as PLAN_LIMITS', () => {
+      SUBSCRIPTION_PLANS.forEach((plan) => {
+        const cachedLimits = getPlanLimitsWithCache(plan);
+        const directLimits = PLAN_LIMITS[plan];
+        expect(cachedLimits).toEqual(directLimits);
+      });
     });
   });
 
@@ -145,10 +174,18 @@ describe('subscription constants', () => {
     });
 
     it('should throw error when environment variable is missing', () => {
+      const originalValue = process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
       delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
-      expect(() => getPriceId('basic', 'monthly', 'USD')).toThrow(
-        'Missing environment variable: STRIPE_PRICE_ID_BASIC_MONTHLY_USD'
-      );
+      
+      try {
+        expect(() => getPriceId('basic', 'monthly', 'USD')).toThrow(
+          'Missing required Stripe price ID environment variables'
+        );
+      } finally {
+        if (originalValue) {
+          process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = originalValue;
+        }
+      }
     });
 
     it('should handle all plan, cycle, and currency combinations', () => {

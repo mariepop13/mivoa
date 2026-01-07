@@ -37,6 +37,7 @@ interface UseEntryOperationsParams {
   setTitle: (title: string) => void;
   hasInitializedRef: React.MutableRefObject<boolean>;
   onDateChange?: (date: Date) => void;
+  onLimitReached?: () => void;
 }
 
 interface UseEntryOperationsResult {
@@ -61,6 +62,7 @@ export function useEntryOperations({
   setTitle,
   hasInitializedRef,
   onDateChange,
+  onLimitReached,
 }: UseEntryOperationsParams): UseEntryOperationsResult {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -75,7 +77,11 @@ export function useEntryOperations({
     }
 
     if (!canCreateEntry) {
-      setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+      if (onLimitReached) {
+        onLimitReached();
+      } else {
+        setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+      }
       return;
     }
 
@@ -85,7 +91,11 @@ export function useEntryOperations({
     try {
       const canCreate = await checkBeforeCreate();
       if (!canCreate) {
-        setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+        if (onLimitReached) {
+          onLimitReached();
+        } else {
+          setSaveError('Entry limit reached. Please upgrade your plan to create more entries.');
+        }
         setIsSaving(false);
         return;
       }
@@ -109,7 +119,7 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [user, firestore, dateKey, updateEntryState, analyze, setIsSaving, setSaveError, canCreateEntry, checkBeforeCreate, plan]);
+  }, [user, firestore, dateKey, updateEntryState, analyze, setIsSaving, setSaveError, canCreateEntry, checkBeforeCreate, plan, onLimitReached]);
 
   const saveEntry = useCallback(async (newContent: string) => {
     if (!selectedEntryDocRef || !user) {

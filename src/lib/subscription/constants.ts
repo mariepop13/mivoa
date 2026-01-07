@@ -44,6 +44,15 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
 };
 
+let cachedPlanLimits: Record<SubscriptionPlan, PlanLimits> | null = null;
+
+export function getPlanLimitsWithCache(plan: SubscriptionPlan): PlanLimits {
+  if (!cachedPlanLimits) {
+    cachedPlanLimits = PLAN_LIMITS;
+  }
+  return cachedPlanLimits[plan];
+}
+
 export const PLAN_PRICING: Record<
   SubscriptionPlan,
   Record<BillingCycle, Record<Currency, number>>
@@ -122,15 +131,53 @@ export const STRIPE_PRICE_ID_ENV_VARS: Record<
   },
 };
 
+function isBuildTime(): boolean {
+  return typeof window === 'undefined' && (
+    process.env.NODE_ENV === 'test' ||
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.NEXT_PHASE === 'phase-development-build' ||
+    process.env.CI === 'true'
+  );
+}
+
 function getPriceIdEnvKey(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD'): string {
   return `STRIPE_PRICE_ID_${plan.toUpperCase()}_${cycle.toUpperCase()}_${currency}`;
 }
 
+function validateAllPriceIdEnvVars(): void {
+  const missing: string[] = [];
+  const plans: ('basic' | 'pro')[] = ['basic', 'pro'];
+  const cycles: ('monthly' | 'annual')[] = ['monthly', 'annual'];
+  const currencies: ('USD' | 'CAD')[] = ['USD', 'CAD'];
+
+  for (const plan of plans) {
+    for (const cycle of cycles) {
+      for (const currency of currencies) {
+        const envKey = getPriceIdEnvKey(plan, cycle, currency);
+        if (!process.env[envKey]) {
+          missing.push(envKey);
+        }
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required Stripe price ID environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}`
+    );
+  }
+}
+
 export function getPriceId(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
+  if (isBuildTime()) {
+    return '';
+  }
+
   const envKey = getPriceIdEnvKey(plan, cycle, currency);
   const priceId = process.env[envKey];
   
   if (!priceId) {
+    validateAllPriceIdEnvVars();
     throw new Error(`Missing environment variable: ${envKey}`);
   }
   

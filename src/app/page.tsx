@@ -7,6 +7,7 @@ import { JournalMainContent } from '@/components/journal-main-content';
 import { JournalAuthError } from '@/components/journal-auth-error';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 import { TemplatePromptDialog } from '@/components/template-prompt-dialog';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 import { FirebaseContext } from '@/firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { useJournalEntries } from '@/hooks/use-journal-entries';
@@ -138,8 +139,13 @@ function JournalApp(): React.JSX.Element {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EntryTemplate | null>(null);
   const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  const journalEntries = useJournalEntries({ selectedDate, onDateChange: setSelectedDate });
+  const journalEntries = useJournalEntries({
+    selectedDate,
+    onDateChange: setSelectedDate,
+    onLimitReached: () => setShowUpgradeDialog(true),
+  });
   const {
     setContent,
     setTitle,
@@ -240,6 +246,10 @@ function JournalApp(): React.JSX.Element {
         onOpenChange={setIsPromptDialogOpen}
         template={selectedTemplate}
         onUsePrompt={handleUsePrompt}
+      />
+      <UpgradePrompt
+        open={showUpgradeDialog}
+        onOpenChange={setShowUpgradeDialog}
       />
     </main>
   );

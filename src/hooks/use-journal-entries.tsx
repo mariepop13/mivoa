@@ -50,6 +50,7 @@ export interface JournalEntryData extends Record<string, unknown> {
 interface UseJournalEntriesParams {
   selectedDate: Date;
   onDateChange?: (date: Date) => void;
+  onLimitReached?: () => void;
 }
 
 interface UseJournalEntriesResult {
@@ -84,7 +85,7 @@ interface UseJournalEntriesResult {
 }
 
 // eslint-disable-next-line max-lines-per-function
-export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntriesParams): UseJournalEntriesResult {
+export function useJournalEntries({ selectedDate, onDateChange, onLimitReached }: UseJournalEntriesParams): UseJournalEntriesResult {
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -189,6 +190,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
     setTitle,
     hasInitializedRef,
     onDateChange,
+    onLimitReached,
   });
 
   const { handleSummarizeConversation } = useSummaryOperations({
