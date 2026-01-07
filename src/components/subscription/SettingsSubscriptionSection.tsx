@@ -2,8 +2,10 @@
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
+import { useRouter } from 'next/navigation';
 import { ManageSubscriptionButton } from './ManageSubscriptionButton';
 import { UsageIndicator } from './UsageIndicator';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 export function SettingsSubscriptionSection(): React.JSX.Element {
   const { plan, isLoading } = useSubscription();
   const { t } = useTranslation();
+  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -38,9 +41,19 @@ export function SettingsSubscriptionSection(): React.JSX.Element {
           </Badge>
         </div>
         <UsageIndicator />
-        {plan !== 'free' && (
+        {plan !== 'free' ? (
           <div className="pt-2">
             <ManageSubscriptionButton />
+          </div>
+        ) : (
+          <div className="pt-2">
+            <Button
+              variant="default"
+              onClick={() => router.push('/billing')}
+              className="w-full"
+            >
+              {t('subscription.upgrade')}
+            </Button>
           </div>
         )}
       </div>

@@ -14,9 +14,10 @@ describe('subscription constants', () => {
   describe('SUBSCRIPTION_PLANS', () => {
     it('should contain all plan types', () => {
       expect(SUBSCRIPTION_PLANS).toContain('free');
+      expect(SUBSCRIPTION_PLANS).toContain('supporter');
       expect(SUBSCRIPTION_PLANS).toContain('basic');
       expect(SUBSCRIPTION_PLANS).toContain('pro');
-      expect(SUBSCRIPTION_PLANS.length).toBe(3);
+      expect(SUBSCRIPTION_PLANS.length).toBe(4);
     });
   });
 
@@ -190,6 +191,10 @@ describe('subscription constants', () => {
 
     it('should handle all plan, cycle, and currency combinations', () => {
       const combinations = [
+        { plan: 'supporter' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD' },
+        { plan: 'supporter' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD' },
+        { plan: 'supporter' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD' },
+        { plan: 'supporter' as const, cycle: 'annual' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD' },
         { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_USD' },
         { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_CAD' },
         { plan: 'basic' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_ANNUAL_USD' },

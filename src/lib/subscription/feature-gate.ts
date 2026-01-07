@@ -1,5 +1,5 @@
-import type { SubscriptionPlan, PlanLimits } from './types';
-import { PLAN_LIMITS, UNLIMITED_ENTRIES } from './constants';
+import type { SubscriptionPlan, PlanLimits, SupporterCosmetics } from './types';
+import { PLAN_LIMITS, UNLIMITED_ENTRIES, SUPPORTER_ACCENT_COLORS } from './constants';
 import type { OpenRouterModel } from '@/ai/types/model';
 
 export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
@@ -30,6 +30,7 @@ export function canCreateEntry(
 export function getAnalysisLevel(plan: SubscriptionPlan): 'basic' | 'enhanced' | 'full' {
   switch (plan) {
     case 'free':
+    case 'supporter':
       return 'basic';
     case 'basic':
       return 'enhanced';
@@ -66,8 +67,24 @@ export function getFeatureLevel(plan: SubscriptionPlan): FeatureLevel {
     case 'basic':
       return 'intermediate';
     case 'free':
+    case 'supporter':
     default:
       return 'basic';
   }
+}
+
+export function hasSupporterBadge(plan: SubscriptionPlan): boolean {
+  return plan !== 'free';
+}
+
+export function getSupporterAccentColors(plan: SubscriptionPlan): string[] {
+  return plan !== 'free' ? SUPPORTER_ACCENT_COLORS : [];
+}
+
+export function getSupporterCosmetics(plan: SubscriptionPlan): SupporterCosmetics {
+  return {
+    badge: hasSupporterBadge(plan),
+    accentColors: getSupporterAccentColors(plan),
+  };
 }
 

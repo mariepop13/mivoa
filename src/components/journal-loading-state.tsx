@@ -1,13 +1,11 @@
 'use client';
 
-import { useTranslation } from '@/hooks/use-translation';
+import { Loader } from 'lucide-react';
 
 export function JournalLoadingState(): React.JSX.Element {
-  const { t } = useTranslation();
-
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="text-muted-foreground">{t('loading')}</div>
+    <main className="flex min-h-screen items-center justify-center bg-background">
+      <Loader className="app-loader" />
     </main>
   );
 }

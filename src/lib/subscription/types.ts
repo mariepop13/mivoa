@@ -1,4 +1,4 @@
-export type SubscriptionPlan = 'free' | 'basic' | 'pro';
+export type SubscriptionPlan = 'free' | 'supporter' | 'basic' | 'pro';
 
 export type SubscriptionStatus =
   | 'free'
@@ -56,5 +56,10 @@ export type Currency = 'USD' | 'CAD';
 export interface CreatePortalSessionParams {
   returnUrl: string;
   userId: string;
+}
+
+export interface SupporterCosmetics {
+  badge: boolean;
+  accentColors: string[];
 }
 
