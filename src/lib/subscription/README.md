@@ -69,6 +69,43 @@ STRIPE_PRICE_ID_PRO_ANNUAL_CAD=price_...
 - `/api/stripe/subscription-status` - Returns current subscription status
 - `/api/stripe/plans` - Returns available plans and pricing
 
+## Plan Limits
+
+| Feature | Free | Basic | Pro |
+|---------|------|-------|-----|
+| Entries/month | 10 | 100 | Unlimited |
+| AI Models | Basic | Enhanced | All |
+| Export | ❌ | Standard | High resolution |
+| Analysis | Basic | Enhanced | Full |
+| Custom Templates | ❌ | ❌ | ✅ |
+
+## Pricing Structure
+
+- **Basic Monthly**: $9.99 USD / $13.99 CAD
+- **Basic Annual**: $99.99 USD / $139.99 CAD (save 17%)
+- **Pro Monthly**: $19.99 USD / $27.99 CAD
+- **Pro Annual**: $199.99 USD / $279.99 CAD (save 17%)
+
+## Subscription Flow
+
+```mermaid
+graph TD
+    A[User visits app] --> B{Has subscription?}
+    B -->|No| C[Show free plan limits]
+    B -->|Yes| D[Load subscription data]
+    C --> E[User creates entry]
+    D --> E
+    E --> F{Check entry limit}
+    F -->|Under limit| G[Create entry]
+    F -->|Limit reached| H[Show upgrade prompt]
+    H --> I[User clicks upgrade]
+    I --> J[Create checkout session]
+    J --> K[Stripe payment]
+    K --> L[Webhook updates subscription]
+    L --> M[User can create entries]
+    G --> N[Increment usage counter]
+```
+
 ## Usage
 
 ### Checking Subscription Limits
@@ -79,14 +116,32 @@ import { useSubscriptionLimits } from '@/hooks/use-subscription-limits';
 const { canCreateEntry, checkBeforeCreate } = useSubscriptionLimits();
 ```
 
+### Getting Current Usage
+
+```typescript
+import { getSubscriptionWithUsage } from '@/lib/subscription/subscription-service';
+
+const subscription = await getSubscriptionWithUsage(userId);
+const { entriesUsed, entriesLimit, lastResetDate, nextResetDate } = subscription.usage;
+
+console.log(`Used ${entriesUsed} of ${entriesLimit} entries`);
+console.log(`Next reset: ${nextResetDate}`);
+```
+
 ### Feature Gating
 
 ```typescript
-import { canUseFeature } from '@/lib/subscription/feature-gate';
+import { canUseModel, canExport, getFeatureLevel } from '@/lib/subscription/feature-gate';
 
-if (canUseFeature('exportEnabled', plan)) {
+if (canUseModel(plan, 'gpt-4o')) {
+  // Allow advanced model
+}
+
+if (canExport(plan)) {
   // Allow export
 }
+
+const level = getFeatureLevel(plan); // 'basic' | 'intermediate' | 'advanced'
 ```
 
 ### Creating Checkout Session
@@ -106,6 +161,16 @@ if (validation.success) {
   });
 }
 ```
+
+## Testing
+
+Test checkout with Stripe test card: `4242 4242 4242 4242`
+
+Use this card for testing subscription flows:
+- Card number: `4242 4242 4242 4242`
+- Expiry: Any future date (e.g., `12/34`)
+- CVC: Any 3 digits (e.g., `123`)
+- ZIP: Any 5 digits (e.g., `12345`)
 
 ## Build-Time Safety
 

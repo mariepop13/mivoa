@@ -1,6 +1,13 @@
-import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, runTransaction } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+
+function isSameMonth(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth()
+  );
+}
 
 export async function incrementEntryUsage(userId: string): Promise<void> {
   const { firestore } = initializeFirebase();
@@ -57,32 +64,50 @@ export async function checkAndResetIfNeeded(
   const usageRef = doc(firestore, `users/${userId}/subscription/usage`);
   
   if (lastResetDate === null) {
-    await setDocumentNonBlocking(usageRef, {
-      entriesUsed: 0,
-      lastResetDate: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    
-    return true;
+    return runTransaction(firestore, async (transaction) => {
+      const usageSnap = await transaction.get(usageRef);
+      
+      if (!usageSnap.exists() || !usageSnap.data()?.lastResetDate) {
+        transaction.set(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return true;
+      }
+      
+      return false;
+    });
   }
   
   const now = new Date();
-  const currentMonth = new Date(now);
-  currentMonth.setDate(1);
-  currentMonth.setHours(0, 0, 0, 0);
   
-  const lastResetMonth = new Date(lastResetDate);
-  lastResetMonth.setDate(1);
-  lastResetMonth.setHours(0, 0, 0, 0);
-  
-  if (lastResetMonth < currentMonth) {
-    await setDocumentNonBlocking(usageRef, {
-      entriesUsed: 0,
-      lastResetDate: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    
-    return true;
+  if (!isSameMonth(lastResetDate, now)) {
+    return runTransaction(firestore, async (transaction) => {
+      const usageSnap = await transaction.get(usageRef);
+      const data = usageSnap.data();
+      
+      if (!usageSnap.exists() || !data) {
+        transaction.set(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return true;
+      }
+      
+      const storedResetDate = data.lastResetDate?.toDate?.() || data.lastResetDate;
+      if (!storedResetDate || !isSameMonth(storedResetDate, now)) {
+        transaction.update(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        return true;
+      }
+      
+      return false;
+    });
   }
   
   return false;
