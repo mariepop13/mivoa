@@ -11,6 +11,12 @@ Add the following variables to `.env.local`:
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
+# Supporter Plan (4 price IDs)
+STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD=price_...
+STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD=price_...
+STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD=price_...
+STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD=price_...
+
 # Basic Plan (4 price IDs)
 STRIPE_PRICE_ID_BASIC_MONTHLY_USD=price_...
 STRIPE_PRICE_ID_BASIC_MONTHLY_CAD=price_...
@@ -30,6 +36,8 @@ STRIPE_PRICE_ID_PRO_ANNUAL_CAD=price_...
 
 - [ ] Create Stripe account (test mode)
 - [ ] Create products:
+  - [ ] Supporter Monthly
+  - [ ] Supporter Annual
   - [ ] Basic Monthly
   - [ ] Basic Annual
   - [ ] Pro Monthly
@@ -71,20 +79,24 @@ STRIPE_PRICE_ID_PRO_ANNUAL_CAD=price_...
 
 ## Plan Limits
 
-| Feature | Free | Basic | Pro |
-|---------|------|-------|-----|
-| Entries/month | 10 | 100 | Unlimited |
-| AI Models | Basic | Enhanced | All |
-| Export | ❌ | Standard | High resolution |
-| Analysis | Basic | Enhanced | Full |
-| Custom Templates | ❌ | ❌ | ✅ |
+| Feature | Free | Supporter | Basic | Pro |
+|---------|------|-----------|-------|-----|
+| Entries/month | 10 | 10 | 100 | Unlimited |
+| AI Models | Basic | Basic | Enhanced | All |
+| Export | ❌ | ❌ | Standard | High resolution |
+| Analysis | Basic | Basic | Enhanced | Full |
+| Custom Templates | ❌ | ❌ | ❌ | ✅ |
+| Supporter Badge | ❌ | ✅ | ✅ | ✅ |
+| Exclusive Colors | ❌ | ✅ | ✅ | ✅ |
 
 ## Pricing Structure
 
-- **Basic Monthly**: $9.99 USD / $13.99 CAD
-- **Basic Annual**: $99.99 USD / $139.99 CAD (save 17%)
-- **Pro Monthly**: $19.99 USD / $27.99 CAD
-- **Pro Annual**: $199.99 USD / $279.99 CAD (save 17%)
+- **Supporter Monthly**: $2.99 USD / $3.99 CAD
+- **Supporter Annual**: $29.99 USD / $39.99 CAD (save 16%)
+- **Basic Monthly**: $6.99 USD / $9.99 CAD
+- **Basic Annual**: $69.99 USD / $99.99 CAD (save 17%)
+- **Pro Monthly**: $14.99 USD / $19.99 CAD
+- **Pro Annual**: $149.99 USD / $199.99 CAD (save 17%)
 
 ## Subscription Flow
 
