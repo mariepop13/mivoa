@@ -117,7 +117,7 @@ export function BillingPage(): React.JSX.Element {
           <div>
             <h2 className="text-2xl font-bold mb-4">{t('subscription.availablePlans')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {plans.map((planData) => (
+              {plans?.map((planData) => (
                 <PricingCard
                   key={planData.id}
                   plan={planData.id}

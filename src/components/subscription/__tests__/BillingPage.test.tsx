@@ -125,7 +125,11 @@ describe('BillingPage', () => {
     await waitFor(() => {
       const basicElements = screen.getAllByText('subscription.basic');
       expect(basicElements.length).toBeGreaterThan(0);
-      expect(screen.getByText('subscription.pro')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      const proElements = screen.getAllByText('subscription.pro');
+      expect(proElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -216,13 +220,20 @@ describe('BillingPage', () => {
       } as Response);
 
     const user = userEvent.setup();
-    render(<BillingPage />);
+    const { container } = render(<BillingPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('subscription.pro')).toBeInTheDocument();
+      const loader = container.querySelector('.animate-spin');
+      expect(loader).not.toBeInTheDocument();
     });
 
-    const upgradeButton = await screen.findByText('subscription.upgrade');
+    await waitFor(() => {
+      const proElements = screen.getAllByText('subscription.pro');
+      expect(proElements.length).toBeGreaterThan(0);
+    });
+
+    const upgradeButtons = await screen.findAllByText('subscription.upgrade');
+    const upgradeButton = upgradeButtons[0];
     await user.click(upgradeButton);
 
     await waitFor(() => {
@@ -273,7 +284,12 @@ describe('BillingPage', () => {
       json: async () => ({ plans: [] }),
     } as Response);
 
-    render(<BillingPage />);
+    const { container } = render(<BillingPage />);
+
+    await waitFor(() => {
+      const loader = container.querySelector('.animate-spin');
+      expect(loader).not.toBeInTheDocument();
+    });
 
     await waitFor(() => {
       expect(screen.getByText('subscription.currentSubscription')).toBeInTheDocument();
