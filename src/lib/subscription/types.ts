@@ -53,3 +53,15 @@ export interface SubscriptionWithUsage extends SubscriptionData {
 
 export type Currency = 'USD' | 'CAD';
 
+export interface CreateCheckoutSessionParams {
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+  userId: string;
+}
+
+export interface CreatePortalSessionParams {
+  returnUrl: string;
+  userId: string;
+}
+

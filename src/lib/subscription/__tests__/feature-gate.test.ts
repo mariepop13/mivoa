@@ -6,6 +6,9 @@ import {
   getAnalysisLevel,
   filterAvailableModels,
   getPlanLimits,
+  isLimitReached,
+  getMaxResolution,
+  getFeatureLevel,
 } from '../feature-gate';
 import { UNLIMITED_ENTRIES } from '../constants';
 import type { OpenRouterModel } from '@/ai/types/model';
@@ -198,6 +201,52 @@ describe('feature-gate', () => {
     it('should return empty array when no models match', () => {
       const emptyModels: OpenRouterModel[] = [];
       expect(filterAvailableModels('free', emptyModels)).toEqual([]);
+    });
+  });
+
+  describe('isLimitReached', () => {
+    it('should return false when usage is below limit', () => {
+      expect(isLimitReached(5, 10)).toBe(false);
+      expect(isLimitReached(0, 10)).toBe(false);
+      expect(isLimitReached(9, 10)).toBe(false);
+    });
+
+    it('should return true when usage equals limit', () => {
+      expect(isLimitReached(10, 10)).toBe(true);
+      expect(isLimitReached(100, 100)).toBe(true);
+    });
+
+    it('should return true when usage exceeds limit', () => {
+      expect(isLimitReached(11, 10)).toBe(true);
+      expect(isLimitReached(101, 100)).toBe(true);
+    });
+  });
+
+  describe('getMaxResolution', () => {
+    it('should return standard for free plan', () => {
+      expect(getMaxResolution('free')).toBe('standard');
+    });
+
+    it('should return standard for basic plan', () => {
+      expect(getMaxResolution('basic')).toBe('standard');
+    });
+
+    it('should return high for pro plan', () => {
+      expect(getMaxResolution('pro')).toBe('high');
+    });
+  });
+
+  describe('getFeatureLevel', () => {
+    it('should return basic for free plan', () => {
+      expect(getFeatureLevel('free')).toBe('basic');
+    });
+
+    it('should return intermediate for basic plan', () => {
+      expect(getFeatureLevel('basic')).toBe('intermediate');
+    });
+
+    it('should return advanced for pro plan', () => {
+      expect(getFeatureLevel('pro')).toBe('advanced');
     });
   });
 });

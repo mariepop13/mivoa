@@ -44,6 +44,15 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
 };
 
+let cachedPlanLimits: Record<SubscriptionPlan, PlanLimits> | null = null;
+
+export function getPlanLimitsWithCache(plan: SubscriptionPlan): PlanLimits {
+  if (!cachedPlanLimits) {
+    cachedPlanLimits = PLAN_LIMITS;
+  }
+  return cachedPlanLimits[plan];
+}
+
 export const PLAN_PRICING: Record<
   SubscriptionPlan,
   Record<BillingCycle, Record<Currency, number>>
@@ -135,6 +144,30 @@ function getPriceIdEnvKey(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', cu
   return `STRIPE_PRICE_ID_${plan.toUpperCase()}_${cycle.toUpperCase()}_${currency}`;
 }
 
+function validateAllPriceIdEnvVars(): void {
+  const missing: string[] = [];
+  const plans: ('basic' | 'pro')[] = ['basic', 'pro'];
+  const cycles: ('monthly' | 'annual')[] = ['monthly', 'annual'];
+  const currencies: ('USD' | 'CAD')[] = ['USD', 'CAD'];
+
+  for (const plan of plans) {
+    for (const cycle of cycles) {
+      for (const currency of currencies) {
+        const envKey = getPriceIdEnvKey(plan, cycle, currency);
+        if (!process.env[envKey]) {
+          missing.push(envKey);
+        }
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required Stripe price ID environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}`
+    );
+  }
+}
+
 export function getPriceId(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
   if (isBuildTime()) {
     return '';
@@ -144,6 +177,7 @@ export function getPriceId(plan: 'basic' | 'pro', cycle: 'monthly' | 'annual', c
   const priceId = process.env[envKey];
   
   if (!priceId) {
+    validateAllPriceIdEnvVars();
     throw new Error(`Missing environment variable: ${envKey}`);
   }
   

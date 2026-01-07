@@ -48,3 +48,26 @@ export function filterAvailableModels(
   return models.filter((model) => limits.modelsAccess.includes(model.id));
 }
 
+export function isLimitReached(usage: number, limit: number): boolean {
+  return usage >= limit;
+}
+
+export function getMaxResolution(plan: SubscriptionPlan): 'standard' | 'high' {
+  const limits = getPlanLimits(plan);
+  return limits.exportResolution;
+}
+
+export type FeatureLevel = 'basic' | 'intermediate' | 'advanced';
+
+export function getFeatureLevel(plan: SubscriptionPlan): FeatureLevel {
+  switch (plan) {
+    case 'pro':
+      return 'advanced';
+    case 'basic':
+      return 'intermediate';
+    case 'free':
+    default:
+      return 'basic';
+  }
+}
+
