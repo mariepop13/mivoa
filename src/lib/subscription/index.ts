@@ -4,4 +4,6 @@ export * from './stripe-client';
 export * from './subscription-service';
 export * from './feature-gate';
 export * from './usage-tracker';
+export * from './utils';
+export * from './checkout-helpers';
 
