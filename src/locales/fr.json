@@ -292,6 +292,7 @@
     "pro": "Pro",
     "freePlan": "Plan gratuit",
     "freePlanDescription": "Parfait pour commencer",
+    "supporterPlanDescription": "Soutenez le développement",
     "paidPlanDescription": "Débloquez les fonctionnalités premium",
     "monthly": "Mensuel",
     "annual": "Annuel",
@@ -346,7 +347,9 @@
       "ExportBackup": "Export backup complet (JSON)",
       "CustomTemplates": "Modèles personnalisés",
       "SemanticSearch": "Recherche sémantique",
-      "PrioritySupport": "Support prioritaire"
+      "PrioritySupport": "Support prioritaire",
+      "includesAllFrom": "Inclut toutes les fonctionnalités de {plan}, plus:",
+      "plus": "Plus:"
     },
     "planComparison": "Comparaison des plans",
     "feature": "Fonctionnalité",

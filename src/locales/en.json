@@ -292,6 +292,7 @@
     "pro": "Pro",
     "freePlan": "Free Plan",
     "freePlanDescription": "Perfect for getting started",
+    "supporterPlanDescription": "Support development",
     "paidPlanDescription": "Unlock premium features",
     "monthly": "Monthly",
     "annual": "Annual",
@@ -346,7 +347,9 @@
       "ExportBackup": "Full backup export (JSON)",
       "CustomTemplates": "Custom templates",
       "SemanticSearch": "Semantic search",
-      "PrioritySupport": "Priority support"
+      "PrioritySupport": "Priority support",
+      "includesAllFrom": "Includes all features from {plan}, plus:",
+      "plus": "Plus:"
     },
     "planComparison": "Plan Comparison",
     "feature": "Feature",

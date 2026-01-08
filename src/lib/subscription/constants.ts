@@ -70,34 +70,45 @@ export const PLAN_PRICING: Record<
   },
 };
 
+const BASE_FEATURES: string[] = [
+  'UnlimitedEntries',
+  'AllAIModels',
+  'BasicAnalysis',
+  'DefaultTemplates',
+];
+
+const SUPPORTER_ADDITIONAL_FEATURES: string[] = [
+  'SupporterBadge',
+  'ExclusiveAccentColors',
+];
+
+const PRO_ADDITIONAL_FEATURES: string[] = [
+  'AdvancedAnalysis',
+  'MultiEntryAnalysis',
+  'PeriodSummary',
+  'ExportPDF',
+  'ExportBackup',
+  'CustomTemplates',
+  'SemanticSearch',
+  'PrioritySupport',
+];
+
 export const PLAN_FEATURES: Record<SubscriptionPlan, string[]> = {
-  free: [
-    'UnlimitedEntries',
-    'AllAIModels',
-    'BasicAnalysis',
-    'DefaultTemplates',
-  ],
-  supporter: [
-    'UnlimitedEntries',
-    'AllAIModels',
-    'BasicAnalysis',
-    'DefaultTemplates',
-    'SupporterBadge',
-    'ExclusiveAccentColors',
-  ],
-  pro: [
-    'UnlimitedEntries',
-    'AllAIModels',
-    'AdvancedAnalysis',
-    'MultiEntryAnalysis',
-    'PeriodSummary',
-    'ExportPDF',
-    'ExportBackup',
-    'CustomTemplates',
-    'SemanticSearch',
-    'PrioritySupport',
-  ],
+  free: BASE_FEATURES,
+  supporter: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES],
+  pro: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES],
 };
+
+export function getPlanFeaturesForDisplay(plan: SubscriptionPlan): string[] {
+  switch (plan) {
+    case 'free':
+      return BASE_FEATURES;
+    case 'supporter':
+      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES];
+    case 'pro':
+      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES];
+  }
+}
 
 export const STRIPE_PRICE_ID_ENV_VARS: Record<
   SubscriptionPlan,
