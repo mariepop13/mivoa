@@ -84,7 +84,7 @@ describe('webhook route', () => {
       current_period_start: Math.floor(Date.now() / 1000),
       current_period_end: Math.floor(Date.now() / 1000) + 86400 * 30,
       cancel_at_period_end: false,
-      metadata: { userId: 'user-id', planId: 'basic' },
+      metadata: { userId: 'user-id', planId: 'supporter' },
       items: {
         object: 'list',
         data: [
@@ -265,7 +265,7 @@ describe('webhook route', () => {
       id: 'sub_test',
       customer: 'cus_test',
       status: 'unknown_status' as any,
-      metadata: { userId: 'user-id', planId: 'basic' },
+      metadata: { userId: 'user-id', planId: 'supporter' },
       items: {
         object: 'list',
         data: [
@@ -372,7 +372,7 @@ describe('webhook route', () => {
     expect(data.received).toBe(true);
     expect(mockDoc.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        plan: 'basic',
+        plan: 'free',
       }),
       { merge: true }
     );
@@ -383,7 +383,7 @@ describe('webhook route', () => {
       id: 'sub_test',
       customer: 'cus_test',
       status: 'active',
-      metadata: { userId: 'user-id', planId: 'basic' },
+      metadata: { userId: 'user-id', planId: 'supporter' },
       items: {
         object: 'list',
         data: [],

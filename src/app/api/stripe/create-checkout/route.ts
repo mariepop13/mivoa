@@ -35,7 +35,7 @@ function validateCheckoutInput(body: CreateCheckoutRequest): NextResponse | null
   }
 
   if (!validatePlanId(body.planId)) {
-    return createErrorResponse('Invalid planId. Must be "supporter", "basic" or "pro"', 400);
+    return createErrorResponse('Invalid planId. Must be "supporter" or "pro"', 400);
   }
 
   if (!validateBillingCycle(body.billingCycle)) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const adminAuth = getAdminAuth();
     const userRecord = await adminAuth.getUser(userId);
     const customer = await getOrCreateStripeCustomer(userId, userRecord.email);
-    const priceId = getStripePriceId(body.planId as 'supporter' | 'basic' | 'pro', body.billingCycle as BillingCycle, currency);
+    const priceId = getStripePriceId(body.planId as 'supporter' | 'pro', body.billingCycle as BillingCycle, currency);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
     const session = await createCheckoutSession(customer, priceId, userId, body.planId, body.billingCycle, baseUrl);
 

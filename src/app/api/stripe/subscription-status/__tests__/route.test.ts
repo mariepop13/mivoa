@@ -66,7 +66,7 @@ describe('subscription-status route', () => {
     const now = Timestamp.now();
     const subscriptionData = {
       userId: 'user-id',
-      plan: 'basic' as const,
+      plan: 'supporter' as const,
       status: 'active' as const,
       billingCycle: 'monthly' as const,
       stripeCustomerId: 'cus_test',
@@ -101,7 +101,7 @@ describe('subscription-status route', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.plan).toBe('basic');
+    expect(data.plan).toBe('supporter');
     expect(data.status).toBe('active');
     expect(data.billingCycle).toBe('monthly');
     expect(data.currentPeriodStart).toBe(now.toDate().toISOString());
@@ -222,7 +222,7 @@ describe('subscription-status route', () => {
     const now = Timestamp.now();
     const subscriptionData = {
       userId: 'user-id',
-      plan: 'basic' as const,
+      plan: 'supporter' as const,
       status: 'active' as const,
       createdAt: now,
       updatedAt: now,
@@ -251,7 +251,7 @@ describe('subscription-status route', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.plan).toBe('basic');
+    expect(data.plan).toBe('supporter');
     expect(data.status).toBe('active');
     expect(data.billingCycle).toBeNull();
     expect(data.currentPeriodStart).toBeNull();
