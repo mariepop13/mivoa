@@ -15,14 +15,13 @@ interface PremiumGateProps {
 
 function hasAccess(currentPlan: SubscriptionPlan, requiredPlan: SubscriptionPlan): boolean {
   if (requiredPlan === 'free') return true;
-  if (requiredPlan === 'basic') return currentPlan === 'basic' || currentPlan === 'pro';
   if (requiredPlan === 'pro') return currentPlan === 'pro';
   return false;
 }
 
 export function PremiumGate({
   children,
-  requiredPlan = 'basic',
+  requiredPlan = 'pro',
   featureName,
   fallback,
 }: PremiumGateProps): React.JSX.Element | null {

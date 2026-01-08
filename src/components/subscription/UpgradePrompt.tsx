@@ -64,7 +64,7 @@ export function UpgradePrompt({
     }
   };
 
-  const availablePlans: SubscriptionPlan[] = plan === 'free' ? ['basic', 'pro'] : ['pro'];
+  const availablePlans: SubscriptionPlan[] = plan === 'free' ? ['supporter', 'pro'] : plan === 'supporter' ? ['pro'] : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
