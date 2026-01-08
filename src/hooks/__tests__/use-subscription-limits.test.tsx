@@ -51,17 +51,7 @@ describe('useSubscriptionLimits', () => {
     });
   });
 
-  it('should return canCreateEntry false when limit reached', () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: {
-        id: 'subscription-status',
-        plan: 'free',
-        status: 'free',
-      },
-      isLoading: false,
-      error: null,
-    });
-
+  it('should return canCreateEntry true (entries are unlimited)', () => {
     vi.mocked(useDoc).mockReturnValueOnce({
       data: {
         id: 'subscription-status',
@@ -73,32 +63,7 @@ describe('useSubscriptionLimits', () => {
     }).mockReturnValueOnce({
       data: {
         id: 'subscription-usage',
-        entriesUsed: 10,
-        lastResetDate: { toDate: () => new Date() },
-      },
-      isLoading: false,
-      error: null,
-    });
-
-    const { result } = renderHook(() => useSubscriptionLimits(), { wrapper });
-
-    expect(result.current.canCreateEntry).toBe(false);
-    expect(result.current.entriesRemaining).toBe(0);
-  });
-
-  it('should return canCreateEntry true when under limit', () => {
-    vi.mocked(useDoc).mockReturnValueOnce({
-      data: {
-        id: 'subscription-status',
-        plan: 'free',
-        status: 'free',
-      },
-      isLoading: false,
-      error: null,
-    }).mockReturnValueOnce({
-      data: {
-        id: 'subscription-usage',
-        entriesUsed: 5,
+        entriesUsed: 1000,
         lastResetDate: { toDate: () => new Date() },
       },
       isLoading: false,
@@ -108,7 +73,7 @@ describe('useSubscriptionLimits', () => {
     const { result } = renderHook(() => useSubscriptionLimits(), { wrapper });
 
     expect(result.current.canCreateEntry).toBe(true);
-    expect(result.current.entriesRemaining).toBe(5);
+    expect(result.current.entriesRemaining).toBe(Infinity);
   });
 
   it('should return Infinity for unlimited plans', () => {

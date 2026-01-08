@@ -61,7 +61,6 @@ describe('SubscriptionContext', () => {
     expect(result.current.status).toBe('free');
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isPremium).toBe(false);
-    expect(result.current.isBasic).toBe(false);
     expect(result.current.isPro).toBe(false);
   });
 
@@ -80,19 +79,18 @@ describe('SubscriptionContext', () => {
 
     expect(result.current.plan).toBe('free');
     expect(result.current.status).toBe('free');
-    expect(result.current.limits.entriesPerMonth).toBe(10);
+    expect(result.current.limits.advancedAnalysis).toBe(false);
     expect(result.current.usage).not.toBeNull();
     expect(result.current.usage?.entriesUsed).toBe(0);
-    expect(result.current.usage?.entriesLimit).toBe(10);
+    expect(result.current.usage?.entriesLimit).toBe(Infinity);
     expect(result.current.isPremium).toBe(false);
-    expect(result.current.isBasic).toBe(false);
     expect(result.current.isPro).toBe(false);
   });
 
   it('should load subscription data from Firestore', async () => {
     const mockSubscriptionData = {
       id: 'subscription-status',
-      plan: 'basic' as SubscriptionPlan,
+      plan: 'supporter' as SubscriptionPlan,
       status: 'active' as SubscriptionStatus,
       stripeCustomerId: 'cus_test',
       stripeSubscriptionId: 'sub_test',
@@ -127,13 +125,12 @@ describe('SubscriptionContext', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.plan).toBe('basic');
+    expect(result.current.plan).toBe('supporter');
     expect(result.current.status).toBe('active');
-    expect(result.current.limits.entriesPerMonth).toBe(100);
+    expect(result.current.limits.advancedAnalysis).toBe(false);
     expect(result.current.usage).not.toBeNull();
     expect(result.current.usage?.entriesUsed).toBe(5);
     expect(result.current.isPremium).toBe(false);
-    expect(result.current.isBasic).toBe(true);
     expect(result.current.isPro).toBe(false);
   });
 
@@ -169,9 +166,8 @@ describe('SubscriptionContext', () => {
 
     expect(result.current.plan).toBe('pro');
     expect(result.current.isPremium).toBe(true);
-    expect(result.current.isBasic).toBe(false);
     expect(result.current.isPro).toBe(true);
-    expect(result.current.limits.entriesPerMonth).toBe(-1);
+    expect(result.current.limits.advancedAnalysis).toBe(true);
   });
 
   it('should handle Firestore errors gracefully', async () => {
@@ -221,7 +217,7 @@ describe('SubscriptionContext', () => {
     const mockDate = new Date('2024-01-15');
     const mockSubscriptionData = {
       id: 'subscription-status',
-      plan: 'basic' as SubscriptionPlan,
+      plan: 'supporter' as SubscriptionPlan,
       status: 'active' as SubscriptionStatus,
       currentPeriodStart: { toDate: () => new Date('2024-01-01') },
       currentPeriodEnd: { toDate: () => new Date('2024-02-01') },
@@ -250,14 +246,14 @@ describe('SubscriptionContext', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.plan).toBe('basic');
+    expect(result.current.plan).toBe('supporter');
     expect(result.current.status).toBe('active');
   });
 
   it('should build usage stats from Firestore data', async () => {
     const mockSubscriptionData = {
       id: 'subscription-status',
-      plan: 'basic' as SubscriptionPlan,
+      plan: 'supporter' as SubscriptionPlan,
       status: 'active' as SubscriptionStatus,
       createdAt: { toDate: () => new Date('2024-01-01') },
       updatedAt: { toDate: () => new Date('2024-01-02') },
@@ -293,7 +289,7 @@ describe('SubscriptionContext', () => {
 
     expect(result.current.usage).not.toBeNull();
     expect(result.current.usage?.entriesUsed).toBe(25);
-    expect(result.current.usage?.entriesLimit).toBe(100);
+    expect(result.current.usage?.entriesLimit).toBe(Infinity);
     expect(result.current.usage?.modelUsage).toEqual({
       'gpt-4o-mini': 15,
       'claude-3-sonnet': 10,
@@ -340,7 +336,7 @@ describe('SubscriptionContext', () => {
     for (const status of statuses) {
       const mockSubscriptionData = {
         id: 'subscription-status',
-        plan: 'basic' as SubscriptionPlan,
+        plan: 'supporter' as SubscriptionPlan,
         status,
         createdAt: { toDate: () => new Date('2024-01-01') },
         updatedAt: { toDate: () => new Date('2024-01-02') },

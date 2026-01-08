@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 const PLAN_NAMES: Record<SubscriptionPlan, { en: string; fr: string }> = {
   free: { en: 'Free', fr: 'Gratuit' },
   supporter: { en: 'Supporter', fr: 'Supporter' },
-  basic: { en: 'Basic', fr: 'Basique' },
   pro: { en: 'Pro', fr: 'Pro' },
 };
 
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const locale = getLocale(request);
 
-    const plans = (['free', 'supporter', 'basic', 'pro'] as SubscriptionPlan[]).map((planId) => {
+    const plans = (['free', 'supporter', 'pro'] as SubscriptionPlan[]).map((planId) => {
       const limits = PLAN_LIMITS[planId];
       const pricing = PLAN_PRICING[planId] || { monthly: { USD: 0, CAD: 0 }, annual: { USD: 0, CAD: 0 } };
 

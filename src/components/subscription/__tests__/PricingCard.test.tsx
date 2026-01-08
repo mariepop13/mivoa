@@ -21,37 +21,37 @@ describe('PricingCard', () => {
   });
 
   it('should render plan name', () => {
-    render(<PricingCard plan="basic" />);
-    expect(mockT).toHaveBeenCalledWith('subscription.basic');
+    render(<PricingCard plan="supporter" />);
+    expect(mockT).toHaveBeenCalledWith('subscription.supporter');
   });
 
   it('should render monthly price by default', () => {
-    render(<PricingCard plan="basic" />);
-    expect(screen.getByText(/\$6\.99/)).toBeInTheDocument();
+    render(<PricingCard plan="supporter" />);
+    expect(screen.getByText(/\$2\.99/)).toBeInTheDocument();
   });
 
   it('should switch to annual pricing when clicked', async () => {
     const user = userEvent.setup();
-    render(<PricingCard plan="basic" />);
+    render(<PricingCard plan="supporter" />);
     
     const annualButton = screen.getByText('subscription.annual');
     await user.click(annualButton);
     
-    expect(screen.getByText(/\$69\.99/)).toBeInTheDocument();
+    expect(screen.getByText(/\$29\.99/)).toBeInTheDocument();
   });
 
   it('should call onUpgrade when upgrade button is clicked', async () => {
     const user = userEvent.setup();
-    render(<PricingCard plan="basic" onUpgrade={mockOnUpgrade} />);
+    render(<PricingCard plan="supporter" onUpgrade={mockOnUpgrade} />);
     
     const upgradeButton = screen.getByText('subscription.upgrade');
     await user.click(upgradeButton);
     
-    expect(mockOnUpgrade).toHaveBeenCalledWith('basic', 'monthly');
+    expect(mockOnUpgrade).toHaveBeenCalledWith('supporter', 'monthly');
   });
 
   it('should show current plan badge when isCurrentPlan is true', () => {
-    render(<PricingCard plan="basic" isCurrentPlan />);
+    render(<PricingCard plan="supporter" isCurrentPlan />);
     expect(screen.getAllByText('subscription.currentPlan').length).toBeGreaterThan(0);
   });
 

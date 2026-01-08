@@ -1,16 +1,15 @@
 import type { SubscriptionPlan, PlanLimits, BillingCycle, Currency } from './types';
 
-export const UNLIMITED_ENTRIES = -1;
-
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['free', 'supporter', 'basic', 'pro'];
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = ['free', 'supporter', 'pro'];
 
 export const SUPPORTER_PLAN_LIMITS: PlanLimits = {
-  entriesPerMonth: 10,
-  modelsAccess: ['gpt-3.5-turbo', 'claude-3-haiku'],
-  exportEnabled: false,
-  exportResolution: 'standard',
   advancedAnalysis: false,
+  multiEntryAnalysis: false,
+  periodSummary: false,
+  exportPDF: false,
+  exportBackup: false,
   customTemplates: false,
+  semanticSearch: false,
 };
 
 export const SUPPORTER_ACCENT_COLORS = [
@@ -24,42 +23,23 @@ export const SUPPORTER_ACCENT_COLORS = [
 
 export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   free: {
-    entriesPerMonth: 10,
-    modelsAccess: ['gpt-3.5-turbo', 'claude-3-haiku'],
-    exportEnabled: false,
-    exportResolution: 'standard',
     advancedAnalysis: false,
+    multiEntryAnalysis: false,
+    periodSummary: false,
+    exportPDF: false,
+    exportBackup: false,
     customTemplates: false,
+    semanticSearch: false,
   },
   supporter: SUPPORTER_PLAN_LIMITS,
-  basic: {
-    entriesPerMonth: 100,
-    modelsAccess: [
-      'gpt-3.5-turbo',
-      'gpt-4o-mini',
-      'claude-3-haiku',
-      'claude-3-sonnet',
-    ],
-    exportEnabled: true,
-    exportResolution: 'standard',
-    advancedAnalysis: true,
-    customTemplates: false,
-  },
   pro: {
-    entriesPerMonth: UNLIMITED_ENTRIES,
-    modelsAccess: [
-      'gpt-3.5-turbo',
-      'gpt-4o-mini',
-      'gpt-4o',
-      'claude-3-haiku',
-      'claude-3-sonnet',
-      'claude-3.5-sonnet',
-      'claude-3-opus',
-    ],
-    exportEnabled: true,
-    exportResolution: 'high',
     advancedAnalysis: true,
+    multiEntryAnalysis: true,
+    periodSummary: true,
+    exportPDF: true,
+    exportBackup: true,
     customTemplates: true,
+    semanticSearch: true,
   },
 };
 
@@ -84,45 +64,53 @@ export const PLAN_PRICING: Record<
     monthly: { USD: 299, CAD: 399 },
     annual: { USD: 2999, CAD: 3999 },
   },
-  basic: {
+  pro: {
     monthly: { USD: 699, CAD: 999 },
     annual: { USD: 6999, CAD: 9999 },
   },
-  pro: {
-    monthly: { USD: 1499, CAD: 1999 },
-    annual: { USD: 14999, CAD: 19999 },
-  },
 };
 
+export const BASE_FEATURES: string[] = [
+  'UnlimitedEntries',
+  'AllAIModels',
+  'BasicAnalysis',
+  'DefaultTemplates',
+];
+
+export const SUPPORTER_ADDITIONAL_FEATURES: string[] = [
+  'SupporterBadge',
+  'ExclusiveAccentColors',
+];
+
+export const PRO_ADDITIONAL_FEATURES: string[] = [
+  'AdvancedAnalysis',
+  'MultiEntryAnalysis',
+  'PeriodSummary',
+  'ExportPDF',
+  'ExportBackup',
+  'CustomTemplates',
+  'SemanticSearch',
+  'PrioritySupport',
+];
+
 export const PLAN_FEATURES: Record<SubscriptionPlan, string[]> = {
-  free: [
-    '10EntriesPerMonth',
-    'basicAIModels',
-    'basicMoodThemesDetection',
-    'standardJournalFeatures',
-  ],
-  supporter: [
-    'supportTheProject',
-    'supporterBadge',
-    'exclusiveAccentColors',
-    '10EntriesPerMonth',
-  ],
-  basic: [
-    '100EntriesPerMonth',
-    'enhancedAIModels',
-    'enhancedAnalysis',
-    'exportEntriesStandardResolution',
-    'advancedMoodThemesDetection',
-  ],
-  pro: [
-    'unlimitedEntries',
-    'allAIModels',
-    'fullAnalysisWithAllFeatures',
-    'exportEntriesHighResolution',
-    'customTemplates',
-    'prioritySupport',
-  ],
+  free: BASE_FEATURES,
+  supporter: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES],
+  pro: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES],
 };
+
+export function getPlanFeaturesForDisplay(plan: SubscriptionPlan): string[] {
+  switch (plan) {
+    case 'free':
+      return BASE_FEATURES;
+    case 'supporter':
+      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES];
+    case 'pro':
+      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES];
+    default:
+      return BASE_FEATURES;
+  }
+}
 
 export const STRIPE_PRICE_ID_ENV_VARS: Record<
   SubscriptionPlan,
@@ -148,16 +136,6 @@ export const STRIPE_PRICE_ID_ENV_VARS: Record<
       CAD: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD',
     },
   },
-  basic: {
-    monthly: {
-      USD: 'STRIPE_PRICE_ID_BASIC_MONTHLY_USD',
-      CAD: 'STRIPE_PRICE_ID_BASIC_MONTHLY_CAD',
-    },
-    annual: {
-      USD: 'STRIPE_PRICE_ID_BASIC_ANNUAL_USD',
-      CAD: 'STRIPE_PRICE_ID_BASIC_ANNUAL_CAD',
-    },
-  },
   pro: {
     monthly: {
       USD: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD',
@@ -179,26 +157,22 @@ function isBuildTime(): boolean {
   );
 }
 
-function getPriceIdEnvKey(plan: 'supporter' | 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD'): string {
+function getPriceIdEnvKey(plan: 'supporter' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD'): string {
   return `STRIPE_PRICE_ID_${plan.toUpperCase()}_${cycle.toUpperCase()}_${currency}`;
 }
 
 function validateAllPriceIdEnvVars(): void {
-  const missing: string[] = [];
-  const plans: ('supporter' | 'basic' | 'pro')[] = ['supporter', 'basic', 'pro'];
+  const plans: ('supporter' | 'pro')[] = ['supporter', 'pro'];
   const cycles: ('monthly' | 'annual')[] = ['monthly', 'annual'];
   const currencies: ('USD' | 'CAD')[] = ['USD', 'CAD'];
 
-  for (const plan of plans) {
-    for (const cycle of cycles) {
-      for (const currency of currencies) {
-        const envKey = getPriceIdEnvKey(plan, cycle, currency);
-        if (!process.env[envKey]) {
-          missing.push(envKey);
-        }
-      }
-    }
-  }
+  const missing = plans.flatMap((plan) =>
+    cycles.flatMap((cycle) =>
+      currencies
+        .map((currency) => getPriceIdEnvKey(plan, cycle, currency))
+        .filter((envKey) => !process.env[envKey])
+    )
+  );
 
   if (missing.length > 0) {
     throw new Error(
@@ -207,7 +181,7 @@ function validateAllPriceIdEnvVars(): void {
   }
 }
 
-export function getPriceId(plan: 'supporter' | 'basic' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
+export function getPriceId(plan: 'supporter' | 'pro', cycle: 'monthly' | 'annual', currency: 'USD' | 'CAD' = 'USD'): string {
   if (isBuildTime()) {
     return '';
   }

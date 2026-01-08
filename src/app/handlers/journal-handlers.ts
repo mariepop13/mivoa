@@ -62,7 +62,7 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
       aiProcessedAt: serverTimestamp(),
     };
 
-    if (analysisLevel === 'enhanced' || analysisLevel === 'full') {
+    if (analysisLevel === 'full') {
       analysisData.keyTakeaways = analysis.keyTakeaways;
       analysisData.places = analysis.places;
       analysisData.characters = analysis.characters;

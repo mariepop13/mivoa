@@ -3,7 +3,7 @@
 import { Download, Lock } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useSubscription } from '@/hooks/use-subscription';
-import { canExport } from '@/lib/subscription/feature-gate';
+import { canExportPDF } from '@/lib/subscription/feature-gate';
 
 interface EntryExportButtonProps {
   entryId: string | null;
@@ -23,7 +23,7 @@ export function EntryExportButton({
   const { t } = useTranslation();
   const { plan } = useSubscription();
 
-  const hasExportAccess = canExport(plan);
+  const hasExportAccess = canExportPDF(plan);
 
   const handleExport = () => {
     if (!hasExportAccess || !entryId || !content) {

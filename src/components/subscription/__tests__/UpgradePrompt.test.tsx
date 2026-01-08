@@ -32,18 +32,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -57,18 +57,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -88,18 +88,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -113,55 +113,55 @@ describe('UpgradePrompt', () => {
     expect(mockT).toHaveBeenCalledWith('subscription.upgradeDescription');
   });
 
-  it('should show basic and pro plans for free users', () => {
+  it('should show supporter and pro plans for free users', () => {
     vi.mocked(useSubscription).mockReturnValue({
       plan: 'free',
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
     render(<UpgradePrompt open onOpenChange={mockOnOpenChange} />);
-    expect(screen.getByText('subscription.basic')).toBeInTheDocument();
+    expect(screen.getByText('subscription.supporter')).toBeInTheDocument();
     expect(screen.getByText('subscription.pro')).toBeInTheDocument();
   });
 
-  it('should show only pro plan for basic users', () => {
+  it('should show only pro plan for supporter users', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     render(<UpgradePrompt open onOpenChange={mockOnOpenChange} />);
-    expect(screen.queryByText('subscription.basic')).not.toBeInTheDocument();
+    expect(screen.queryByText('subscription.supporter')).not.toBeInTheDocument();
     expect(screen.getByText('subscription.pro')).toBeInTheDocument();
   });
 
@@ -171,18 +171,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -205,7 +205,7 @@ describe('UpgradePrompt', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          planId: 'basic',
+          planId: 'supporter',
           billingCycle: 'monthly',
           currency: 'USD',
         }),
@@ -219,18 +219,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -260,18 +260,18 @@ describe('UpgradePrompt', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 

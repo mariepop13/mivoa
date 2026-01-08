@@ -25,59 +25,63 @@ function validateCurrency(currency: string): Currency | null {
   return validCurrencies.includes(currencyUpper) ? currencyUpper : null;
 }
 
+function validateAuth(authenticatedUserId: string | null): ValidationResult | null {
+  if (!authenticatedUserId) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  return null;
+}
+
+function validatePlanIdField(planId: unknown): ValidationResult | null {
+  if (!planId || typeof planId !== 'string') {
+    return { success: false, error: 'planId is required' };
+  }
+  if (!validatePlanId(planId)) {
+    return { success: false, error: 'Invalid planId. Must be "supporter" or "pro"' };
+  }
+  return null;
+}
+
+function validateBillingCycleField(billingCycle: unknown): ValidationResult | null {
+  if (!billingCycle || typeof billingCycle !== 'string') {
+    return { success: false, error: 'billingCycle is required' };
+  }
+  if (!validateBillingCycle(billingCycle)) {
+    return { success: false, error: 'Invalid billingCycle. Must be "monthly" or "annual"' };
+  }
+  return null;
+}
+
+function validateCurrencyField(currency: string | undefined): { currency: Currency } | ValidationResult {
+  const defaultCurrency = currency || 'USD';
+  const validCurrency = validateCurrency(defaultCurrency);
+  if (!validCurrency) {
+    return { success: false, error: 'Invalid currency. Must be "USD" or "CAD"' };
+  }
+  return { currency: validCurrency };
+}
+
 export function validateCheckoutRequest(
   body: CheckoutRequest,
   authenticatedUserId: string | null
 ): ValidationResult {
-  if (!authenticatedUserId) {
-    return {
-      success: false,
-      error: 'Unauthorized',
-    };
-  }
+  const authError = validateAuth(authenticatedUserId);
+  if (authError) return authError;
 
-  if (!body.planId || typeof body.planId !== 'string') {
-    return {
-      success: false,
-      error: 'planId is required',
-    };
-  }
+  const planIdError = validatePlanIdField(body.planId);
+  if (planIdError) return planIdError;
 
-  if (!body.billingCycle || typeof body.billingCycle !== 'string') {
-    return {
-      success: false,
-      error: 'billingCycle is required',
-    };
-  }
+  const billingCycleError = validateBillingCycleField(body.billingCycle);
+  if (billingCycleError) return billingCycleError;
 
-  if (!validatePlanId(body.planId)) {
-    return {
-      success: false,
-      error: 'Invalid planId. Must be "basic" or "pro"',
-    };
-  }
-
-  if (!validateBillingCycle(body.billingCycle)) {
-    return {
-      success: false,
-      error: 'Invalid billingCycle. Must be "monthly" or "annual"',
-    };
-  }
-
-  const currency = body.currency || 'USD';
-  const validCurrency = validateCurrency(currency);
-  if (!validCurrency) {
-    return {
-      success: false,
-      error: 'Invalid currency. Must be "USD" or "CAD"',
-    };
-  }
+  const currencyResult = validateCurrencyField(body.currency);
+  if (!('currency' in currencyResult)) return currencyResult;
 
   try {
     const priceId = getStripePriceId(
-      body.planId as 'basic' | 'pro',
+      body.planId as 'supporter' | 'pro',
       body.billingCycle as BillingCycle,
-      validCurrency
+      currencyResult.currency
     );
 
     return {
@@ -85,7 +89,7 @@ export function validateCheckoutRequest(
       priceId,
       planId: body.planId as SubscriptionPlan,
       billingCycle: body.billingCycle as BillingCycle,
-      currency: validCurrency,
+      currency: currencyResult.currency,
     };
   } catch (error) {
     return {

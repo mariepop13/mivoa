@@ -241,9 +241,9 @@ describe('stripe-helpers', () => {
   });
 
   describe('getStripePriceId', () => {
-    it('should return price ID for basic monthly USD', () => {
-      const priceId = getStripePriceId('basic', 'monthly', 'USD');
-      expect(priceId).toBe('price_basic_monthly_USD');
+    it('should return price ID for supporter monthly USD', () => {
+      const priceId = getStripePriceId('supporter', 'monthly', 'USD');
+      expect(priceId).toBe('price_supporter_monthly_USD');
     });
 
     it('should return price ID for pro annual CAD', () => {
@@ -252,8 +252,8 @@ describe('stripe-helpers', () => {
     });
 
     it('should default to USD when currency not specified', () => {
-      const priceId = getStripePriceId('basic', 'monthly');
-      expect(priceId).toBe('price_basic_monthly_USD');
+      const priceId = getStripePriceId('supporter', 'monthly');
+      expect(priceId).toBe('price_supporter_monthly_USD');
     });
 
     it('should throw error for free plan', () => {
@@ -268,7 +268,7 @@ describe('stripe-helpers', () => {
       const now = new Date();
       const data: SubscriptionData = {
         userId: 'user-id',
-        plan: 'basic',
+        plan: 'supporter',
         status: 'active',
         billingCycle: 'monthly',
         stripeCustomerId: 'cus_test',
@@ -282,7 +282,7 @@ describe('stripe-helpers', () => {
 
       const result = formatSubscriptionResponse(data);
 
-      expect(result.plan).toBe('basic');
+      expect(result.plan).toBe('supporter');
       expect(result.status).toBe('active');
       expect(result.billingCycle).toBe('monthly');
       expect(result.currentPeriodStart).toBe(now.toISOString());
@@ -338,7 +338,7 @@ describe('stripe-helpers', () => {
       const now = new Date();
       const data: SubscriptionData = {
         userId: 'user-id',
-        plan: 'basic',
+        plan: 'supporter',
         status: 'active',
         billingCycle: 'monthly',
         cancelAtPeriodEnd: undefined,

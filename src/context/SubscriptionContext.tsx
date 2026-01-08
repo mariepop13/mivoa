@@ -15,7 +15,6 @@ import {
   calculateUsageResetDate,
 } from '@/lib/subscription/subscription-service';
 import { getPlanLimits } from '@/lib/subscription/feature-gate';
-import { UNLIMITED_ENTRIES } from '@/lib/subscription/constants';
 
 interface SubscriptionFirestoreData extends Record<string, unknown> {
   plan?: SubscriptionPlan;
@@ -48,7 +47,6 @@ export interface SubscriptionContextType {
   error: Error | null;
   refreshSubscription: () => Promise<void>;
   isPremium: boolean;
-  isBasic: boolean;
   isPro: boolean;
 }
 
@@ -85,8 +83,7 @@ function transformSubscriptionData(
 }
 
 function buildUsageStats(
-  data: UsageFirestoreData | null,
-  entriesPerMonth: number
+  data: UsageFirestoreData | null
 ): UsageStats {
   const lastResetDateField = data?.lastResetDate;
   const lastReset = lastResetDateField?.toDate?.() || null;
@@ -94,7 +91,7 @@ function buildUsageStats(
 
   return {
     entriesUsed: data?.entriesUsed || 0,
-    entriesLimit: entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : entriesPerMonth,
+    entriesLimit: Infinity,
     lastResetDate,
     nextResetDate,
     modelUsage: (data?.modelUsage as Record<string, number>) || {},
@@ -136,14 +133,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps): R
     if (!user) {
       return null;
     }
-    return buildUsageStats(usageData, limits.entriesPerMonth);
-  }, [user, usageData, limits.entriesPerMonth]);
+    return buildUsageStats(usageData);
+  }, [user, usageData]);
 
   const isLoading = isUserLoading || isSubscriptionLoading || isUsageLoading;
   const error = subscriptionError || usageError || null;
 
   const isPremium = plan === 'pro';
-  const isBasic = plan === 'basic';
   const isPro = plan === 'pro';
 
   const refreshSubscription = useCallback(async () => {
@@ -162,10 +158,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps): R
       error,
       refreshSubscription,
       isPremium,
-      isBasic,
       isPro,
     }),
-    [plan, status, usage, limits, isLoading, error, refreshSubscription, isPremium, isBasic, isPro]
+    [plan, status, usage, limits, isLoading, error, refreshSubscription, isPremium, isPro]
   );
 
   return (

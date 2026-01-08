@@ -10,7 +10,6 @@ import {
 } from '../subscription-service';
 import { getPlanLimits } from '../feature-gate';
 import type { SubscriptionData, SubscriptionPlan } from '../types';
-import { UNLIMITED_ENTRIES } from '../constants';
 
 vi.mock('@/firebase', () => ({
   initializeFirebase: vi.fn(() => ({
@@ -39,27 +38,28 @@ describe('subscription-service', () => {
   describe('getPlanLimits', () => {
     it('should return limits for free plan', () => {
       const limits = getPlanLimits('free');
-      expect(limits.entriesPerMonth).toBe(10);
-      expect(limits.modelsAccess).toContain('gpt-3.5-turbo');
-      expect(limits.exportEnabled).toBe(false);
       expect(limits.advancedAnalysis).toBe(false);
+      expect(limits.multiEntryAnalysis).toBe(false);
+      expect(limits.exportPDF).toBe(false);
+      expect(limits.customTemplates).toBe(false);
     });
 
-    it('should return limits for basic plan', () => {
-      const limits = getPlanLimits('basic');
-      expect(limits.entriesPerMonth).toBe(100);
-      expect(limits.modelsAccess).toContain('claude-3-sonnet');
-      expect(limits.exportEnabled).toBe(true);
-      expect(limits.advancedAnalysis).toBe(true);
+    it('should return limits for supporter plan', () => {
+      const limits = getPlanLimits('supporter');
+      expect(limits.advancedAnalysis).toBe(false);
+      expect(limits.multiEntryAnalysis).toBe(false);
+      expect(limits.exportPDF).toBe(false);
+      expect(limits.customTemplates).toBe(false);
     });
 
     it('should return limits for pro plan', () => {
       const limits = getPlanLimits('pro');
-      expect(limits.entriesPerMonth).toBe(UNLIMITED_ENTRIES);
-      expect(limits.modelsAccess).toContain('claude-3-opus');
-      expect(limits.exportEnabled).toBe(true);
-      expect(limits.exportResolution).toBe('high');
+      expect(limits.advancedAnalysis).toBe(true);
+      expect(limits.multiEntryAnalysis).toBe(true);
+      expect(limits.exportPDF).toBe(true);
+      expect(limits.exportBackup).toBe(true);
       expect(limits.customTemplates).toBe(true);
+      expect(limits.semanticSearch).toBe(true);
     });
   });
 
@@ -102,7 +102,7 @@ describe('subscription-service', () => {
         ...getDefaultSubscription('user1'),
         status: 'active',
         stripeSubscriptionId: 'sub_123',
-        plan: 'basic',
+        plan: 'supporter',
       };
       expect(validateSubscription(subscription)).toBe(true);
     });
@@ -111,7 +111,7 @@ describe('subscription-service', () => {
       const subscription: SubscriptionData = {
         ...getDefaultSubscription('user1'),
         status: 'canceled',
-        plan: 'basic',
+        plan: 'supporter',
       };
       expect(validateSubscription(subscription)).toBe(true);
     });
@@ -132,7 +132,7 @@ describe('subscription-service', () => {
         const subscription: SubscriptionData = {
           ...getDefaultSubscription('user1'),
           status,
-          plan: 'basic',
+          plan: 'supporter',
           ...(status === 'active' && { stripeSubscriptionId: 'sub_123' }),
         };
         expect(validateSubscription(subscription)).toBe(true);
@@ -237,7 +237,7 @@ describe('subscription-service', () => {
       vi.mocked(getDoc).mockResolvedValue({
         exists: vi.fn(() => true),
         data: vi.fn(() => ({
-          plan: 'basic',
+          plan: 'supporter',
           status: 'active',
           stripeCustomerId: 'cus_123',
           stripeSubscriptionId: 'sub_123',
@@ -248,7 +248,7 @@ describe('subscription-service', () => {
 
       const result = await fetchSubscription('user123');
       expect(result).not.toBeNull();
-      expect(result?.plan).toBe('basic');
+      expect(result?.plan).toBe('supporter');
       expect(result?.status).toBe('active');
       expect(result?.stripeCustomerId).toBe('cus_123');
     });
@@ -300,7 +300,7 @@ describe('subscription-service', () => {
       vi.mocked(getDoc).mockResolvedValue({
         exists: vi.fn(() => true),
         data: vi.fn(() => ({
-          plan: 'basic',
+          plan: 'supporter',
           status: 'free',
           createdAt: mockDate,
           updatedAt: mockDate,
@@ -309,7 +309,7 @@ describe('subscription-service', () => {
 
       const result = await fetchSubscription('user123');
       expect(result).not.toBeNull();
-      expect(result?.plan).toBe('basic');
+      expect(result?.plan).toBe('supporter');
       expect(result?.status).toBe('free');
       expect(result?.stripeCustomerId).toBeUndefined();
       expect(result?.stripeSubscriptionId).toBeUndefined();
@@ -363,9 +363,9 @@ describe('subscription-service', () => {
       const result = await getSubscriptionWithUsage('user123');
       expect(result.plan).toBe('free');
       expect(result.status).toBe('free');
-      expect(result.limits.entriesPerMonth).toBe(10);
+      expect(result.limits.advancedAnalysis).toBe(false);
       expect(result.usage.entriesUsed).toBe(0);
-      expect(result.usage.entriesLimit).toBe(10);
+      expect(result.usage.entriesLimit).toBe(Infinity);
     });
 
     it('should return subscription with usage stats', async () => {
@@ -378,7 +378,7 @@ describe('subscription-service', () => {
         .mockResolvedValueOnce({
           exists: vi.fn(() => true),
           data: vi.fn(() => ({
-            plan: 'basic',
+            plan: 'supporter',
             status: 'active',
             stripeSubscriptionId: 'sub_123',
             createdAt: mockDate,
@@ -395,10 +395,10 @@ describe('subscription-service', () => {
         } as any);
 
       const result = await getSubscriptionWithUsage('user123');
-      expect(result.plan).toBe('basic');
-      expect(result.limits.entriesPerMonth).toBe(100);
+      expect(result.plan).toBe('supporter');
+      expect(result.limits.advancedAnalysis).toBe(false);
       expect(result.usage.entriesUsed).toBe(25);
-      expect(result.usage.entriesLimit).toBe(100);
+      expect(result.usage.entriesLimit).toBe(Infinity);
       expect(result.usage.modelUsage).toEqual({ 'gpt-4': 10 });
     });
 
@@ -441,7 +441,7 @@ describe('subscription-service', () => {
         .mockResolvedValueOnce({
           exists: vi.fn(() => true),
           data: vi.fn(() => ({
-            plan: 'basic',
+            plan: 'supporter',
             status: 'active',
             stripeSubscriptionId: 'sub_123',
             createdAt: mockDate,
@@ -452,14 +452,14 @@ describe('subscription-service', () => {
 
       const result = await getSubscriptionWithUsage('user123');
 
-      expect(result.plan).toBe('basic');
+      expect(result.plan).toBe('supporter');
       expect(result.usage.entriesUsed).toBe(0);
-      expect(result.usage.entriesLimit).toBe(100);
+      expect(result.usage.entriesLimit).toBe(Infinity);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Failed to fetch usage stats from Firestore',
         expect.objectContaining({
           userId: 'user123',
-          plan: 'basic',
+          plan: 'supporter',
           error: 'Firestore error',
         })
       );
@@ -478,7 +478,7 @@ describe('subscription-service', () => {
         .mockResolvedValueOnce({
           exists: vi.fn(() => true),
           data: vi.fn(() => ({
-            plan: 'basic',
+            plan: 'supporter',
             status: 'active',
             stripeSubscriptionId: 'sub_123',
             createdAt: mockDate,
@@ -489,14 +489,14 @@ describe('subscription-service', () => {
 
       const result = await getSubscriptionWithUsage('user123');
 
-      expect(result.plan).toBe('basic');
+      expect(result.plan).toBe('supporter');
       expect(result.usage.entriesUsed).toBe(0);
-      expect(result.usage.entriesLimit).toBe(100);
+      expect(result.usage.entriesLimit).toBe(Infinity);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Failed to fetch usage stats from Firestore',
         expect.objectContaining({
           userId: 'user123',
-          plan: 'basic',
+          plan: 'supporter',
           error: 'String error',
         })
       );
@@ -509,7 +509,6 @@ describe('subscription-service', () => {
     it('should return true for valid plan IDs', () => {
       expect(validatePlanId('free')).toBe(true);
       expect(validatePlanId('supporter')).toBe(true);
-      expect(validatePlanId('basic')).toBe(true);
       expect(validatePlanId('pro')).toBe(true);
     });
 

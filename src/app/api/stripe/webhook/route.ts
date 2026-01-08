@@ -31,12 +31,12 @@ function mapStripeStatusToSubscriptionStatus(stripeStatus: string): Subscription
 function mapStripePlanToSubscriptionPlan(_priceId: string, metadata?: Stripe.Metadata): SubscriptionPlan {
   if (metadata?.planId) {
     const planId = metadata.planId;
-    if (planId === 'basic' || planId === 'pro') {
+    if (planId === 'supporter' || planId === 'pro') {
       return planId;
     }
   }
 
-  return 'basic';
+  return 'free';
 }
 
 function mapStripeBillingCycle(interval: string | null | undefined): BillingCycle | null {

@@ -27,22 +27,22 @@ describe('BillingPage', () => {
 
   it('should show loading state initially', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: true,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -53,36 +53,36 @@ describe('BillingPage', () => {
 
   it('should fetch and display plans', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     const mockPlans = [
       {
-        id: 'basic' as const,
-        name: 'Basic',
+        id: 'supporter' as const,
+        name: 'Supporter',
         price: {
-          monthly: 999,
-          annual: 9999,
-          monthlyFormatted: '$9.99',
-          annualFormatted: '$99.99',
-          annualSavings: 1989,
-          annualSavingsFormatted: '$19.89',
+          monthly: 299,
+          annual: 2999,
+          monthlyFormatted: '$2.99',
+          annualFormatted: '$29.99',
+          annualSavings: 589,
+          annualSavingsFormatted: '$5.89',
           savingsPercent: 17,
         },
         currency: 'USD' as const,
@@ -123,8 +123,8 @@ describe('BillingPage', () => {
     });
 
     await waitFor(() => {
-      const basicElements = screen.getAllByText('subscription.basic');
-      expect(basicElements.length).toBeGreaterThan(0);
+      const supporterElements = screen.getAllByText('subscription.supporter');
+      expect(supporterElements.length).toBeGreaterThan(0);
     });
 
     await waitFor(() => {
@@ -135,22 +135,22 @@ describe('BillingPage', () => {
 
   it('should handle plans API error', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -171,22 +171,22 @@ describe('BillingPage', () => {
 
   it('should call checkout API when upgrade is clicked', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -253,28 +253,28 @@ describe('BillingPage', () => {
 
   it('should display current subscription section', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: {
         entriesUsed: 50,
-        entriesLimit: 100,
+        entriesLimit: Infinity,
         lastResetDate: new Date(),
         nextResetDate: new Date(),
         modelUsage: {},
       },
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -302,18 +302,18 @@ describe('BillingPage', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 

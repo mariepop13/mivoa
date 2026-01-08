@@ -6,9 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
-import { PLAN_PRICING, PLAN_FEATURES } from '@/lib/subscription/constants';
+import { PLAN_PRICING, BASE_FEATURES, SUPPORTER_ADDITIONAL_FEATURES, PRO_ADDITIONAL_FEATURES } from '@/lib/subscription/constants';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
 import { cn } from '@/lib/utils';
+
+interface FeatureDisplayItem {
+  type: 'base' | 'includes' | 'feature';
+  content?: string;
+  planName?: string;
+}
 
 interface PricingCardProps {
   plan: SubscriptionPlan;
@@ -29,6 +35,28 @@ function getPlanName(plan: SubscriptionPlan, t: (key: string) => string): string
   return t(`subscription.${plan}`);
 }
 
+function getFeaturesForDisplay(plan: SubscriptionPlan, t: (key: string) => string): FeatureDisplayItem[] {
+  const items: FeatureDisplayItem[] = [];
+
+  if (plan === 'free') {
+    BASE_FEATURES.forEach((feature) => {
+      items.push({ type: 'feature', content: feature });
+    });
+  } else if (plan === 'supporter') {
+    items.push({ type: 'includes', planName: t('subscription.free') });
+    SUPPORTER_ADDITIONAL_FEATURES.forEach((feature) => {
+      items.push({ type: 'feature', content: feature });
+    });
+  } else if (plan === 'pro') {
+    items.push({ type: 'includes', planName: t('subscription.supporter') });
+    PRO_ADDITIONAL_FEATURES.forEach((feature) => {
+      items.push({ type: 'feature', content: feature });
+    });
+  }
+
+  return items;
+}
+
 export function PricingCard({
   plan,
   currency = 'USD',
@@ -39,7 +67,7 @@ export function PricingCard({
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
   const pricing = PLAN_PRICING[plan];
-  const features = PLAN_FEATURES[plan];
+  const featuresForDisplay = getFeaturesForDisplay(plan, t);
   const monthlyPrice = pricing.monthly[currency];
   const annualPrice = pricing.annual[currency];
   const annualSavings = monthlyPrice * 12 - annualPrice;
@@ -72,7 +100,11 @@ export function PricingCard({
       <CardHeader>
         <CardTitle className="text-2xl">{getPlanName(plan, t)}</CardTitle>
         <CardDescription>
-          {isFree ? t('subscription.freePlanDescription') : t('subscription.paidPlanDescription')}
+          {isFree
+            ? t('subscription.freePlanDescription')
+            : plan === 'supporter'
+              ? t('subscription.supporterPlanDescription')
+              : t('subscription.paidPlanDescription')}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 space-y-4">
@@ -118,12 +150,23 @@ export function PricingCard({
           )}
         </div>
         <ul className="space-y-2">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <span className="text-sm">{t(`subscription.features.${feature}`)}</span>
-            </li>
-          ))}
+          {featuresForDisplay.map((item, index) => {
+            if (item.type === 'includes') {
+              return (
+                <li key={index} className="flex items-start gap-2 pt-2 border-t border-border">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {t('subscription.features.includesAllFrom').replace('{plan}', item.planName || '')}
+                  </span>
+                </li>
+              );
+            }
+            return (
+              <li key={index} className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm">{t(`subscription.features.${item.content}`)}</span>
+              </li>
+            );
+          })}
         </ul>
       </CardContent>
       <CardFooter>

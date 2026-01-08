@@ -15,7 +15,7 @@ describe('checkout-helpers', () => {
   describe('validateCheckoutRequest', () => {
     it('should return error when user is not authenticated', () => {
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'monthly' },
+        { planId: 'supporter', billingCycle: 'monthly' },
         null
       );
 
@@ -35,7 +35,7 @@ describe('checkout-helpers', () => {
 
     it('should return error when billingCycle is missing', () => {
       const result = validateCheckoutRequest(
-        { planId: 'basic' } as any,
+        { planId: 'supporter' } as any,
         'user-id'
       );
 
@@ -50,12 +50,12 @@ describe('checkout-helpers', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid planId. Must be "basic" or "pro"');
+      expect(result.error).toBe('Invalid planId. Must be "supporter" or "pro"');
     });
 
     it('should return error when billingCycle is invalid', () => {
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'invalid' },
+        { planId: 'supporter', billingCycle: 'invalid' },
         'user-id'
       );
 
@@ -65,7 +65,7 @@ describe('checkout-helpers', () => {
 
     it('should return error when currency is invalid', () => {
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'monthly', currency: 'EUR' },
+        { planId: 'supporter', billingCycle: 'monthly', currency: 'EUR' },
         'user-id'
       );
 
@@ -73,17 +73,17 @@ describe('checkout-helpers', () => {
       expect(result.error).toBe('Invalid currency. Must be "USD" or "CAD"');
     });
 
-    it('should return success with priceId for valid basic monthly USD request', () => {
-      vi.mocked(getStripePriceId).mockReturnValue('price_basic_monthly_usd');
+    it('should return success with priceId for valid supporter monthly USD request', () => {
+      vi.mocked(getStripePriceId).mockReturnValue('price_supporter_monthly_usd');
 
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'monthly', currency: 'USD' },
+        { planId: 'supporter', billingCycle: 'monthly', currency: 'USD' },
         'user-id'
       );
 
       expect(result.success).toBe(true);
-      expect(result.priceId).toBe('price_basic_monthly_usd');
-      expect(result.planId).toBe('basic');
+      expect(result.priceId).toBe('price_supporter_monthly_usd');
+      expect(result.planId).toBe('supporter');
       expect(result.billingCycle).toBe('monthly');
       expect(result.currency).toBe('USD');
     });
@@ -104,10 +104,10 @@ describe('checkout-helpers', () => {
     });
 
     it('should default to USD when currency is not provided', () => {
-      vi.mocked(getStripePriceId).mockReturnValue('price_basic_monthly_usd');
+      vi.mocked(getStripePriceId).mockReturnValue('price_supporter_monthly_usd');
 
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'monthly' },
+        { planId: 'supporter', billingCycle: 'monthly' },
         'user-id'
       );
 
@@ -121,7 +121,7 @@ describe('checkout-helpers', () => {
       });
 
       const result = validateCheckoutRequest(
-        { planId: 'basic', billingCycle: 'monthly' },
+        { planId: 'supporter', billingCycle: 'monthly' },
         'user-id'
       );
 
@@ -158,7 +158,7 @@ describe('checkout-helpers', () => {
         customer: mockCustomer,
         priceId: 'price_test',
         userId: 'user-id',
-        planId: 'basic',
+        planId: 'supporter',
         billingCycle: 'monthly',
         origin: 'http://localhost:3000',
       });
@@ -177,13 +177,13 @@ describe('checkout-helpers', () => {
         cancel_url: 'http://localhost:3000/subscription/cancel',
         metadata: {
           userId: 'user-id',
-          planId: 'basic',
+          planId: 'supporter',
           billingCycle: 'monthly',
         },
         subscription_data: {
           metadata: {
             userId: 'user-id',
-            planId: 'basic',
+            planId: 'supporter',
           },
         },
       });
@@ -208,7 +208,7 @@ describe('checkout-helpers', () => {
           customer: mockCustomer,
           priceId: 'price_test',
           userId: 'user-id',
-          planId: 'basic',
+          planId: 'supporter',
           billingCycle: 'monthly',
           origin: 'http://localhost:3000',
         })

@@ -22,64 +22,34 @@ describe('UsageIndicator', () => {
 
   it('should render usage information', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: {
         entriesUsed: 50,
-        entriesLimit: 100,
+        entriesLimit: Infinity,
         lastResetDate: new Date(),
         nextResetDate: new Date(),
         modelUsage: {},
       },
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     render(<UsageIndicator />);
     expect(screen.getByText('subscription.usage')).toBeInTheDocument();
-  });
-
-  it('should show warning when usage exceeds 80%', () => {
-    vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
-      status: 'active',
-      usage: {
-        entriesUsed: 85,
-        entriesLimit: 100,
-        lastResetDate: new Date(),
-        nextResetDate: new Date(),
-        modelUsage: {},
-      },
-      limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
-        customTemplates: false,
-      },
-      isLoading: false,
-      error: null,
-      refreshSubscription: vi.fn(),
-      isPremium: false,
-      isBasic: true,
-      isPro: false,
-    });
-
-    render(<UsageIndicator />);
-    expect(screen.getByText('subscription.usageWarning')).toBeInTheDocument();
+    expect(screen.getByText('subscription.unlimitedEntries')).toBeInTheDocument();
   });
 
   it('should show unlimited for pro plan', () => {
@@ -94,23 +64,23 @@ describe('UsageIndicator', () => {
         modelUsage: {},
       },
       limits: {
-        entriesPerMonth: -1,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'high',
         advancedAnalysis: true,
+        multiEntryAnalysis: true,
+        periodSummary: true,
+        exportPDF: true,
+        exportBackup: true,
         customTemplates: true,
+        semanticSearch: true,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: true,
-      isBasic: false,
       isPro: true,
     });
 
     render(<UsageIndicator />);
-    expect(screen.getByText('subscription.unlimited')).toBeInTheDocument();
+    expect(screen.getByText('subscription.unlimitedEntries')).toBeInTheDocument();
   });
 
   it('should return null when usage is not available', () => {
@@ -119,18 +89,18 @@ describe('UsageIndicator', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 

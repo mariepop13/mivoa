@@ -31,18 +31,18 @@ describe('ManageSubscriptionButton', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -52,22 +52,22 @@ describe('ManageSubscriptionButton', () => {
 
   it('should show loading state when subscription is loading', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: true,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -77,22 +77,22 @@ describe('ManageSubscriptionButton', () => {
 
   it('should call portal API and redirect on success', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -120,22 +120,22 @@ describe('ManageSubscriptionButton', () => {
 
   it('should show error message on API failure', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -158,22 +158,22 @@ describe('ManageSubscriptionButton', () => {
 
   it('should show loading state during portal creation', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
@@ -200,22 +200,22 @@ describe('ManageSubscriptionButton', () => {
 
   it('should handle network errors', async () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 

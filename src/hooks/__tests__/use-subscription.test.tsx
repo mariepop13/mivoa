@@ -68,7 +68,6 @@ describe('useSubscription', () => {
     expect(result.current.error).toBeDefined();
     expect(result.current.refreshSubscription).toBeDefined();
     expect(result.current.isPremium).toBeDefined();
-    expect(result.current.isBasic).toBeDefined();
     expect(result.current.isPro).toBeDefined();
   });
 
@@ -77,9 +76,8 @@ describe('useSubscription', () => {
 
     expect(result.current.plan).toBe('free');
     expect(result.current.status).toBe('free');
-    expect(result.current.limits.entriesPerMonth).toBe(10);
+    expect(result.current.limits.advancedAnalysis).toBe(false);
     expect(result.current.isPremium).toBe(false);
-    expect(result.current.isBasic).toBe(false);
     expect(result.current.isPro).toBe(false);
   });
 
@@ -92,7 +90,6 @@ describe('useSubscription', () => {
     expect(typeof subscription.status).toBe('string');
     expect(typeof subscription.isLoading).toBe('boolean');
     expect(typeof subscription.isPremium).toBe('boolean');
-    expect(typeof subscription.isBasic).toBe('boolean');
     expect(typeof subscription.isPro).toBe('boolean');
     expect(typeof subscription.refreshSubscription).toBe('function');
   });

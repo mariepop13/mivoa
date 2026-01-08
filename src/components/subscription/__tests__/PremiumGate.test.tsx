@@ -26,18 +26,18 @@ describe('PremiumGate', () => {
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: -1,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'high',
         advancedAnalysis: true,
+        multiEntryAnalysis: true,
+        periodSummary: true,
+        exportPDF: true,
+        exportBackup: true,
         customTemplates: true,
+        semanticSearch: true,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: true,
-      isBasic: false,
       isPro: true,
     });
 
@@ -56,18 +56,18 @@ describe('PremiumGate', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -87,18 +87,18 @@ describe('PremiumGate', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -112,34 +112,34 @@ describe('PremiumGate', () => {
     expect(screen.queryByText('Premium Content')).not.toBeInTheDocument();
   });
 
-  it('should allow basic plan access to basic features', () => {
+  it('should allow supporter plan access to pro features (no longer exists)', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     render(
-      <PremiumGate requiredPlan="basic">
-        <div>Basic Content</div>
+      <PremiumGate requiredPlan="pro">
+        <div>Pro Content</div>
       </PremiumGate>
     );
 
-    expect(screen.getByText('Basic Content')).toBeInTheDocument();
+    expect(screen.queryByText('Pro Content')).not.toBeInTheDocument();
   });
 
   it('should show fallback when loading', () => {
@@ -148,18 +148,18 @@ describe('PremiumGate', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: true,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 
@@ -172,34 +172,34 @@ describe('PremiumGate', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('should allow pro plan access to basic features', () => {
+  it('should allow pro plan access to pro features', () => {
     vi.mocked(useSubscription).mockReturnValue({
       plan: 'pro',
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: -1,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'high',
         advancedAnalysis: true,
+        multiEntryAnalysis: true,
+        periodSummary: true,
+        exportPDF: true,
+        exportBackup: true,
         customTemplates: true,
+        semanticSearch: true,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: true,
-      isBasic: false,
       isPro: true,
     });
 
     render(
-      <PremiumGate requiredPlan="basic">
-        <div>Basic Content</div>
+      <PremiumGate requiredPlan="pro">
+        <div>Pro Content</div>
       </PremiumGate>
     );
 
-    expect(screen.getByText('Basic Content')).toBeInTheDocument();
+    expect(screen.getByText('Pro Content')).toBeInTheDocument();
   });
 
   it('should allow free plan access to free features', () => {
@@ -208,18 +208,18 @@ describe('PremiumGate', () => {
       status: 'free',
       usage: null,
       limits: {
-        entriesPerMonth: 10,
-        modelsAccess: [],
-        exportEnabled: false,
-        exportResolution: 'standard',
         advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: false,
       isPro: false,
     });
 

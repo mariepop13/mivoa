@@ -48,7 +48,15 @@ vi.mock('../use-subscription', () => ({
   useSubscription: vi.fn(() => ({
     plan: 'free',
     usage: { entriesUsed: 0 },
-    limits: { entriesPerMonth: 10 },
+    limits: {
+      advancedAnalysis: false,
+      multiEntryAnalysis: false,
+      periodSummary: false,
+      exportPDF: false,
+      exportBackup: false,
+      customTemplates: false,
+      semanticSearch: false,
+    },
     isLoading: false,
   })),
 }));

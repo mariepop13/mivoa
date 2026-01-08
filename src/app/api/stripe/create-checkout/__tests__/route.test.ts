@@ -27,7 +27,7 @@ describe('create-checkout route', () => {
   it('should return 401 when user is not authenticated', async () => {
     vi.mocked(requireAuthenticatedUserId).mockRejectedValue(new Error('Unauthorized'));
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -49,7 +49,7 @@ describe('create-checkout route', () => {
   it('should return 400 when billingCycle is missing', async () => {
     vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
 
-    const request = createRequest({ planId: 'basic' });
+    const request = createRequest({ planId: 'supporter' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -71,7 +71,7 @@ describe('create-checkout route', () => {
   it('should return 400 when billingCycle is invalid', async () => {
     vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'invalid' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'invalid' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -82,7 +82,7 @@ describe('create-checkout route', () => {
   it('should return 400 when currency is invalid', async () => {
     vi.mocked(requireAuthenticatedUserId).mockResolvedValue('user-id');
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly', currency: 'EUR' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly', currency: 'EUR' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -110,7 +110,7 @@ describe('create-checkout route', () => {
     };
     vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly', currency: 'USD' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly', currency: 'USD' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -122,7 +122,7 @@ describe('create-checkout route', () => {
         mode: 'subscription',
         metadata: expect.objectContaining({
           userId: 'user-id',
-          planId: 'basic',
+          planId: 'supporter',
           billingCycle: 'monthly',
         }),
       })
@@ -176,7 +176,7 @@ describe('create-checkout route', () => {
     };
     vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -190,7 +190,7 @@ describe('create-checkout route', () => {
       getUser: vi.fn().mockRejectedValue(new Error('Database error')),
     } as any);
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly' });
     const response = await POST(request);
     const data = await response.json();
 
@@ -219,7 +219,7 @@ describe('create-checkout route', () => {
     };
     vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'monthly' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'monthly' });
     await POST(request);
 
     expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
@@ -277,11 +277,11 @@ describe('create-checkout route', () => {
     };
     vi.mocked(getStripeClient).mockReturnValue(mockStripe as any);
 
-    const request = createRequest({ planId: 'basic', billingCycle: 'annual', currency: 'usd' });
+    const request = createRequest({ planId: 'supporter', billingCycle: 'annual', currency: 'usd' });
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    expect(getStripePriceId).toHaveBeenCalledWith('basic', 'annual', 'USD');
+    expect(getStripePriceId).toHaveBeenCalledWith('supporter', 'annual', 'USD');
   });
 });
 

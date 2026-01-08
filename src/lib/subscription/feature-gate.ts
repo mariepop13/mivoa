@@ -1,76 +1,53 @@
 import type { SubscriptionPlan, PlanLimits, SupporterCosmetics } from './types';
-import { PLAN_LIMITS, UNLIMITED_ENTRIES, SUPPORTER_ACCENT_COLORS } from './constants';
-import type { OpenRouterModel } from '@/ai/types/model';
+import { PLAN_LIMITS, SUPPORTER_ACCENT_COLORS } from './constants';
 
 export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
   return PLAN_LIMITS[plan];
 }
 
-export function canUseModel(plan: SubscriptionPlan, modelId: string): boolean {
+export function canUseAdvancedAnalysis(plan: SubscriptionPlan): boolean {
   const limits = getPlanLimits(plan);
-  return limits.modelsAccess.includes(modelId);
+  return limits.advancedAnalysis;
 }
 
-export function canExport(plan: SubscriptionPlan): boolean {
+export function canUseMultiEntryAnalysis(plan: SubscriptionPlan): boolean {
   const limits = getPlanLimits(plan);
-  return limits.exportEnabled;
+  return limits.multiEntryAnalysis;
 }
 
-export function canCreateEntry(
-  plan: SubscriptionPlan,
-  entriesUsed: number,
-  limit: number
-): boolean {
-  if (limit === UNLIMITED_ENTRIES || limit === Infinity) {
-    return true;
-  }
-  return entriesUsed < limit;
-}
-
-export function getAnalysisLevel(plan: SubscriptionPlan): 'basic' | 'enhanced' | 'full' {
-  switch (plan) {
-    case 'free':
-    case 'supporter':
-      return 'basic';
-    case 'basic':
-      return 'enhanced';
-    case 'pro':
-      return 'full';
-    default:
-      return 'basic';
-  }
-}
-
-export function filterAvailableModels(
-  plan: SubscriptionPlan,
-  models: OpenRouterModel[]
-): OpenRouterModel[] {
+export function canUsePeriodSummary(plan: SubscriptionPlan): boolean {
   const limits = getPlanLimits(plan);
-  return models.filter((model) => limits.modelsAccess.includes(model.id));
+  return limits.periodSummary;
 }
 
-export function isLimitReached(usage: number, limit: number): boolean {
-  return usage >= limit;
-}
-
-export function getMaxResolution(plan: SubscriptionPlan): 'standard' | 'high' {
+export function canExportPDF(plan: SubscriptionPlan): boolean {
   const limits = getPlanLimits(plan);
-  return limits.exportResolution;
+  return limits.exportPDF;
 }
 
-export type FeatureLevel = 'basic' | 'intermediate' | 'advanced';
+export function canExportBackup(plan: SubscriptionPlan): boolean {
+  const limits = getPlanLimits(plan);
+  return limits.exportBackup;
+}
+
+export function canUseCustomTemplates(plan: SubscriptionPlan): boolean {
+  const limits = getPlanLimits(plan);
+  return limits.customTemplates;
+}
+
+export function canUseSemanticSearch(plan: SubscriptionPlan): boolean {
+  const limits = getPlanLimits(plan);
+  return limits.semanticSearch;
+}
+
+export function getAnalysisLevel(plan: SubscriptionPlan): 'basic' | 'full' {
+  return canUseAdvancedAnalysis(plan) ? 'full' : 'basic';
+}
+
+export type FeatureLevel = 'basic' | 'advanced';
 
 export function getFeatureLevel(plan: SubscriptionPlan): FeatureLevel {
-  switch (plan) {
-    case 'pro':
-      return 'advanced';
-    case 'basic':
-      return 'intermediate';
-    case 'free':
-    case 'supporter':
-    default:
-      return 'basic';
-  }
+  return plan === 'pro' ? 'advanced' : 'basic';
 }
 
 export function hasSupporterBadge(plan: SubscriptionPlan): boolean {
