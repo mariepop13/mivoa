@@ -70,19 +70,19 @@ export const PLAN_PRICING: Record<
   },
 };
 
-const BASE_FEATURES: string[] = [
+export const BASE_FEATURES: string[] = [
   'UnlimitedEntries',
   'AllAIModels',
   'BasicAnalysis',
   'DefaultTemplates',
 ];
 
-const SUPPORTER_ADDITIONAL_FEATURES: string[] = [
+export const SUPPORTER_ADDITIONAL_FEATURES: string[] = [
   'SupporterBadge',
   'ExclusiveAccentColors',
 ];
 
-const PRO_ADDITIONAL_FEATURES: string[] = [
+export const PRO_ADDITIONAL_FEATURES: string[] = [
   'AdvancedAnalysis',
   'MultiEntryAnalysis',
   'PeriodSummary',
@@ -162,21 +162,17 @@ function getPriceIdEnvKey(plan: 'supporter' | 'pro', cycle: 'monthly' | 'annual'
 }
 
 function validateAllPriceIdEnvVars(): void {
-  const missing: string[] = [];
   const plans: ('supporter' | 'pro')[] = ['supporter', 'pro'];
   const cycles: ('monthly' | 'annual')[] = ['monthly', 'annual'];
   const currencies: ('USD' | 'CAD')[] = ['USD', 'CAD'];
 
-  for (const plan of plans) {
-    for (const cycle of cycles) {
-      for (const currency of currencies) {
-        const envKey = getPriceIdEnvKey(plan, cycle, currency);
-        if (!process.env[envKey]) {
-          missing.push(envKey);
-        }
-      }
-    }
-  }
+  const missing = plans.flatMap((plan) =>
+    cycles.flatMap((cycle) =>
+      currencies
+        .map((currency) => getPriceIdEnvKey(plan, cycle, currency))
+        .filter((envKey) => !process.env[envKey])
+    )
+  );
 
   if (missing.length > 0) {
     throw new Error(

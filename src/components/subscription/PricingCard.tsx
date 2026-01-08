@@ -6,32 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
-import { PLAN_PRICING } from '@/lib/subscription/constants';
+import { PLAN_PRICING, BASE_FEATURES, SUPPORTER_ADDITIONAL_FEATURES, PRO_ADDITIONAL_FEATURES } from '@/lib/subscription/constants';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
 import { cn } from '@/lib/utils';
-
-const BASE_FEATURES: string[] = [
-  'UnlimitedEntries',
-  'AllAIModels',
-  'BasicAnalysis',
-  'DefaultTemplates',
-];
-
-const SUPPORTER_ADDITIONAL_FEATURES: string[] = [
-  'SupporterBadge',
-  'ExclusiveAccentColors',
-];
-
-const PRO_ADDITIONAL_FEATURES: string[] = [
-  'AdvancedAnalysis',
-  'MultiEntryAnalysis',
-  'PeriodSummary',
-  'ExportPDF',
-  'ExportBackup',
-  'CustomTemplates',
-  'SemanticSearch',
-  'PrioritySupport',
-];
 
 interface FeatureDisplayItem {
   type: 'base' | 'includes' | 'feature';
