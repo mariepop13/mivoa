@@ -3,7 +3,6 @@
 import { useMemo, useCallback } from 'react';
 import { useUser } from '@/firebase';
 import { useSubscription } from './use-subscription';
-import { canCreateEntry } from '@/lib/subscription/feature-gate';
 import { incrementEntryUsage, checkAndResetIfNeeded } from '@/lib/subscription/usage-tracker';
 
 export interface UseSubscriptionLimitsReturn {
@@ -17,31 +16,22 @@ export interface UseSubscriptionLimitsReturn {
 
 export function useSubscriptionLimits(): UseSubscriptionLimitsReturn {
   const { user } = useUser();
-  const { plan, usage, limits, isLoading } = useSubscription();
+  const { usage, isLoading } = useSubscription();
 
   const entriesUsed = usage?.entriesUsed ?? 0;
-  const entriesLimit = limits.entriesPerMonth === -1 ? Infinity : limits.entriesPerMonth;
+  const entriesLimit = Infinity;
 
   const canCreate = useMemo(() => {
-    if (isLoading || !usage) {
+    if (isLoading) {
       return false;
     }
-    return canCreateEntry(plan, entriesUsed, limits.entriesPerMonth);
-  }, [plan, entriesUsed, limits.entriesPerMonth, isLoading, usage]);
+    return true;
+  }, [isLoading]);
 
-  const entriesRemaining = useMemo(() => {
-    if (entriesLimit === Infinity) {
-      return Infinity;
-    }
-    return Math.max(0, entriesLimit - entriesUsed);
-  }, [entriesLimit, entriesUsed]);
+  const entriesRemaining = Infinity;
 
   const checkBeforeCreate = useCallback(async (): Promise<boolean> => {
     if (!user) {
-      return false;
-    }
-
-    if (!canCreate) {
       return false;
     }
 
@@ -57,7 +47,7 @@ export function useSubscriptionLimits(): UseSubscriptionLimitsReturn {
       console.error('Failed to track entry usage:', error);
       return false;
     }
-  }, [user, canCreate, usage]);
+  }, [user, usage]);
 
   return {
     canCreateEntry: canCreate,

@@ -16,7 +16,15 @@ vi.mock('../use-subscription', () => ({
   useSubscription: vi.fn(() => ({
     plan: 'free',
     usage: { entriesUsed: 0 },
-    limits: { entriesPerMonth: 10 },
+    limits: {
+      advancedAnalysis: false,
+      multiEntryAnalysis: false,
+      periodSummary: false,
+      exportPDF: false,
+      exportBackup: false,
+      customTemplates: false,
+      semanticSearch: false,
+    },
     isLoading: false,
   })),
 }));
@@ -24,9 +32,9 @@ vi.mock('../use-subscription-limits', () => ({
   useSubscriptionLimits: vi.fn(() => ({
     canCreateEntry: true,
     checkBeforeCreate: vi.fn().mockResolvedValue(true),
-    entriesRemaining: 10,
+    entriesRemaining: Infinity,
     entriesUsed: 0,
-    entriesLimit: 10,
+    entriesLimit: Infinity,
     isLoading: false,
   })),
 }));
