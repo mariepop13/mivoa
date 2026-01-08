@@ -53,7 +53,7 @@ export function validateCheckoutRequest(
   if (!validatePlanId(body.planId)) {
     return {
       success: false,
-      error: 'Invalid planId. Must be "basic" or "pro"',
+      error: 'Invalid planId. Must be "supporter" or "pro"',
     };
   }
 
@@ -75,7 +75,7 @@ export function validateCheckoutRequest(
 
   try {
     const priceId = getStripePriceId(
-      body.planId as 'basic' | 'pro',
+      body.planId as 'supporter' | 'pro',
       body.billingCycle as BillingCycle,
       validCurrency
     );

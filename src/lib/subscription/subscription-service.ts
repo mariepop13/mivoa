@@ -7,7 +7,7 @@ import type {
   SubscriptionWithUsage,
   UsageStats,
 } from './types';
-import { SUBSCRIPTION_PLANS, UNLIMITED_ENTRIES } from './constants';
+import { SUBSCRIPTION_PLANS } from './constants';
 import { getPlanLimits } from './feature-gate';
 
 const FIRESTORE_SUBSCRIPTION_PATH = 'subscription/status';
@@ -125,11 +125,11 @@ export async function getSubscriptionWithUsage(
   };
 }
 
-function buildDefaultUsageStats(entriesPerMonth: number): UsageStats {
+function buildDefaultUsageStats(): UsageStats {
   const { lastResetDate, nextResetDate } = calculateUsageResetDate(null);
   return {
     entriesUsed: 0,
-    entriesLimit: entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : entriesPerMonth,
+    entriesLimit: Infinity,
     lastResetDate,
     nextResetDate,
     modelUsage: {},
@@ -137,8 +137,7 @@ function buildDefaultUsageStats(entriesPerMonth: number): UsageStats {
 }
 
 function buildUsageStatsFromData(
-  data: Record<string, unknown>,
-  entriesPerMonth: number
+  data: Record<string, unknown>
 ): UsageStats {
   const lastResetDateField = data.lastResetDate as { toDate?: () => Date } | undefined;
   const lastReset = lastResetDateField?.toDate?.() || null;
@@ -146,7 +145,7 @@ function buildUsageStatsFromData(
 
   return {
     entriesUsed: (data.entriesUsed as number | undefined) || 0,
-    entriesLimit: entriesPerMonth === UNLIMITED_ENTRIES ? Infinity : entriesPerMonth,
+    entriesLimit: Infinity,
     lastResetDate,
     nextResetDate,
     modelUsage: (data.modelUsage as Record<string, number> | undefined) || {},
@@ -172,20 +171,19 @@ async function getUsageStats(
 ): Promise<UsageStats> {
   const { firestore } = initializeFirebase();
   const usageRef = doc(firestore, `users/${userId}/subscription/usage`);
-  const limits = getPlanLimits(plan);
 
   try {
     const usageSnap = await getDoc(usageRef);
     const data = usageSnap.data();
 
     if (!data) {
-      return buildDefaultUsageStats(limits.entriesPerMonth);
+      return buildDefaultUsageStats();
     }
 
-    return buildUsageStatsFromData(data, limits.entriesPerMonth);
+    return buildUsageStatsFromData(data);
   } catch (error) {
     logUsageStatsFetchError(userId, plan, error);
-    return buildDefaultUsageStats(limits.entriesPerMonth);
+    return buildDefaultUsageStats();
   }
 }
 
