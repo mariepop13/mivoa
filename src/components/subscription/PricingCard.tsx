@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
-import { PLAN_PRICING, PLAN_FEATURES } from '@/lib/subscription/constants';
+import { PLAN_PRICING } from '@/lib/subscription/constants';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
 import { cn } from '@/lib/utils';
 

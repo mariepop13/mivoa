@@ -107,6 +107,8 @@ export function getPlanFeaturesForDisplay(plan: SubscriptionPlan): string[] {
       return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES];
     case 'pro':
       return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES];
+    default:
+      return BASE_FEATURES;
   }
 }
 
