@@ -5,7 +5,6 @@ import {
   PLAN_PRICING,
   PLAN_FEATURES,
   STRIPE_PRICE_ID_ENV_VARS,
-  UNLIMITED_ENTRIES,
   getPriceId,
   getPlanLimitsWithCache,
 } from '../constants';
@@ -15,9 +14,8 @@ describe('subscription constants', () => {
     it('should contain all plan types', () => {
       expect(SUBSCRIPTION_PLANS).toContain('free');
       expect(SUBSCRIPTION_PLANS).toContain('supporter');
-      expect(SUBSCRIPTION_PLANS).toContain('basic');
       expect(SUBSCRIPTION_PLANS).toContain('pro');
-      expect(SUBSCRIPTION_PLANS.length).toBe(4);
+      expect(SUBSCRIPTION_PLANS.length).toBe(3);
     });
   });
 
@@ -25,46 +23,56 @@ describe('subscription constants', () => {
     it('should define limits for all plans', () => {
       SUBSCRIPTION_PLANS.forEach((plan) => {
         expect(PLAN_LIMITS[plan]).toBeDefined();
-        expect(PLAN_LIMITS[plan].entriesPerMonth).toBeDefined();
-        expect(PLAN_LIMITS[plan].modelsAccess).toBeInstanceOf(Array);
-        expect(typeof PLAN_LIMITS[plan].exportEnabled).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].advancedAnalysis).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].multiEntryAnalysis).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].periodSummary).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].exportPDF).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].exportBackup).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].customTemplates).toBe('boolean');
+        expect(typeof PLAN_LIMITS[plan].semanticSearch).toBe('boolean');
       });
     });
 
-    it('should have increasing limits from free to pro', () => {
-      expect(PLAN_LIMITS.free.entriesPerMonth).toBeLessThan(
-        PLAN_LIMITS.basic.entriesPerMonth
-      );
-      expect(PLAN_LIMITS.pro.entriesPerMonth).toBe(UNLIMITED_ENTRIES);
+    it('should have free and supporter plans with no Pro features', () => {
+      expect(PLAN_LIMITS.free.advancedAnalysis).toBe(false);
+      expect(PLAN_LIMITS.free.multiEntryAnalysis).toBe(false);
+      expect(PLAN_LIMITS.free.exportPDF).toBe(false);
+      expect(PLAN_LIMITS.supporter.advancedAnalysis).toBe(false);
+      expect(PLAN_LIMITS.supporter.multiEntryAnalysis).toBe(false);
+      expect(PLAN_LIMITS.supporter.exportPDF).toBe(false);
     });
 
-    it('should have more models for higher tiers', () => {
-      expect(PLAN_LIMITS.free.modelsAccess.length).toBeLessThan(
-        PLAN_LIMITS.basic.modelsAccess.length
-      );
-      expect(PLAN_LIMITS.basic.modelsAccess.length).toBeLessThanOrEqual(
-        PLAN_LIMITS.pro.modelsAccess.length
-      );
+    it('should have pro plan with all features enabled', () => {
+      expect(PLAN_LIMITS.pro.advancedAnalysis).toBe(true);
+      expect(PLAN_LIMITS.pro.multiEntryAnalysis).toBe(true);
+      expect(PLAN_LIMITS.pro.periodSummary).toBe(true);
+      expect(PLAN_LIMITS.pro.exportPDF).toBe(true);
+      expect(PLAN_LIMITS.pro.exportBackup).toBe(true);
+      expect(PLAN_LIMITS.pro.customTemplates).toBe(true);
+      expect(PLAN_LIMITS.pro.semanticSearch).toBe(true);
     });
   });
 
   describe('getPlanLimitsWithCache', () => {
     it('should return limits for free plan', () => {
       const limits = getPlanLimitsWithCache('free');
-      expect(limits.entriesPerMonth).toBe(10);
-      expect(limits.exportEnabled).toBe(false);
+      expect(limits.advancedAnalysis).toBe(false);
+      expect(limits.exportPDF).toBe(false);
+      expect(limits.customTemplates).toBe(false);
     });
 
-    it('should return limits for basic plan', () => {
-      const limits = getPlanLimitsWithCache('basic');
-      expect(limits.entriesPerMonth).toBe(100);
-      expect(limits.exportEnabled).toBe(true);
+    it('should return limits for supporter plan', () => {
+      const limits = getPlanLimitsWithCache('supporter');
+      expect(limits.advancedAnalysis).toBe(false);
+      expect(limits.exportPDF).toBe(false);
+      expect(limits.customTemplates).toBe(false);
     });
 
     it('should return limits for pro plan', () => {
       const limits = getPlanLimitsWithCache('pro');
-      expect(limits.entriesPerMonth).toBe(UNLIMITED_ENTRIES);
-      expect(limits.exportEnabled).toBe(true);
+      expect(limits.advancedAnalysis).toBe(true);
+      expect(limits.exportPDF).toBe(true);
+      expect(limits.customTemplates).toBe(true);
     });
 
     it('should return same limits as PLAN_LIMITS', () => {
@@ -96,15 +104,15 @@ describe('subscription constants', () => {
     });
 
     it('should have positive prices for paid plans', () => {
-      expect(PLAN_PRICING.basic.monthly.USD).toBeGreaterThan(0);
-      expect(PLAN_PRICING.basic.annual.USD).toBeGreaterThan(0);
+      expect(PLAN_PRICING.supporter.monthly.USD).toBeGreaterThan(0);
+      expect(PLAN_PRICING.supporter.annual.USD).toBeGreaterThan(0);
       expect(PLAN_PRICING.pro.monthly.USD).toBeGreaterThan(0);
       expect(PLAN_PRICING.pro.annual.USD).toBeGreaterThan(0);
     });
 
     it('should have annual pricing higher than monthly', () => {
-      expect(PLAN_PRICING.basic.annual.USD).toBeGreaterThan(
-        PLAN_PRICING.basic.monthly.USD
+      expect(PLAN_PRICING.supporter.annual.USD).toBeGreaterThan(
+        PLAN_PRICING.supporter.monthly.USD
       );
       expect(PLAN_PRICING.pro.annual.USD).toBeGreaterThan(
         PLAN_PRICING.pro.monthly.USD
@@ -122,9 +130,9 @@ describe('subscription constants', () => {
 
     it('should have more features for higher tiers', () => {
       expect(PLAN_FEATURES.free.length).toBeLessThanOrEqual(
-        PLAN_FEATURES.basic.length
+        PLAN_FEATURES.supporter.length
       );
-      expect(PLAN_FEATURES.basic.length).toBeLessThanOrEqual(
+      expect(PLAN_FEATURES.supporter.length).toBeLessThanOrEqual(
         PLAN_FEATURES.pro.length
       );
     });
@@ -143,8 +151,8 @@ describe('subscription constants', () => {
     });
 
     it('should have correct env var name format', () => {
-      expect(STRIPE_PRICE_ID_ENV_VARS.basic.monthly.USD).toBe(
-        'STRIPE_PRICE_ID_BASIC_MONTHLY_USD'
+      expect(STRIPE_PRICE_ID_ENV_VARS.supporter.monthly.USD).toBe(
+        'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD'
       );
       expect(STRIPE_PRICE_ID_ENV_VARS.pro.annual.CAD).toBe(
         'STRIPE_PRICE_ID_PRO_ANNUAL_CAD'
@@ -153,11 +161,11 @@ describe('subscription constants', () => {
   });
 
   describe('getPriceId', () => {
-    it('should return price ID from environment variable for basic monthly USD', () => {
-      process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = 'price_basic_monthly_usd';
-      const priceId = getPriceId('basic', 'monthly', 'USD');
-      expect(priceId).toBe('price_basic_monthly_usd');
-      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+    it('should return price ID from environment variable for supporter monthly USD', () => {
+      process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD = 'price_supporter_monthly_usd';
+      const priceId = getPriceId('supporter', 'monthly', 'USD');
+      expect(priceId).toBe('price_supporter_monthly_usd');
+      delete process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD;
     });
 
     it('should return price ID from environment variable for pro annual CAD', () => {
@@ -168,23 +176,23 @@ describe('subscription constants', () => {
     });
 
     it('should default to USD when currency not specified', () => {
-      process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = 'price_basic_monthly_usd';
-      const priceId = getPriceId('basic', 'monthly');
-      expect(priceId).toBe('price_basic_monthly_usd');
-      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+      process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD = 'price_supporter_monthly_usd';
+      const priceId = getPriceId('supporter', 'monthly');
+      expect(priceId).toBe('price_supporter_monthly_usd');
+      delete process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD;
     });
 
     it('should throw error when environment variable is missing', () => {
-      const originalValue = process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
-      delete process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD;
+      const originalValue = process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD;
+      delete process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD;
       
       try {
-        expect(() => getPriceId('basic', 'monthly', 'USD')).toThrow(
+        expect(() => getPriceId('supporter', 'monthly', 'USD')).toThrow(
           'Missing required Stripe price ID environment variables'
         );
       } finally {
         if (originalValue) {
-          process.env.STRIPE_PRICE_ID_BASIC_MONTHLY_USD = originalValue;
+          process.env.STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD = originalValue;
         }
       }
     });
@@ -195,10 +203,6 @@ describe('subscription constants', () => {
         { plan: 'supporter' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD' },
         { plan: 'supporter' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD' },
         { plan: 'supporter' as const, cycle: 'annual' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD' },
-        { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_USD' },
-        { plan: 'basic' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_BASIC_MONTHLY_CAD' },
-        { plan: 'basic' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_BASIC_ANNUAL_USD' },
-        { plan: 'basic' as const, cycle: 'annual' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_BASIC_ANNUAL_CAD' },
         { plan: 'pro' as const, cycle: 'monthly' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD' },
         { plan: 'pro' as const, cycle: 'monthly' as const, currency: 'CAD' as const, env: 'STRIPE_PRICE_ID_PRO_MONTHLY_CAD' },
         { plan: 'pro' as const, cycle: 'annual' as const, currency: 'USD' as const, env: 'STRIPE_PRICE_ID_PRO_ANNUAL_USD' },

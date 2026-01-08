@@ -1,4 +1,4 @@
-export type SubscriptionPlan = 'free' | 'supporter' | 'basic' | 'pro';
+export type SubscriptionPlan = 'free' | 'supporter' | 'pro';
 
 export type SubscriptionStatus =
   | 'free'
@@ -13,20 +13,21 @@ export type SubscriptionStatus =
 export type BillingCycle = 'monthly' | 'annual';
 
 export interface PlanLimits {
-  entriesPerMonth: number;
-  modelsAccess: string[];
-  exportEnabled: boolean;
-  exportResolution: 'standard' | 'high';
   advancedAnalysis: boolean;
+  multiEntryAnalysis: boolean;
+  periodSummary: boolean;
+  exportPDF: boolean;
+  exportBackup: boolean;
   customTemplates: boolean;
+  semanticSearch: boolean;
 }
 
 export interface UsageStats {
-  entriesUsed: number;
-  entriesLimit: number;
-  lastResetDate: Date | null;
-  nextResetDate: Date | null;
-  modelUsage: Record<string, number>;
+  entriesUsed?: number;
+  entriesLimit?: number;
+  lastResetDate?: Date | null;
+  nextResetDate?: Date | null;
+  modelUsage?: Record<string, number>;
 }
 
 export interface SubscriptionData {
