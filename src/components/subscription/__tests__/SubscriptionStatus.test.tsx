@@ -22,34 +22,34 @@ describe('SubscriptionStatus', () => {
 
   it('should render current plan', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: {
         entriesUsed: 50,
-        entriesLimit: 100,
+        entriesLimit: Infinity,
         lastResetDate: new Date(),
         nextResetDate: new Date(),
         modelUsage: {},
       },
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     render(<SubscriptionStatus />);
     expect(screen.getByText('subscription.currentPlan')).toBeInTheDocument();
-    expect(mockT).toHaveBeenCalledWith('subscription.basic');
+    expect(mockT).toHaveBeenCalledWith('subscription.supporter');
   });
 
   it('should render status badge', () => {
@@ -58,18 +58,18 @@ describe('SubscriptionStatus', () => {
       status: 'active',
       usage: null,
       limits: {
-        entriesPerMonth: -1,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'high',
         advancedAnalysis: true,
+        multiEntryAnalysis: true,
+        periodSummary: true,
+        exportPDF: true,
+        exportBackup: true,
         customTemplates: true,
+        semanticSearch: true,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: true,
-      isBasic: false,
       isPro: true,
     });
 
@@ -79,34 +79,33 @@ describe('SubscriptionStatus', () => {
 
   it('should render usage information when available', () => {
     vi.mocked(useSubscription).mockReturnValue({
-      plan: 'basic',
+      plan: 'supporter',
       status: 'active',
       usage: {
         entriesUsed: 75,
-        entriesLimit: 100,
+        entriesLimit: Infinity,
         lastResetDate: new Date('2024-01-01'),
         nextResetDate: new Date('2024-02-01'),
         modelUsage: {},
       },
       limits: {
-        entriesPerMonth: 100,
-        modelsAccess: [],
-        exportEnabled: true,
-        exportResolution: 'standard',
-        advancedAnalysis: true,
+        advancedAnalysis: false,
+        multiEntryAnalysis: false,
+        periodSummary: false,
+        exportPDF: false,
+        exportBackup: false,
         customTemplates: false,
+        semanticSearch: false,
       },
       isLoading: false,
       error: null,
       refreshSubscription: vi.fn(),
       isPremium: false,
-      isBasic: true,
       isPro: false,
     });
 
     render(<SubscriptionStatus />);
-    expect(mockT).toHaveBeenCalledWith('subscription.entriesUsed');
-    expect(mockT).toHaveBeenCalledWith('subscription.resetDate');
+    expect(mockT).toHaveBeenCalledWith('subscription.currentPlan');
   });
 });
 
