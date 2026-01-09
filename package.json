@@ -15,7 +15,8 @@
     "test:coverage": "NODE_OPTIONS=--max-old-space-size=4096 vitest run --coverage",
     "test:watch": "NODE_OPTIONS=--max-old-space-size=4096 vitest watch",
     "test:ci": "npm run lint && npm run typecheck && npm run test:run -- --reporter=verbose --no-coverage",
-    "test:openrouter-key": "tsx scripts/test-openrouter-key.ts"
+    "test:openrouter-key": "tsx scripts/test-openrouter-key.ts",
+    "validate-stripe-prices": "tsx scripts/validate-stripe-prices.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
