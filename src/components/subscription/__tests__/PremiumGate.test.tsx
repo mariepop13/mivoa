@@ -3,18 +3,29 @@ import { render, screen } from '@testing-library/react';
 import { PremiumGate } from '../PremiumGate';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUser } from '@/firebase/auth/use-user';
 
 vi.mock('@/hooks/use-subscription');
 vi.mock('@/hooks/use-translation');
+vi.mock('@/firebase/auth/use-user');
 
 describe('PremiumGate', () => {
   const mockT = vi.fn((key: string) => key);
+  const mockGetIdToken = vi.fn().mockResolvedValue('mock-token');
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useTranslation).mockReturnValue({
       t: mockT,
       language: 'en',
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(useUser).mockReturnValue({
+      user: {
+        uid: 'test-user-id',
+        getIdToken: mockGetIdToken,
+      } as any,
       isLoading: false,
       error: null,
     });

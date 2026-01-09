@@ -4,21 +4,32 @@ import userEvent from '@testing-library/user-event';
 import { BillingPage } from '../BillingPage';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUser } from '@/firebase/auth/use-user';
 
 vi.mock('@/hooks/use-subscription');
 vi.mock('@/hooks/use-translation');
+vi.mock('@/firebase/auth/use-user');
 
 global.fetch = vi.fn();
 global.window.location.href = '';
 
 describe('BillingPage', () => {
   const mockT = vi.fn((key: string) => key);
+  const mockGetIdToken = vi.fn().mockResolvedValue('mock-token');
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useTranslation).mockReturnValue({
       t: mockT,
       language: 'en',
+      isLoading: false,
+      error: null,
+    });
+    vi.mocked(useUser).mockReturnValue({
+      user: {
+        uid: 'test-user-id',
+        getIdToken: mockGetIdToken,
+      } as any,
       isLoading: false,
       error: null,
     });
@@ -241,6 +252,7 @@ describe('BillingPage', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer mock-token',
         },
         body: JSON.stringify({
           planId: 'pro',

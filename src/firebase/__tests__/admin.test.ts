@@ -23,12 +23,16 @@ vi.mock('firebase-admin/firestore', () => ({
 
 describe('firebase admin', () => {
   const originalEnv = process.env;
+  const mockServiceAccountKey = JSON.stringify({
+    project_id: 'test-project',
+    private_key: 'test-private-key',
+    client_email: 'test@example.com',
+  });
 
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    process.env.FIREBASE_PROJECT_ID = 'test-project';
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'test-project';
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY = mockServiceAccountKey;
   });
 
   afterEach(() => {
@@ -36,15 +40,16 @@ describe('firebase admin', () => {
   });
 
   describe('getAdminAuth', () => {
-    it('should throw error when project ID is missing', () => {
-      delete process.env.FIREBASE_PROJECT_ID;
-      delete process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    it('should throw error when service account key is missing', async () => {
+      delete process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      mockGetApps.mockReturnValue([]);
+      const { getAdminAuth: getAdminAuthAfterReset } = await import('../admin');
 
-      expect(() => getAdminAuth()).toThrow('Missing required Firebase Admin environment variable');
+      expect(() => getAdminAuthAfterReset()).toThrow('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is required');
     });
 
-    it('should return auth instance when project ID is set', async () => {
-      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
+    it('should return auth instance when service account key is set', async () => {
+      const mockAuth = { verifyIdToken: vi.fn() } as unknown as Auth;
       const { getAuth } = await import('firebase-admin/auth');
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
@@ -55,7 +60,7 @@ describe('firebase admin', () => {
     });
 
     it('should return same auth instance on subsequent calls', async () => {
-      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
+      const mockAuth = { verifyIdToken: vi.fn() } as unknown as Auth;
       const { getAuth } = await import('firebase-admin/auth');
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
@@ -102,7 +107,7 @@ describe('firebase admin', () => {
       const mockExistingApp = { name: 'existing-app' } as unknown as App;
       mockGetApps.mockReturnValue([mockExistingApp]);
       const { getAuth } = await import('firebase-admin/auth');
-      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
+      const mockAuth = { verifyIdToken: vi.fn() } as unknown as Auth;
       vi.mocked(getAuth).mockReturnValue(mockAuth);
 
       const auth1 = getAdminAuth();
@@ -112,41 +117,24 @@ describe('firebase admin', () => {
       expect(auth1).toBe(auth2);
     });
 
-    it('should use NEXT_PUBLIC_FIREBASE_PROJECT_ID when FIREBASE_PROJECT_ID is missing', async () => {
-      delete process.env.FIREBASE_PROJECT_ID;
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'public-project-id';
-      mockGetApps.mockReturnValue([]);
-      const { getAuth } = await import('firebase-admin/auth');
-      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
-      vi.mocked(getAuth).mockReturnValue(mockAuth);
-
-      expect(() => getAdminAuth()).not.toThrow();
-    });
-
-    it('should initialize app with credentials when env vars are set', async () => {
+    it('should initialize app with service account credentials', async () => {
       vi.resetModules();
-      process.env.FIREBASE_ADMIN_PRIVATE_KEY = 'test-private-key';
-      process.env.FIREBASE_ADMIN_CLIENT_EMAIL = 'test@example.com';
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY = mockServiceAccountKey;
       mockGetApps.mockReturnValue([]);
       const mockCredential = { projectId: 'test-project' };
       mockCert.mockReturnValue(mockCredential);
       const mockApp = { name: 'test-app' } as unknown as App;
       mockInitializeApp.mockReturnValue(mockApp);
       const { getAuth } = await import('firebase-admin/auth');
-      const mockAuth = { verifySessionCookie: vi.fn() } as unknown as Auth;
+      const mockAuth = { verifyIdToken: vi.fn() } as unknown as Auth;
       vi.mocked(getAuth).mockReturnValue(mockAuth);
       const { getAdminAuth: getAdminAuthAfterReset } = await import('../admin');
 
       getAdminAuthAfterReset();
 
-      expect(mockCert).toHaveBeenCalledWith({
-        projectId: 'test-project',
-        privateKey: 'test-private-key',
-        clientEmail: 'test@example.com',
-      });
+      expect(mockCert).toHaveBeenCalledWith(JSON.parse(mockServiceAccountKey));
       expect(mockInitializeApp).toHaveBeenCalledWith({
         credential: mockCredential,
-        projectId: 'test-project',
       });
     });
   });

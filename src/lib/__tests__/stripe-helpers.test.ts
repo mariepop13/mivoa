@@ -59,19 +59,20 @@ describe('stripe-helpers', () => {
         },
       };
 
-      const mockSubscriptionDoc = {
-        exists: true,
-        data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_existing' }),
-      };
-      const mockCollection = {
-        doc: vi.fn().mockReturnValue({
-          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+      const mockSubscriptionRef = {
+        get: vi.fn().mockResolvedValue({
+          exists: true,
+          data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_existing' }),
         }),
+        update: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockResolvedValue(undefined),
       };
       const mockFirestore = {
         collection: vi.fn().mockReturnValue({
           doc: vi.fn().mockReturnValue({
-            collection: vi.fn().mockReturnValue(mockCollection),
+            collection: vi.fn().mockReturnValue({
+              doc: vi.fn().mockReturnValue(mockSubscriptionRef),
+            }),
           }),
         }),
       };
@@ -99,19 +100,20 @@ describe('stripe-helpers', () => {
         },
       };
 
-      const mockSubscriptionDoc = {
-        exists: true,
-        data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_deleted' }),
-      };
-      const mockCollection = {
-        doc: vi.fn().mockReturnValue({
-          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+      const mockSubscriptionRef = {
+        get: vi.fn().mockResolvedValue({
+          exists: true,
+          data: vi.fn().mockReturnValue({ stripeCustomerId: 'cus_deleted' }),
         }),
+        update: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockResolvedValue(undefined),
       };
       const mockFirestore = {
         collection: vi.fn().mockReturnValue({
           doc: vi.fn().mockReturnValue({
-            collection: vi.fn().mockReturnValue(mockCollection),
+            collection: vi.fn().mockReturnValue({
+              doc: vi.fn().mockReturnValue(mockSubscriptionRef),
+            }),
           }),
         }),
       };
@@ -137,18 +139,19 @@ describe('stripe-helpers', () => {
         },
       };
 
-      const mockSubscriptionDoc = {
-        exists: false,
-      };
-      const mockCollection = {
-        doc: vi.fn().mockReturnValue({
-          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+      const mockSubscriptionRef = {
+        get: vi.fn().mockResolvedValue({
+          exists: false,
         }),
+        update: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockResolvedValue(undefined),
       };
       const mockFirestore = {
         collection: vi.fn().mockReturnValue({
           doc: vi.fn().mockReturnValue({
-            collection: vi.fn().mockReturnValue(mockCollection),
+            collection: vi.fn().mockReturnValue({
+              doc: vi.fn().mockReturnValue(mockSubscriptionRef),
+            }),
           }),
         }),
       };
@@ -174,18 +177,19 @@ describe('stripe-helpers', () => {
         },
       };
 
-      const mockSubscriptionDoc = {
-        exists: false,
-      };
-      const mockCollection = {
-        doc: vi.fn().mockReturnValue({
-          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+      const mockSubscriptionRef = {
+        get: vi.fn().mockResolvedValue({
+          exists: false,
         }),
+        update: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockResolvedValue(undefined),
       };
       const mockFirestore = {
         collection: vi.fn().mockReturnValue({
           doc: vi.fn().mockReturnValue({
-            collection: vi.fn().mockReturnValue(mockCollection),
+            collection: vi.fn().mockReturnValue({
+              doc: vi.fn().mockReturnValue(mockSubscriptionRef),
+            }),
           }),
         }),
       };
@@ -211,18 +215,19 @@ describe('stripe-helpers', () => {
         },
       };
 
-      const mockSubscriptionDoc = {
-        exists: false,
-      };
-      const mockCollection = {
-        doc: vi.fn().mockReturnValue({
-          get: vi.fn().mockResolvedValue(mockSubscriptionDoc),
+      const mockSubscriptionRef = {
+        get: vi.fn().mockResolvedValue({
+          exists: false,
         }),
+        update: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockResolvedValue(undefined),
       };
       const mockFirestore = {
         collection: vi.fn().mockReturnValue({
           doc: vi.fn().mockReturnValue({
-            collection: vi.fn().mockReturnValue(mockCollection),
+            collection: vi.fn().mockReturnValue({
+              doc: vi.fn().mockReturnValue(mockSubscriptionRef),
+            }),
           }),
         }),
       };
