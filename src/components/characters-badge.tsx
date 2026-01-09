@@ -39,4 +39,3 @@ function CharactersBadgeComponent({
 }
 
 export const CharactersBadge = memo(CharactersBadgeComponent);
-

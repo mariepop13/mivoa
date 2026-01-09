@@ -35,4 +35,3 @@ function PlacesBadgeComponent({ places, colorClass, className }: PlacesBadgeProp
 }
 
 export const PlacesBadge = memo(PlacesBadgeComponent);
-

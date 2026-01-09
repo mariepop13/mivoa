@@ -54,4 +54,3 @@ function MoodsBadgeComponent({ moods, moodEmojis, colorClass, className }: Moods
 }
 
 export const MoodsBadge = memo(MoodsBadgeComponent);
-

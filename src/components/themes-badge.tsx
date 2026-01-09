@@ -54,4 +54,3 @@ function ThemesBadgeComponent({ themes, themeEmojis, colorClass, className }: Th
 }
 
 export const ThemesBadge = memo(ThemesBadgeComponent);
-
