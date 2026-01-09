@@ -105,15 +105,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const priceId = getStripePriceId(body.planId as 'supporter' | 'pro', body.billingCycle as BillingCycle, currency);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
 
-    console.log('Creating checkout session:', {
-      userId,
-      planId: body.planId,
-      billingCycle: body.billingCycle,
-      currency,
-      priceId,
-      customerId: customer.id,
-    });
-
     const session = await createCheckoutSession(customer, priceId, userId, body.planId, body.billingCycle, baseUrl);
 
     if (!session.url) {
