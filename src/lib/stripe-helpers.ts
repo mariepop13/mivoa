@@ -4,16 +4,30 @@ import { getPriceId } from '@/lib/subscription/constants';
 import { getAdminFirestore } from '@/firebase/admin';
 import type { SubscriptionPlan, BillingCycle, Currency, SubscriptionData, SubscriptionStatus } from '@/lib/subscription/types';
 
-async function retrieveCustomerById(stripe: Stripe, customerId: string): Promise<Stripe.Customer | null> {
-  try {
-    const customer = await stripe.customers.retrieve(customerId);
-    if (customer && !customer.deleted) {
-      return customer as Stripe.Customer;
-    }
-  } catch (error) {
-    console.warn('Failed to retrieve customer from Stripe by ID, falling back to email lookup:', error);
+async function updateUserStripeCustomerId(
+  userId: string,
+  stripeCustomerId: string
+): Promise<void> {
+  const adminFirestore = getAdminFirestore();
+  const subscriptionRef = adminFirestore
+    .collection('users')
+    .doc(userId)
+    .collection('subscription')
+    .doc('status');
+
+  const subscriptionSnap = await subscriptionRef.get();
+
+  if (subscriptionSnap.exists) {
+    await subscriptionRef.update({
+      stripeCustomerId,
+    });
+  } else {
+    await subscriptionRef.set({
+      plan: 'free',
+      status: 'active',
+      stripeCustomerId,
+    });
   }
-  return null;
 }
 
 export async function getOrCreateStripeCustomer(
@@ -33,31 +47,61 @@ export async function getOrCreateStripeCustomer(
 
   if (subscriptionSnap.exists) {
     const subscriptionData = subscriptionSnap.data();
-    const stripeCustomerId = subscriptionData?.stripeCustomerId as string | undefined;
+    const existingCustomerId = subscriptionData?.stripeCustomerId as string | undefined;
 
-    if (stripeCustomerId) {
-      const customer = await retrieveCustomerById(stripe, stripeCustomerId);
-      if (customer) {
-        return customer;
+    if (existingCustomerId) {
+      try {
+        const customer = await stripe.customers.retrieve(existingCustomerId);
+        if (customer && !customer.deleted) {
+          return customer as Stripe.Customer;
+        }
+        console.info('Customer was deleted in Stripe, creating new one:', {
+          userId,
+          existingCustomerId,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorCode = (error as { code?: string })?.code;
+        console.info('Customer not found in Stripe, creating new one:', {
+          userId,
+          existingCustomerId,
+          error: errorMessage,
+          code: errorCode,
+        });
       }
     }
   }
 
-  const existingCustomers = await stripe.customers.list({
-    email: email || undefined,
-    limit: 1,
-  });
+  if (email) {
+    try {
+      const existingCustomers = await stripe.customers.list({
+        email,
+        limit: 1,
+      });
 
-  if (existingCustomers.data.length > 0) {
-    return existingCustomers.data[0];
+      if (existingCustomers.data.length > 0) {
+        const customer = existingCustomers.data[0];
+        await updateUserStripeCustomerId(userId, customer.id);
+        return customer;
+      }
+    } catch (error) {
+      console.warn('Failed to search customers by email, creating new one:', {
+        userId,
+        email,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
-  return await stripe.customers.create({
+  const customer = await stripe.customers.create({
     email: email || undefined,
     metadata: {
       userId,
     },
   });
+
+  await updateUserStripeCustomerId(userId, customer.id);
+  return customer;
 }
 
 export function getStripePriceId(
