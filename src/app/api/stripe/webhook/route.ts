@@ -6,6 +6,35 @@ import type { SubscriptionPlan, SubscriptionStatus, BillingCycle } from '@/lib/s
 
 export const dynamic = 'force-dynamic';
 
+async function getUserIdFromSubscription(
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+): Promise<string | null> {
+  const userId = subscription.metadata?.userId;
+  if (userId) {
+    return userId;
+  }
+
+  const customerId = typeof subscription.customer === 'string'
+    ? subscription.customer
+    : subscription.customer.id;
+
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer && !customer.deleted && 'metadata' in customer) {
+      return customer.metadata?.userId || null;
+    }
+  } catch (error) {
+    console.error('Failed to retrieve customer for webhook:', {
+      customerId,
+      subscriptionId: subscription.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return null;
+}
+
 function getWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
@@ -28,13 +57,44 @@ function mapStripeStatusToSubscriptionStatus(stripeStatus: string): Subscription
   return statusMap[stripeStatus] || 'free';
 }
 
-function mapStripePlanToSubscriptionPlan(_priceId: string, metadata?: Stripe.Metadata): SubscriptionPlan {
+function getPlanFromPriceId(priceId: string): SubscriptionPlan | null {
+  const priceIdMappings: Array<{ envKey: string; plan: SubscriptionPlan }> = [
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD', plan: 'supporter' },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD', plan: 'supporter' },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD', plan: 'supporter' },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD', plan: 'supporter' },
+    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD', plan: 'pro' },
+    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_CAD', plan: 'pro' },
+    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_USD', plan: 'pro' },
+    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_CAD', plan: 'pro' },
+  ];
+
+  for (const mapping of priceIdMappings) {
+    if (process.env[mapping.envKey] === priceId) {
+      return mapping.plan;
+    }
+  }
+
+  return null;
+}
+
+function mapStripePlanToSubscriptionPlan(priceId: string, metadata?: Stripe.Metadata): SubscriptionPlan {
   if (metadata?.planId) {
     const planId = metadata.planId;
     if (planId === 'supporter' || planId === 'pro') {
       return planId;
     }
   }
+
+  const planFromPriceId = getPlanFromPriceId(priceId);
+  if (planFromPriceId) {
+    return planFromPriceId;
+  }
+
+  console.warn('Could not determine plan from price ID or metadata:', {
+    priceId,
+    metadata,
+  });
 
   return 'free';
 }
@@ -45,35 +105,43 @@ function mapStripeBillingCycle(interval: string | null | undefined): BillingCycl
   return null;
 }
 
-async function handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
-  const adminFirestore = getAdminFirestore();
-  const userId = subscription.metadata?.userId;
-
+async function handleSubscriptionCreated(
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+): Promise<void> {
+  const userId = await getUserIdFromSubscription(stripe, subscription);
   if (!userId) {
-    return;
+    throw new Error('Missing userId in subscription or customer metadata');
   }
+
+  const adminFirestore = getAdminFirestore();
 
   const plan = mapStripePlanToSubscriptionPlan(subscription.items.data[0]?.price.id || '', subscription.metadata);
   const status = mapStripeStatusToSubscriptionStatus(subscription.status);
   const billingCycle = mapStripeBillingCycle(subscription.items.data[0]?.price.recurring?.interval);
 
-  const subscriptionData = {
+  const subscriptionData: Record<string, unknown> = {
     userId,
     plan,
     status,
-    billingCycle: billingCycle || undefined,
     stripeCustomerId: subscription.customer as string,
     stripeSubscriptionId: subscription.id,
-    currentPeriodStart: subscription.current_period_start
-      ? new Date(subscription.current_period_start * 1000)
-      : undefined,
-    currentPeriodEnd: subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000)
-      : undefined,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+
+  if (billingCycle) {
+    subscriptionData.billingCycle = billingCycle;
+  }
+
+  if (subscription.current_period_start) {
+    subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+  }
+
+  if (subscription.current_period_end) {
+    subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  }
 
   await adminFirestore
     .collection('users')
@@ -84,33 +152,41 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
 
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
-  const adminFirestore = getAdminFirestore();
-  const userId = subscription.metadata?.userId;
-
+async function handleSubscriptionUpdated(
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+): Promise<void> {
+  const userId = await getUserIdFromSubscription(stripe, subscription);
   if (!userId) {
-    return;
+    throw new Error('Missing userId in subscription or customer metadata');
   }
+
+  const adminFirestore = getAdminFirestore();
 
   const plan = mapStripePlanToSubscriptionPlan(subscription.items.data[0]?.price.id || '', subscription.metadata);
   const status = mapStripeStatusToSubscriptionStatus(subscription.status);
   const billingCycle = mapStripeBillingCycle(subscription.items.data[0]?.price.recurring?.interval);
 
-  const updateData = {
+  const updateData: Record<string, unknown> = {
     plan,
     status,
-    billingCycle: billingCycle || undefined,
     stripeCustomerId: subscription.customer as string,
     stripeSubscriptionId: subscription.id,
-    currentPeriodStart: subscription.current_period_start
-      ? new Date(subscription.current_period_start * 1000)
-      : undefined,
-    currentPeriodEnd: subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000)
-      : undefined,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     updatedAt: new Date(),
   };
+
+  if (billingCycle) {
+    updateData.billingCycle = billingCycle;
+  }
+
+  if (subscription.current_period_start) {
+    updateData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+  }
+
+  if (subscription.current_period_end) {
+    updateData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  }
 
   await adminFirestore
     .collection('users')
@@ -121,15 +197,19 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
 
 }
 
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
-  const adminFirestore = getAdminFirestore();
-  const userId = subscription.metadata?.userId;
-
+async function handleSubscriptionDeleted(
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+): Promise<void> {
+  const userId = await getUserIdFromSubscription(stripe, subscription);
   if (!userId) {
-    return;
+    throw new Error('Missing userId in subscription or customer metadata');
   }
 
+  const adminFirestore = getAdminFirestore();
+
   const updateData = {
+    plan: 'free' as SubscriptionPlan,
     status: 'canceled' as SubscriptionStatus,
     cancelAtPeriodEnd: false,
     updatedAt: new Date(),
@@ -153,9 +233,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   let event: Stripe.Event;
+  const stripe = getStripeClient();
 
   try {
-    const stripe = getStripeClient();
     const webhookSecret = getWebhookSecret();
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (error) {
@@ -167,19 +247,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     switch (event.type) {
       case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionCreated(subscription);
+        await handleSubscriptionCreated(stripe, subscription);
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdated(subscription);
+        await handleSubscriptionUpdated(stripe, subscription);
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(subscription);
+        await handleSubscriptionDeleted(stripe, subscription);
         break;
       }
 
@@ -190,6 +270,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     console.error('Error processing webhook:', error);
+    
+    if (error instanceof Error && error.message.includes('Missing userId')) {
+      const subscription = (event.data.object as Stripe.Subscription) || {};
+      const customerId = typeof subscription.customer === 'string'
+        ? subscription.customer
+        : subscription.customer?.id || 'unknown';
+      
+      console.error('Webhook missing userId:', {
+        subscriptionId: subscription.id,
+        customerId,
+        eventType: event.type,
+      });
+      
+      return NextResponse.json(
+        { error: 'Missing userId in subscription or customer metadata' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }
