@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { requireAuthenticatedUserId } from '@/lib/api-auth';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
 import { getAdminFirestore } from '@/firebase/admin';
+import { MILLISECONDS_PER_SECOND } from '@/lib/time-constants';
 import type { SubscriptionPlan, SubscriptionStatus, BillingCycle } from '@/lib/subscription/types';
 
 export const dynamic = 'force-dynamic';
@@ -122,11 +123,11 @@ async function syncSubscriptionFromStripe(
   }
 
   if (stripeSubscription.current_period_start) {
-    subscriptionData.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+    subscriptionData.currentPeriodStart = new Date(stripeSubscription.current_period_start * MILLISECONDS_PER_SECOND);
   }
 
   if (stripeSubscription.current_period_end) {
-    subscriptionData.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    subscriptionData.currentPeriodEnd = new Date(stripeSubscription.current_period_end * MILLISECONDS_PER_SECOND);
   }
 
   await adminFirestore

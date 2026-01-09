@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
 import { getAdminFirestore } from '@/firebase/admin';
+import { MILLISECONDS_PER_SECOND } from '@/lib/time-constants';
 import type { SubscriptionPlan, SubscriptionStatus, BillingCycle } from '@/lib/subscription/types';
 
 export const dynamic = 'force-dynamic';
@@ -136,11 +137,11 @@ async function handleSubscriptionCreated(
   }
 
   if (subscription.current_period_start) {
-    subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+    subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * MILLISECONDS_PER_SECOND);
   }
 
   if (subscription.current_period_end) {
-    subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * MILLISECONDS_PER_SECOND);
   }
 
   await adminFirestore
@@ -181,11 +182,11 @@ async function handleSubscriptionUpdated(
   }
 
   if (subscription.current_period_start) {
-    updateData.currentPeriodStart = new Date(subscription.current_period_start * 1000);
+    updateData.currentPeriodStart = new Date(subscription.current_period_start * MILLISECONDS_PER_SECOND);
   }
 
   if (subscription.current_period_end) {
-    updateData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    updateData.currentPeriodEnd = new Date(subscription.current_period_end * MILLISECONDS_PER_SECOND);
   }
 
   await adminFirestore
