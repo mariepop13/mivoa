@@ -43,15 +43,6 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
 };
 
-let cachedPlanLimits: Record<SubscriptionPlan, PlanLimits> | null = null;
-
-export function getPlanLimitsWithCache(plan: SubscriptionPlan): PlanLimits {
-  if (!cachedPlanLimits) {
-    cachedPlanLimits = PLAN_LIMITS;
-  }
-  return cachedPlanLimits[plan];
-}
-
 export const PLAN_PRICING: Record<
   SubscriptionPlan,
   Record<BillingCycle, Record<Currency, number>>
@@ -98,19 +89,6 @@ export const PLAN_FEATURES: Record<SubscriptionPlan, string[]> = {
   supporter: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES],
   pro: [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES],
 };
-
-export function getPlanFeaturesForDisplay(plan: SubscriptionPlan): string[] {
-  switch (plan) {
-    case 'free':
-      return BASE_FEATURES;
-    case 'supporter':
-      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES];
-    case 'pro':
-      return [...BASE_FEATURES, ...SUPPORTER_ADDITIONAL_FEATURES, ...PRO_ADDITIONAL_FEATURES];
-    default:
-      return BASE_FEATURES;
-  }
-}
 
 export const STRIPE_PRICE_ID_ENV_VARS: Record<
   SubscriptionPlan,

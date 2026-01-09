@@ -6,7 +6,6 @@ import {
   PLAN_FEATURES,
   STRIPE_PRICE_ID_ENV_VARS,
   getPriceId,
-  getPlanLimitsWithCache,
 } from '../constants';
 
 describe('subscription constants', () => {
@@ -50,37 +49,6 @@ describe('subscription constants', () => {
       expect(PLAN_LIMITS.pro.exportBackup).toBe(true);
       expect(PLAN_LIMITS.pro.customTemplates).toBe(true);
       expect(PLAN_LIMITS.pro.semanticSearch).toBe(true);
-    });
-  });
-
-  describe('getPlanLimitsWithCache', () => {
-    it('should return limits for free plan', () => {
-      const limits = getPlanLimitsWithCache('free');
-      expect(limits.advancedAnalysis).toBe(false);
-      expect(limits.exportPDF).toBe(false);
-      expect(limits.customTemplates).toBe(false);
-    });
-
-    it('should return limits for supporter plan', () => {
-      const limits = getPlanLimitsWithCache('supporter');
-      expect(limits.advancedAnalysis).toBe(false);
-      expect(limits.exportPDF).toBe(false);
-      expect(limits.customTemplates).toBe(false);
-    });
-
-    it('should return limits for pro plan', () => {
-      const limits = getPlanLimitsWithCache('pro');
-      expect(limits.advancedAnalysis).toBe(true);
-      expect(limits.exportPDF).toBe(true);
-      expect(limits.customTemplates).toBe(true);
-    });
-
-    it('should return same limits as PLAN_LIMITS', () => {
-      SUBSCRIPTION_PLANS.forEach((plan) => {
-        const cachedLimits = getPlanLimitsWithCache(plan);
-        const directLimits = PLAN_LIMITS[plan];
-        expect(cachedLimits).toEqual(directLimits);
-      });
     });
   });
 
