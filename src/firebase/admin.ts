@@ -6,18 +6,6 @@ let adminApp: App | null = null;
 let adminAuth: Auth | null = null;
 let adminFirestore: Firestore | null = null;
 
-function validateAdminEnv(): string {
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
-  if (!projectId) {
-    throw new Error(
-      'Missing required Firebase Admin environment variable:\n  - FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECT_ID\n\nPlease set this variable in your .env.local file.'
-    );
-  }
-
-  return projectId;
-}
-
 function initializeAdminApp(): App {
   if (adminApp) {
     return adminApp;
@@ -29,21 +17,25 @@ function initializeAdminApp(): App {
     return adminApp;
   }
 
-  const projectId = validateAdminEnv();
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountKey) {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is required');
+    }
+    return null as unknown as App;
+  }
 
-  if (process.env.FIREBASE_ADMIN_PRIVATE_KEY && process.env.FIREBASE_ADMIN_CLIENT_EMAIL) {
+  try {
+    const serviceAccount = JSON.parse(serviceAccountKey);
     adminApp = initializeApp({
-      credential: cert({
-        projectId,
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      }),
-      projectId,
+      credential: cert(serviceAccount),
     });
-  } else {
-    adminApp = initializeApp({
-      projectId,
-    });
+  } catch (error) {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn('Warning: FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON. Skipping Firebase Admin initialization during build.');
+      return null as unknown as App;
+    }
+    throw error;
   }
 
   return adminApp;
