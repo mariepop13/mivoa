@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SubscriptionStatus } from './SubscriptionStatus';
-import { UsageIndicator } from './UsageIndicator';
 import { ManageSubscriptionButton } from './ManageSubscriptionButton';
 import { PricingCard } from './PricingCard';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUser } from '@/firebase/auth/use-user';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
 import { PLAN_LIMITS } from '@/lib/subscription/constants';
 import { Loader2 } from 'lucide-react';
@@ -32,6 +32,7 @@ interface PlanData {
 export function BillingPage(): React.JSX.Element {
   const { t } = useTranslation();
   const { plan, isLoading: isSubscriptionLoading } = useSubscription();
+  const { user } = useUser();
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [currency] = useState<Currency>('USD');
@@ -55,14 +56,38 @@ export function BillingPage(): React.JSX.Element {
     fetchPlans();
   }, [currency]);
 
+  useEffect(() => {
+    const syncSubscription = async () => {
+      if (!user) return;
+
+      try {
+        const token = await user.getIdToken();
+        await fetch('/api/stripe/sync-subscription', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to sync subscription:', error);
+      }
+    };
+
+    syncSubscription();
+  }, [user]);
+
   const handleUpgrade = async (planId: SubscriptionPlan, billingCycle: BillingCycle) => {
     if (planId === 'free') return;
+    if (!user) return;
 
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           planId,
@@ -108,7 +133,6 @@ export function BillingPage(): React.JSX.Element {
           </CardHeader>
           <CardContent className="space-y-6">
             <SubscriptionStatus />
-            <UsageIndicator />
             {plan !== 'free' && <ManageSubscriptionButton />}
           </CardContent>
         </Card>

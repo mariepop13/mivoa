@@ -60,9 +60,22 @@ function transformSubscriptionData(
   userId: string,
   data: SubscriptionFirestoreData | null
 ): SubscriptionData {
+  console.log('SubscriptionContext - received data:', {
+    userId,
+    hasData: !!data,
+    data,
+  });
+
   if (!data) {
+    console.log('SubscriptionContext - no data, returning default');
     return getDefaultSubscription(userId);
   }
+
+  console.log('SubscriptionContext - transforming data:', {
+    rawData: data,
+    plan: data.plan,
+    status: data.status,
+  });
 
   return {
     userId,
@@ -102,9 +115,21 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps): R
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
 
+  console.log('SubscriptionProvider - state:', {
+    hasUser: !!user,
+    userId: user?.uid,
+    hasFirestore: !!firestore,
+    isUserLoading,
+  });
+
   const subscriptionDocRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}/subscription/status`);
+    if (!firestore || !user) {
+      console.log('SubscriptionProvider - no docRef:', { hasFirestore: !!firestore, hasUser: !!user });
+      return null;
+    }
+    const path = `users/${user.uid}/subscription/status`;
+    console.log('SubscriptionProvider - creating docRef:', path);
+    return doc(firestore, path);
   }, [firestore, user]);
 
   const usageDocRef = useMemo(() => {
@@ -114,6 +139,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps): R
 
   const { data: subscriptionData, isLoading: isSubscriptionLoading, error: subscriptionError } =
     useDoc<SubscriptionFirestoreData>(subscriptionDocRef);
+
+  console.log('SubscriptionProvider - useDoc result:', {
+    hasData: !!subscriptionData,
+    isLoading: isSubscriptionLoading,
+    error: subscriptionError?.message,
+    docRef: subscriptionDocRef ? 'present' : 'null',
+  });
 
   const { data: usageData, isLoading: isUsageLoading, error: usageError } =
     useDoc<UsageFirestoreData>(usageDocRef);

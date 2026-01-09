@@ -7,7 +7,6 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
 import { ManageSubscriptionButton } from './ManageSubscriptionButton';
-import { UsageIndicator } from './UsageIndicator';
 import { Loader2 } from 'lucide-react';
 
 export function SettingsSubscriptionSection(): React.JSX.Element {
@@ -40,7 +39,6 @@ export function SettingsSubscriptionSection(): React.JSX.Element {
             {t(`subscription.${plan}`)}
           </Badge>
         </div>
-        <UsageIndicator />
         {plan !== 'free' ? (
           <div className="pt-2">
             <ManageSubscriptionButton />

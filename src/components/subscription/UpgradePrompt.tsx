@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { PricingCard } from './PricingCard';
 import { useTranslation } from '@/hooks/use-translation';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useUser } from '@/firebase/auth/use-user';
 import type { SubscriptionPlan, BillingCycle, Currency } from '@/lib/subscription/types';
 
 interface UpgradePromptProps {
@@ -30,16 +31,20 @@ export function UpgradePrompt({
 }: UpgradePromptProps): React.JSX.Element {
   const { t } = useTranslation();
   const { plan } = useSubscription();
+  const { user } = useUser();
   const [currency] = useState<Currency>('USD');
 
   const handleUpgrade = async (planId: SubscriptionPlan, billingCycle: BillingCycle) => {
     if (planId === 'free') return;
+    if (!user) return;
 
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           planId,

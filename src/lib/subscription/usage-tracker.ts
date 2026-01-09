@@ -58,47 +58,47 @@ export async function trackModelUsage(userId: string, modelId: string): Promise<
 
 function initializeUsageDocument(usageRef: ReturnType<typeof doc>): Promise<boolean> {
   const { firestore } = initializeFirebase();
-  return runTransaction(firestore, async (transaction) => {
-    const usageSnap = await transaction.get(usageRef);
-    if (!usageSnap.exists() || !usageSnap.data()?.lastResetDate) {
-      transaction.set(usageRef, {
-        entriesUsed: 0,
-        lastResetDate: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-      return true;
-    }
-    return false;
-  });
-}
-
+    return runTransaction(firestore, async (transaction) => {
+      const usageSnap = await transaction.get(usageRef);
+      if (!usageSnap.exists() || !usageSnap.data()?.lastResetDate) {
+        transaction.set(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return true;
+      }
+      return false;
+    });
+  }
+  
 function resetMonthlyUsage(usageRef: ReturnType<typeof doc>, now: Date): Promise<boolean> {
   const { firestore } = initializeFirebase();
-  return runTransaction(firestore, async (transaction) => {
-    const usageSnap = await transaction.get(usageRef);
-    const data = usageSnap.data();
-    
-    if (!usageSnap.exists() || !data) {
-      transaction.set(usageRef, {
-        entriesUsed: 0,
-        lastResetDate: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-      return true;
-    }
-    
-    const storedResetDate = data.lastResetDate?.toDate?.() || data.lastResetDate;
-    if (!storedResetDate || !isSameMonth(storedResetDate, now)) {
-      transaction.update(usageRef, {
-        entriesUsed: 0,
-        lastResetDate: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      return true;
-    }
-    
-    return false;
-  });
+    return runTransaction(firestore, async (transaction) => {
+      const usageSnap = await transaction.get(usageRef);
+      const data = usageSnap.data();
+      
+      if (!usageSnap.exists() || !data) {
+        transaction.set(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return true;
+      }
+      
+      const storedResetDate = data.lastResetDate?.toDate?.() || data.lastResetDate;
+      if (!storedResetDate || !isSameMonth(storedResetDate, now)) {
+        transaction.update(usageRef, {
+          entriesUsed: 0,
+          lastResetDate: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        return true;
+      }
+      
+      return false;
+    });
 }
 
 export async function checkAndResetIfNeeded(

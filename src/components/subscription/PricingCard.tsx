@@ -161,10 +161,10 @@ export function PricingCard({
               );
             }
             return (
-              <li key={index} className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <li key={index} className="flex items-start gap-2">
+              <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <span className="text-sm">{t(`subscription.features.${item.content}`)}</span>
-              </li>
+            </li>
             );
           })}
         </ul>

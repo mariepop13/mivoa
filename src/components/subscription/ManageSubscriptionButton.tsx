@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useUser } from '@/firebase/auth/use-user';
 import { Loader2 } from 'lucide-react';
 
 export function ManageSubscriptionButton(): React.JSX.Element | null {
   const { t } = useTranslation();
   const { plan, isLoading } = useSubscription();
+  const { user } = useUser();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,15 +18,18 @@ export function ManageSubscriptionButton(): React.JSX.Element | null {
 
   const handleManageSubscription = async () => {
     if (isFreePlan) return;
+    if (!user) return;
 
     setIsLoadingPortal(true);
     setError(null);
 
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/stripe/create-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 

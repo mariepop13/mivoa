@@ -50,21 +50,10 @@ export function SubscriptionStatus(): React.JSX.Element {
           {getStatusLabel(status)}
         </Badge>
       </div>
-      {usage && (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            {usage.entriesLimit === Infinity
-              ? t('subscription.unlimitedEntries')
-              : t('subscription.entriesUsed')
-                  .replace('{used}', String(usage.entriesUsed))
-                  .replace('{limit}', String(usage.entriesLimit))}
-          </p>
-          {usage.nextResetDate && (
-            <p className="text-xs text-muted-foreground">
-              {t('subscription.resetDate').replace('{date}', formatDate(usage.nextResetDate))}
-            </p>
-          )}
-        </div>
+      {usage?.nextResetDate && (
+        <p className="text-xs text-muted-foreground">
+          {t('subscription.resetDate').replace('{date}', formatDate(usage.nextResetDate))}
+        </p>
       )}
     </div>
   );
