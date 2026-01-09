@@ -12,7 +12,7 @@ function createErrorResponse(message: string, status: number): NextResponse {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const userId = await requireAuthenticatedUserId();
+    const userId = await requireAuthenticatedUserId(request);
 
     const adminFirestore = getAdminFirestore();
     const subscriptionDoc = await adminFirestore

@@ -19,7 +19,9 @@ describe('subscription-status route', () => {
     });
 
   it('should return 401 when user is not authenticated', async () => {
-    vi.mocked(requireAuthenticatedUserId).mockRejectedValue(new Error('Unauthorized'));
+    vi.mocked(requireAuthenticatedUserId).mockImplementation(async () => {
+      throw new Error('Unauthorized');
+    });
 
     const request = createRequest();
     const response = await GET(request);

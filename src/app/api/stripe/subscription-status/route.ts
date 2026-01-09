@@ -29,9 +29,9 @@ function buildFreeSubscriptionResponse(): NextResponse {
   );
 }
 
-export async function GET(_request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const userId = await requireAuthenticatedUserId();
+    const userId = await requireAuthenticatedUserId(request);
 
     const adminFirestore = getAdminFirestore();
     const subscriptionDoc = await adminFirestore

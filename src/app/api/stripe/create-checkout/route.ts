@@ -90,7 +90,7 @@ async function createCheckoutSession(
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const userId = await requireAuthenticatedUserId();
+    const userId = await requireAuthenticatedUserId(request);
     const body: CreateCheckoutRequest = await request.json();
 
     const validationError = validateCheckoutInput(body);
@@ -104,9 +104,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const customer = await getOrCreateStripeCustomer(userId, userRecord.email);
     const priceId = getStripePriceId(body.planId as 'supporter' | 'pro', body.billingCycle as BillingCycle, currency);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+
+    console.log('Creating checkout session:', {
+      userId,
+      planId: body.planId,
+      billingCycle: body.billingCycle,
+      currency,
+      priceId,
+      customerId: customer.id,
+    });
+
     const session = await createCheckoutSession(customer, priceId, userId, body.planId, body.billingCycle, baseUrl);
 
     if (!session.url) {
+      console.error('Checkout session created but URL is missing:', { sessionId: session.id });
       return createErrorResponse('Failed to create checkout session', 500);
     }
 
@@ -116,7 +127,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return createErrorResponse('Unauthorized', 401);
     }
 
-    console.error('Failed to create checkout session:', error);
+    console.error('Failed to create checkout session:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      body: request.body ? 'present' : 'missing',
+    });
     return createErrorResponse('Internal server error', 500);
   }
 }
