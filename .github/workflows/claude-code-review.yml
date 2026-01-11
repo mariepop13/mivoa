@@ -106,25 +106,30 @@ jobs:
             4. Performance: Identify bottlenecks and inefficiencies
             5. Testing: Verify test coverage for changes
 
-            Use inline comments for specific issues. Post a summary comment with findings.
+            For each inline comment you make, end it with a personalized AI prompts section. The prompts MUST be:
+            - Specific to the actual code/file/function being commented
+            - Contextual to the issue you identified
+            - Actionable and copy-paste ready
+            - 2-3 prompts maximum per comment
 
-            At the end of your summary comment, ALWAYS include this section with example prompts in a code block:
-
+            Format:
             ---
             <details>
-            <summary>💡 AI Prompts</summary>
+            <summary>💡 Suggestions</summary>
 
             ```
-            Explain the logic in [file/function name]
-            Suggest improvements for [specific code section]
-            Add unit tests for [component/function]
-            Refactor this code to improve readability
-            Check for edge cases in [function name]
-            Add error handling for [specific scenario]
-            Why was this approach chosen?
-            Suggest performance optimizations
+            [Personalized prompt 1 based on this specific code]
+            [Personalized prompt 2 based on this specific code]
+            [Personalized prompt 3 based on this specific code]
             ```
             </details>
+
+            Examples:
+            - If commenting on `userAuth.validateToken()`: "Explain the token validation logic in userAuth.validateToken()", "Add unit tests for token expiration in validateToken()"
+            - If commenting on performance in a loop: "Optimize the iteration in [specific function name]", "Explain why this loop might cause performance issues"
+            - If commenting on missing error handling: "Add try-catch for [specific operation]", "Suggest error handling strategy for [specific function]"
+
+            Post a summary comment with overall findings (no prompts section in summary).
           claude_args: |
             --model claude-sonnet-4-5-20250929
             --max-turns 15
