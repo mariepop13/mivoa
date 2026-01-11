@@ -107,6 +107,24 @@ jobs:
             5. Testing: Verify test coverage for changes
 
             Use inline comments for specific issues. Post a summary comment with findings.
+
+            At the end of your summary comment, ALWAYS include this section with example prompts in a code block:
+
+            ---
+            <details>
+            <summary>💡 AI Prompts</summary>
+
+            ```
+            Explain the logic in [file/function name]
+            Suggest improvements for [specific code section]
+            Add unit tests for [component/function]
+            Refactor this code to improve readability
+            Check for edge cases in [function name]
+            Add error handling for [specific scenario]
+            Why was this approach chosen?
+            Suggest performance optimizations
+            ```
+            </details>
           claude_args: |
             --model claude-sonnet-4-5-20250929
             --max-turns 15
