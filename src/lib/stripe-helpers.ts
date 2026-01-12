@@ -4,6 +4,101 @@ import { getPriceId } from '@/lib/subscription/constants';
 import { getAdminFirestore } from '@/firebase/admin';
 import type { SubscriptionPlan, BillingCycle, Currency, SubscriptionData, SubscriptionStatus } from '@/lib/subscription/types';
 
+const MILLISECONDS_PER_SECOND = 1000;
+
+export function mapStripeStatusToSubscriptionStatus(stripeStatus: string): SubscriptionStatus {
+  const statusMap: Record<string, SubscriptionStatus> = {
+    active: 'active',
+    canceled: 'canceled',
+    past_due: 'past_due',
+    trialing: 'trialing',
+    incomplete: 'incomplete',
+    incomplete_expired: 'incomplete_expired',
+    unpaid: 'unpaid',
+  };
+  return statusMap[stripeStatus] || 'free';
+}
+
+export function getPlanFromPriceId(priceId: string): SubscriptionPlan | null {
+  const priceIdMappings = [
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD', plan: 'supporter' as const },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD', plan: 'supporter' as const },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD', plan: 'supporter' as const },
+    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD', plan: 'supporter' as const },
+    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD', plan: 'pro' as const },
+    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_CAD', plan: 'pro' as const },
+    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_USD', plan: 'pro' as const },
+    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_CAD', plan: 'pro' as const },
+  ];
+
+  for (const mapping of priceIdMappings) {
+    if (process.env[mapping.envKey] === priceId) {
+      return mapping.plan;
+    }
+  }
+  return null;
+}
+
+export function mapStripePlanToSubscriptionPlan(
+  priceId: string,
+  metadata?: Stripe.Metadata
+): SubscriptionPlan {
+  if (metadata?.planId === 'supporter' || metadata?.planId === 'pro') {
+    return metadata.planId;
+  }
+  return getPlanFromPriceId(priceId) ?? 'free';
+}
+
+export function mapStripeBillingCycle(interval: string | null | undefined): BillingCycle | null {
+  if (interval === 'month') return 'monthly';
+  if (interval === 'year') return 'annual';
+  return null;
+}
+
+export function buildSubscriptionData(
+  subscription: Stripe.Subscription,
+  userId: string,
+  isCreation: boolean = false
+): Record<string, unknown> {
+  const priceItem = subscription.items.data[0];
+  if (!priceItem) {
+    throw new Error('Subscription has no price items');
+  }
+
+  const priceId = priceItem.price.id;
+  const plan = mapStripePlanToSubscriptionPlan(priceId, subscription.metadata);
+  const status = mapStripeStatusToSubscriptionStatus(subscription.status);
+  const billingCycle = mapStripeBillingCycle(priceItem.price.recurring?.interval);
+
+  const data: Record<string, unknown> = {
+    plan,
+    status,
+    stripeCustomerId: subscription.customer as string,
+    stripeSubscriptionId: subscription.id,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    updatedAt: new Date(),
+  };
+
+  if (isCreation) {
+    data.userId = userId;
+    data.createdAt = new Date();
+  }
+
+  if (billingCycle) {
+    data.billingCycle = billingCycle;
+  }
+
+  if (subscription.current_period_start) {
+    data.currentPeriodStart = new Date(subscription.current_period_start * MILLISECONDS_PER_SECOND);
+  }
+
+  if (subscription.current_period_end) {
+    data.currentPeriodEnd = new Date(subscription.current_period_end * MILLISECONDS_PER_SECOND);
+  }
+
+  return data;
+}
+
 async function updateUserStripeCustomerId(
   userId: string,
   stripeCustomerId: string
@@ -15,19 +110,10 @@ async function updateUserStripeCustomerId(
     .collection('subscription')
     .doc('status');
 
-  const subscriptionSnap = await subscriptionRef.get();
-
-  if (subscriptionSnap.exists) {
-    await subscriptionRef.update({
-      stripeCustomerId,
-    });
-  } else {
-    await subscriptionRef.set({
-      plan: 'free',
-      status: 'active',
-      stripeCustomerId,
-    });
-  }
+  await subscriptionRef.set(
+    { stripeCustomerId, plan: 'free', status: 'active' },
+    { merge: true }
+  );
 }
 
 export async function getOrCreateStripeCustomer(
@@ -55,19 +141,21 @@ export async function getOrCreateStripeCustomer(
         if (customer && !customer.deleted) {
           return customer as Stripe.Customer;
         }
-        console.info('Customer was deleted in Stripe, creating new one:', {
+        console.warn('Customer was deleted in Stripe, clearing from Firestore:', {
           userId,
           existingCustomerId,
         });
+        await subscriptionRef.set({ stripeCustomerId: null }, { merge: true });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorCode = (error as { code?: string })?.code;
-        console.info('Customer not found in Stripe, creating new one:', {
+        console.warn('Customer not found in Stripe, clearing from Firestore:', {
           userId,
           existingCustomerId,
           error: errorMessage,
           code: errorCode,
         });
+        await subscriptionRef.set({ stripeCustomerId: null }, { merge: true });
       }
     }
   }

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
 import { getAdminFirestore } from '@/firebase/admin';
-import { MILLISECONDS_PER_SECOND } from '@/lib/time-constants';
+import {
+  mapStripeStatusToSubscriptionStatus,
+  mapStripePlanToSubscriptionPlan,
+  mapStripeBillingCycle,
+  buildSubscriptionData,
+} from '@/lib/stripe-helpers';
 import type { SubscriptionPlan, SubscriptionStatus, BillingCycle } from '@/lib/subscription/types';
 
 export const dynamic = 'force-dynamic';
@@ -44,68 +49,6 @@ function getWebhookSecret(): string {
   return secret;
 }
 
-function mapStripeStatusToSubscriptionStatus(stripeStatus: string): SubscriptionStatus {
-  const statusMap: Record<string, SubscriptionStatus> = {
-    active: 'active',
-    canceled: 'canceled',
-    past_due: 'past_due',
-    trialing: 'trialing',
-    incomplete: 'incomplete',
-    incomplete_expired: 'incomplete_expired',
-    unpaid: 'unpaid',
-  };
-
-  return statusMap[stripeStatus] || 'free';
-}
-
-function getPlanFromPriceId(priceId: string): SubscriptionPlan | null {
-  const priceIdMappings: Array<{ envKey: string; plan: SubscriptionPlan }> = [
-    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_USD', plan: 'supporter' },
-    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_MONTHLY_CAD', plan: 'supporter' },
-    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_USD', plan: 'supporter' },
-    { envKey: 'STRIPE_PRICE_ID_SUPPORTER_ANNUAL_CAD', plan: 'supporter' },
-    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_USD', plan: 'pro' },
-    { envKey: 'STRIPE_PRICE_ID_PRO_MONTHLY_CAD', plan: 'pro' },
-    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_USD', plan: 'pro' },
-    { envKey: 'STRIPE_PRICE_ID_PRO_ANNUAL_CAD', plan: 'pro' },
-  ];
-
-  for (const mapping of priceIdMappings) {
-    if (process.env[mapping.envKey] === priceId) {
-      return mapping.plan;
-    }
-  }
-
-  return null;
-}
-
-function mapStripePlanToSubscriptionPlan(priceId: string, metadata?: Stripe.Metadata): SubscriptionPlan {
-  if (metadata?.planId) {
-    const planId = metadata.planId;
-    if (planId === 'supporter' || planId === 'pro') {
-      return planId;
-    }
-  }
-
-  const planFromPriceId = getPlanFromPriceId(priceId);
-  if (planFromPriceId) {
-    return planFromPriceId;
-  }
-
-  console.warn('Could not determine plan from price ID or metadata:', {
-    priceId,
-    metadata,
-  });
-
-  return 'free';
-}
-
-function mapStripeBillingCycle(interval: string | null | undefined): BillingCycle | null {
-  if (interval === 'month') return 'monthly';
-  if (interval === 'year') return 'annual';
-  return null;
-}
-
 async function handleSubscriptionCreated(
   stripe: Stripe,
   subscription: Stripe.Subscription
@@ -116,33 +59,7 @@ async function handleSubscriptionCreated(
   }
 
   const adminFirestore = getAdminFirestore();
-
-  const plan = mapStripePlanToSubscriptionPlan(subscription.items.data[0]?.price.id || '', subscription.metadata);
-  const status = mapStripeStatusToSubscriptionStatus(subscription.status);
-  const billingCycle = mapStripeBillingCycle(subscription.items.data[0]?.price.recurring?.interval);
-
-  const subscriptionData: Record<string, unknown> = {
-    userId,
-    plan,
-    status,
-    stripeCustomerId: subscription.customer as string,
-    stripeSubscriptionId: subscription.id,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  if (billingCycle) {
-    subscriptionData.billingCycle = billingCycle;
-  }
-
-  if (subscription.current_period_start) {
-    subscriptionData.currentPeriodStart = new Date(subscription.current_period_start * MILLISECONDS_PER_SECOND);
-  }
-
-  if (subscription.current_period_end) {
-    subscriptionData.currentPeriodEnd = new Date(subscription.current_period_end * MILLISECONDS_PER_SECOND);
-  }
+  const subscriptionData = buildSubscriptionData(subscription, userId, true);
 
   await adminFirestore
     .collection('users')
@@ -150,7 +67,6 @@ async function handleSubscriptionCreated(
     .collection('subscription')
     .doc('status')
     .set(subscriptionData, { merge: true });
-
 }
 
 async function handleSubscriptionUpdated(
@@ -163,31 +79,7 @@ async function handleSubscriptionUpdated(
   }
 
   const adminFirestore = getAdminFirestore();
-
-  const plan = mapStripePlanToSubscriptionPlan(subscription.items.data[0]?.price.id || '', subscription.metadata);
-  const status = mapStripeStatusToSubscriptionStatus(subscription.status);
-  const billingCycle = mapStripeBillingCycle(subscription.items.data[0]?.price.recurring?.interval);
-
-  const updateData: Record<string, unknown> = {
-    plan,
-    status,
-    stripeCustomerId: subscription.customer as string,
-    stripeSubscriptionId: subscription.id,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    updatedAt: new Date(),
-  };
-
-  if (billingCycle) {
-    updateData.billingCycle = billingCycle;
-  }
-
-  if (subscription.current_period_start) {
-    updateData.currentPeriodStart = new Date(subscription.current_period_start * MILLISECONDS_PER_SECOND);
-  }
-
-  if (subscription.current_period_end) {
-    updateData.currentPeriodEnd = new Date(subscription.current_period_end * MILLISECONDS_PER_SECOND);
-  }
+  const updateData = buildSubscriptionData(subscription, userId, false);
 
   await adminFirestore
     .collection('users')
@@ -195,7 +87,6 @@ async function handleSubscriptionUpdated(
     .collection('subscription')
     .doc('status')
     .set(updateData, { merge: true });
-
 }
 
 async function handleSubscriptionDeleted(
