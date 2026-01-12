@@ -10,10 +10,11 @@ export async function getAuthenticatedUserId(request: NextRequest): Promise<stri
   const token = authHeader.substring(7);
   try {
     const adminAuth = getAdminAuth();
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await adminAuth.verifyIdToken(token, true);
     return decodedToken.uid;
   } catch (error) {
-    console.error('Failed to verify ID token:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown verification error';
+    console.error('Failed to verify ID token:', { error: errorMessage });
     return null;
   }
 }
