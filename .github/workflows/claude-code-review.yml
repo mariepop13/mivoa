@@ -58,7 +58,7 @@ jobs:
           trigger_phrase: "@claude"
           additional_permissions: |
             actions: read
-          claude_args: "--model claude-sonnet-4-5-20250929 --max-turns 10"
+          claude_args: "--model claude-sonnet-4-5-20250929 --max-turns 20"
 
   # Automated code review on PR events
   claude-automated-review:
@@ -106,6 +106,9 @@ jobs:
             4. Performance: Identify bottlenecks and inefficiencies
             5. Testing: Verify test coverage for changes
 
+            IMPORTANT: When suggesting modifications, ALWAYS include the specific line numbers concerned.
+            Format your suggestions as: "In file_path:line_number, suggest changing..."
+
             For each inline comment you make, end it with a personalized AI prompts section. The prompts MUST be:
             - Specific to the actual code/file/function being commented
             - Contextual to the issue you identified
@@ -129,10 +132,10 @@ jobs:
             - If commenting on performance in a loop: "Optimize the iteration in [specific function name]", "Explain why this loop might cause performance issues"
             - If commenting on missing error handling: "Add try-catch for [specific operation]", "Suggest error handling strategy for [specific function]"
 
-            Post a summary comment with overall findings (no prompts section in summary).
+            Use inline comments for specific issues. Post a summary comment with overall findings (no prompts section in summary).
           claude_args: |
             --model claude-sonnet-4-5-20250929
-            --max-turns 15
+            --max-turns 25
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh pr diff:*)"
 
   # Security-focused review for sensitive changes
