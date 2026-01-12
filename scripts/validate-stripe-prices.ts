@@ -16,10 +16,7 @@ if (!STRIPE_SECRET_KEY.startsWith('sk_live_') && !STRIPE_SECRET_KEY.startsWith('
   process.exit(1);
 }
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2025-12-15.clover' as any,
-  typescript: true,
-});
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 const isTestMode = STRIPE_SECRET_KEY.startsWith('sk_test_');
 
