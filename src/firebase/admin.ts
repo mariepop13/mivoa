@@ -6,6 +6,22 @@ let adminApp: App | null = null;
 let adminAuth: Auth | null = null;
 let adminFirestore: Firestore | null = null;
 
+function validateServiceAccountCredentials(parsed: unknown): Record<string, unknown> {
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY must be a valid JSON object');
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  if (
+    typeof obj.project_id !== 'string' ||
+    typeof obj.private_key !== 'string' ||
+    typeof obj.client_email !== 'string'
+  ) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY must contain project_id, private_key, and client_email');
+  }
+  return obj;
+}
+
 function initializeAdminApp(): App {
   if (adminApp) {
     return adminApp;
@@ -19,24 +35,14 @@ function initializeAdminApp(): App {
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountKey) {
-    if (process.env.NEXT_PHASE !== 'phase-production-build') {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is required');
-    }
-    return null as unknown as App;
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is required');
   }
 
-  try {
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    adminApp = initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } catch (error) {
-    if (process.env.NEXT_PHASE === 'phase-production-build') {
-      console.warn('Warning: FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON. Skipping Firebase Admin initialization during build.');
-      return null as unknown as App;
-    }
-    throw error;
-  }
+  const serviceAccount = JSON.parse(serviceAccountKey);
+  const validatedCredentials = validateServiceAccountCredentials(serviceAccount);
+  adminApp = initializeApp({
+    credential: cert(validatedCredentials as any),
+  });
 
   return adminApp;
 }
