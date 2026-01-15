@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { requireAuthenticatedUserId } from '@/lib/api-auth';
 import { getStripeClient } from '@/lib/subscription/stripe-client';
 import { getAdminFirestore } from '@/firebase/admin';
 import { buildSubscriptionData } from '@/lib/stripe-helpers';
-import type { SubscriptionPlan, SubscriptionStatus, BillingCycle } from '@/lib/subscription/types';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/lib/subscription/types';
 
 export const dynamic = 'force-dynamic';
 
