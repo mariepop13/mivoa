@@ -38,7 +38,15 @@ function initializeAdminApp(): App {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is required');
   }
 
-  const serviceAccount = JSON.parse(serviceAccountKey);
+  let serviceAccount: unknown;
+  try {
+    serviceAccount = JSON.parse(serviceAccountKey);
+  } catch (error) {
+    throw new Error(
+      `FIREBASE_SERVICE_ACCOUNT_KEY contains invalid JSON: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
   const validatedCredentials = validateServiceAccountCredentials(serviceAccount);
   adminApp = initializeApp({
     credential: cert(validatedCredentials as any),

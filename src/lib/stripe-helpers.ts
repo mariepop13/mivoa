@@ -15,6 +15,7 @@ export function mapStripeStatusToSubscriptionStatus(stripeStatus: string): Subsc
     incomplete: 'incomplete',
     incomplete_expired: 'incomplete_expired',
     unpaid: 'unpaid',
+    paused: 'paused',
   };
   return statusMap[stripeStatus] || 'free';
 }
