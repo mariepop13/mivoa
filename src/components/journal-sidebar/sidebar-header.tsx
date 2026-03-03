@@ -3,6 +3,7 @@
 import { DatePicker } from '@/components/date-picker';
 import { SettingsMenu } from '@/components/settings-menu';
 import { UserMenu } from '@/components/user-menu';
+import { ExportImportMenu } from '@/components/export-import-menu';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 interface SidebarHeaderProps {
@@ -38,6 +39,7 @@ export function SidebarHeader({
         <div className="flex items-center gap-2 flex-shrink-0">
           <UserMenu />
           <SettingsMenu />
+          <ExportImportMenu />
         </div>
       </div>
       {entries && entries.length > 0 && (

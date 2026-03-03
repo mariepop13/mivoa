@@ -24,14 +24,19 @@ export function useDoc<T extends Record<string, unknown> = Record<string, unknow
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [docIsLoading, setDocIsLoading] = useState<boolean>(false);
+  // hasSettled tracks whether the current memoizedDocRef has received its first snapshot.
+  // This prevents the race condition where isLoading=false and data=null simultaneously
+  // in the render frame between memoizedDocRef becoming non-null and the effect firing.
+  const [hasSettled, setHasSettled] = useState(false);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
     if (!memoizedDocRef && mountedRef.current) {
       startTransition(() => {
-        setIsLoading(false);
+        setDocIsLoading(false);
+        setHasSettled(false);
         setError(null);
         setData(null);
       });
@@ -47,7 +52,8 @@ export function useDoc<T extends Record<string, unknown> = Record<string, unknow
 
     if (mountedRef.current) {
       startTransition(() => {
-        setIsLoading(true);
+        setDocIsLoading(true);
+        setHasSettled(false);
         setError(null);
       });
     }
@@ -61,11 +67,12 @@ export function useDoc<T extends Record<string, unknown> = Record<string, unknow
         } else {
           setData(null);
         }
-        setIsLoading(false);
+        setDocIsLoading(false);
+        setHasSettled(true);
       },
       (_error: FirestoreError) => {
         if (!mountedRef.current) return;
-        
+
         if (_error.code === 'permission-denied') {
           const contextualError = new FirestorePermissionError({
             operation: 'get',
@@ -76,9 +83,10 @@ export function useDoc<T extends Record<string, unknown> = Record<string, unknow
         } else {
           setError(_error);
         }
-        
+
         setData(null);
-        setIsLoading(false);
+        setDocIsLoading(false);
+        setHasSettled(true);
       }
     );
 
@@ -87,6 +95,11 @@ export function useDoc<T extends Record<string, unknown> = Record<string, unknow
       unsubscribe();
     };
   }, [memoizedDocRef]);
+
+  // isLoading is true when docRef is non-null but no snapshot has arrived yet (hasSettled=false),
+  // OR when the subscription is actively fetching. This ensures isLoading=true in the render
+  // frame right after memoizedDocRef becomes non-null, before any effect fires.
+  const isLoading = docIsLoading || (!!memoizedDocRef && !hasSettled);
 
   return { data, isLoading, error };
 }

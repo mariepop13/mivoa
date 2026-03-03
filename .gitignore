@@ -46,6 +46,8 @@ next-env.d.ts
 # environment variables
 .env*
 !.env.example
+# Fake Firebase emulator credentials — safe to commit, copy to .env.test.local for E2E tests
+!.env.test.local.example
 
 # Editors
 .vscode/*
@@ -59,3 +61,6 @@ next-env.d.ts
 .cursor/*
 !.cursor/rules/
 
+# Playwright
+/playwright-report/
+/test-results/

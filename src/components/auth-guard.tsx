@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 
-const PUBLIC_ROUTES = ['/auth', '/about', '/contact', '/legal', '/privacy', '/terms'];
+const PUBLIC_ROUTES = ['/auth', '/about', '/contact', '/legal', '/privacy', '/terms', '/test-auth'];
 
 export function AuthGuard({ children }: { children: ReactNode }): React.JSX.Element {
   const { user, isLoading } = useUser();

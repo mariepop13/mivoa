@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "exportedAt": "2026-03-02T14:30:00Z",
+  "userId": "test-uid",
+  "entries": [
+    {
+      "id": "2026-03-02-143045123",
+      "content": "Today was a productive day. I finished the import/export feature and wrote tests for it.",
+      "title": "Productive day",
+      "date": "2026-03-02",
+      "createdAt": "2026-03-02T14:30:45.000Z",
+      "updatedAt": "2026-03-02T14:31:00.000Z",
+      "moods": ["calm", "focused"],
+      "moodEmojis": { "calm": "😌", "focused": "🎯" },
+      "subjectEmoji": "💻",
+      "themes": ["work", "productivity"],
+      "themeEmojis": { "work": "💼", "productivity": "⚡" },
+      "keyTakeaways": ["Ship early, iterate often", "Tests give confidence"],
+      "places": ["home office"],
+      "characters": [],
+      "linkedEntryIds": [],
+      "conversationHistory": [
+        {
+          "role": "assistant",
+          "content": "What would you like to reflect on today?",
+          "timestamp": "2026-03-02T14:30:45.000Z"
+        },
+        {
+          "role": "user",
+          "content": "I finished a big feature today.",
+          "timestamp": "2026-03-02T14:31:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "2026-03-01-100000000",
+      "content": "Quiet Sunday. Read a book and went for a walk.",
+      "title": "Rest day",
+      "date": "2026-03-01",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "updatedAt": "2026-03-01T10:01:00.000Z",
+      "moods": ["relaxed"],
+      "moodEmojis": { "relaxed": "🌿" },
+      "subjectEmoji": "📖",
+      "themes": ["rest", "nature"],
+      "themeEmojis": { "rest": "😴", "nature": "🌳" },
+      "keyTakeaways": ["Rest is productive too"],
+      "places": ["park"],
+      "characters": [],
+      "linkedEntryIds": [],
+      "conversationHistory": []
+    }
+  ]
+}
