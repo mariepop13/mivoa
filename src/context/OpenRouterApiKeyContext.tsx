@@ -1,13 +1,7 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useMemo } from 'react';
-import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp, deleteField } from 'firebase/firestore';
-
-interface UserSettings extends Record<string, unknown> {
-  openRouterApiKey?: string;
-  updatedAt?: unknown;
-}
+import { createContext, ReactNode, useCallback } from 'react';
+import { useStorage, useSettings } from '@/repositories/storage-provider';
 
 interface OpenRouterApiKeyContextType {
   apiKey: string | null;
@@ -24,42 +18,21 @@ export const OpenRouterApiKeyContext = createContext<OpenRouterApiKeyContextType
 });
 
 export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const settingsDocRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}/settings/api`);
-  }, [firestore, user]);
-
-  const { data: settingsData, isLoading } = useDoc<UserSettings>(settingsDocRef);
+  const { backend } = useStorage();
+  const { data: settingsData, isLoading } = useSettings();
 
   const apiKey = settingsData?.openRouterApiKey || null;
 
   const setApiKey = useCallback(async (key: string | null) => {
-    if (!settingsDocRef) return;
+    if (!backend) return;
 
     try {
-      if (key) {
-        await setDocumentNonBlocking(
-          settingsDocRef,
-          {
-            openRouterApiKey: key,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } else {
-        await updateDocumentNonBlocking(settingsDocRef, {
-          openRouterApiKey: deleteField(),
-          updatedAt: serverTimestamp(),
-        });
-      }
+      await backend.updateSettings({ openRouterApiKey: key ?? undefined });
     } catch (error) {
-      console.error('Failed to save OpenRouter API key to Firestore', error);
+      console.error('Failed to save OpenRouter API key', error);
       throw error;
     }
-  }, [settingsDocRef]);
+  }, [backend]);
 
   const resetApiKey = useCallback(async () => {
     await setApiKey(null);
