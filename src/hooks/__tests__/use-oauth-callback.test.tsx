@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useOAuthCallback } from '../use-oauth-callback';
@@ -10,8 +11,23 @@ vi.mock('next/navigation');
 vi.mock('@/lib/openrouter-oauth');
 vi.mock('@/hooks/use-translation');
 
+const mockSetApiKey = vi.fn();
+
+const createWrapper = () =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider
+      value={{
+        apiKey: null,
+        setApiKey: mockSetApiKey,
+        resetApiKey: vi.fn(),
+        isLoading: false,
+      }}
+    >
+      {children}
+    </OpenRouterApiKeyContext.Provider>
+  );
+
 describe('useOAuthCallback', () => {
-  const mockSetApiKey = vi.fn();
   const mockRouterPush = vi.fn();
   const mockGet = vi.fn();
   const mockT = vi.fn((key: string) => key);
@@ -40,20 +56,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    const { result } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { result } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.status).toBe('success');
@@ -69,20 +72,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(exchangeAuthCodeForApiKey).toHaveBeenCalled();
@@ -99,20 +89,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    const { result } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { result } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.status).toBe('error');
@@ -125,20 +102,7 @@ describe('useOAuthCallback', () => {
   it('should set error status when code is missing', async () => {
     mockGet.mockReturnValue(null);
 
-    const { result } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { result } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.status).toBe('error');
@@ -156,20 +120,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    const { result } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { result } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.status).toBe('error');
@@ -185,20 +136,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    const { result } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { result } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.status).toBe('error');
@@ -213,20 +151,7 @@ describe('useOAuthCallback', () => {
       return null;
     });
 
-    const { unmount } = renderHook(() => useOAuthCallback(), {
-      wrapper: ({ children }) => (
-        <OpenRouterApiKeyContext.Provider
-          value={{
-            apiKey: null,
-            setApiKey: mockSetApiKey,
-            resetApiKey: vi.fn(),
-            isLoading: false,
-          }}
-        >
-          {children}
-        </OpenRouterApiKeyContext.Provider>
-      ),
-    });
+    const { unmount } = renderHook(() => useOAuthCallback(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(exchangeAuthCodeForApiKey).toHaveBeenCalled();
@@ -241,4 +166,3 @@ describe('useOAuthCallback', () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 });
-

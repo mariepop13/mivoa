@@ -14,15 +14,16 @@ const mockApiKey = 'test-api-key';
 const mockLanguage = 'en';
 const mockModel = 'test-model';
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <OpenRouterApiKeyContext.Provider value={{ apiKey: mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-    <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-      <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-        {children}
-      </ModelContext.Provider>
-    </LanguageContext.Provider>
-  </OpenRouterApiKeyContext.Provider>
-);
+const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider value={{ apiKey: 'apiKey' in overrides ? (overrides.apiKey as string | null) : mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
+      <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+        <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
+          {children}
+        </ModelContext.Provider>
+      </LanguageContext.Provider>
+    </OpenRouterApiKeyContext.Provider>
+  );
 
 describe('useEntryAnalysis', () => {
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe('useEntryAnalysis', () => {
   });
 
   it('analyzes entry content', async () => {
-    const { result } = renderHook(() => useEntryAnalysis(), { wrapper });
+    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: createWrapper() });
 
     const analysis = await result.current.analyze('Test entry content');
 
@@ -57,17 +58,7 @@ describe('useEntryAnalysis', () => {
   });
 
   it('returns null when API key is not configured', async () => {
-    const wrapperWithoutKey = ({ children }: { children: React.ReactNode }) => (
-      <OpenRouterApiKeyContext.Provider value={{ apiKey: null, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-        <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-          <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-            {children}
-          </ModelContext.Provider>
-        </LanguageContext.Provider>
-      </OpenRouterApiKeyContext.Provider>
-    );
-
-    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: wrapperWithoutKey });
+    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: createWrapper({ apiKey: null }) });
 
     const analysis = await result.current.analyze('Test content');
 
@@ -78,7 +69,7 @@ describe('useEntryAnalysis', () => {
   });
 
   it('returns null for empty content', async () => {
-    const { result } = renderHook(() => useEntryAnalysis(), { wrapper });
+    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: createWrapper() });
 
     const analysis = await result.current.analyze('   ');
 
@@ -89,7 +80,7 @@ describe('useEntryAnalysis', () => {
   it('handles analysis errors', async () => {
     vi.mocked(entryAnalysisService.analyzeEntry).mockRejectedValue(new Error('Analysis failed'));
 
-    const { result } = renderHook(() => useEntryAnalysis(), { wrapper });
+    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: createWrapper() });
 
     const analysis = await result.current.analyze('Test content');
 
@@ -107,7 +98,7 @@ describe('useEntryAnalysis', () => {
 
     vi.mocked(entryAnalysisService.analyzeEntry).mockReturnValue(analysisPromise);
 
-    const { result } = renderHook(() => useEntryAnalysis(), { wrapper });
+    const { result } = renderHook(() => useEntryAnalysis(), { wrapper: createWrapper() });
 
     const analyzePromise = result.current.analyze('Test content');
 
