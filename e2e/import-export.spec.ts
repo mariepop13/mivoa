@@ -12,7 +12,6 @@ const i18n = {
   importJSON: 'Import JSON',
   exportSuccess: 'Export downloaded',
   importConfirmTitle: 'Import entries',
-  importSuccess: 'entries imported',
   importUnsupportedVersion: 'Unsupported format version',
 };
 
@@ -77,7 +76,7 @@ test('Import JSON — confirm imports and shows success toast', async ({ page })
 
   await dialog.getByRole('button', { name: 'Import' }).click();
 
-  await expect(page.getByText(i18n.importSuccess)).toBeVisible();
+  await expect(page.getByText(/\d+ entries imported/)).toBeVisible({ timeout: 5000 });
 });
 
 test('Import invalid version — shows error toast', async ({ page }) => {
