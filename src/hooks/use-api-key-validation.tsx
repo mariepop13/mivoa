@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { validateOpenRouterApiKey } from '@/lib/openrouter-client';
+import { useUser } from '@/firebase';
 
 interface UseApiKeyValidationResult {
   localApiKey: string;
@@ -11,6 +12,7 @@ interface UseApiKeyValidationResult {
 export function useApiKeyValidation(): UseApiKeyValidationResult {
   const [localApiKey, setLocalApiKey] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const { user } = useUser();
 
   const handleSubmit = async (
     e: React.FormEvent,
@@ -22,9 +24,15 @@ export function useApiKeyValidation(): UseApiKeyValidationResult {
       return;
     }
 
+    const idToken = await user?.getIdToken();
+    if (!idToken) {
+      onError('Authentication required');
+      return;
+    }
+
     setIsVerifying(true);
     try {
-      const isValid = await validateOpenRouterApiKey(localApiKey.trim());
+      const isValid = await validateOpenRouterApiKey(localApiKey.trim(), idToken);
       if (isValid) {
         await onSubmit(localApiKey.trim());
         setLocalApiKey('');
@@ -46,4 +54,3 @@ export function useApiKeyValidation(): UseApiKeyValidationResult {
     handleSubmit,
   };
 }
-
