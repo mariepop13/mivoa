@@ -2,8 +2,6 @@ import { collection, getDocs } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCallback, useState } from 'react';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
 import type { JournalEntryData } from './use-journal-entries';
 
 function isTimestampLike(value: unknown): value is { toDate(): Date } {
@@ -81,7 +79,10 @@ export function useExport() {
     if (!firestore || !user) return;
     setIsExporting(true);
     try {
-      const entries = await fetchAllEntries();
+      const [entries, { saveAs }] = await Promise.all([
+        fetchAllEntries(),
+        import('file-saver'),
+      ]);
       const dateStr = new Date().toISOString().slice(0, 10);
       const payload = {
         version: 1,
@@ -100,7 +101,11 @@ export function useExport() {
     if (!firestore || !user) return;
     setIsExporting(true);
     try {
-      const entries = await fetchAllEntries();
+      const [entries, { default: JSZip }, { saveAs }] = await Promise.all([
+        fetchAllEntries(),
+        import('jszip'),
+        import('file-saver'),
+      ]);
       const zip = new JSZip();
       entries.forEach((entry) => {
         zip.file(toSafeZipFileName(entry.id), entryToMarkdown(entry));
