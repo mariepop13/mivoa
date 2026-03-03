@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
-import { useAuth, useFirestore, initiateAnonymousSignIn, setDocumentNonBlocking } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, initiateAnonymousSignIn } from '@/firebase';
 
 export default function TestAuthPage(): React.JSX.Element {
   const auth = useAuth();
@@ -23,7 +23,7 @@ export default function TestAuthPage(): React.JSX.Element {
     async function setup(): Promise<void> {
       const { user } = await initiateAnonymousSignIn(auth!);
       const settingsRef = doc(firestore!, `users/${user.uid}/settings/api`);
-      await setDocumentNonBlocking(settingsRef, { openRouterApiKey: 'test-openrouter-key' }, {});
+      await setDoc(settingsRef, { openRouterApiKey: 'test-openrouter-key' });
       router.replace('/');
     }
 

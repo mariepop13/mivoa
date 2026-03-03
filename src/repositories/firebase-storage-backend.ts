@@ -138,10 +138,11 @@ export class FirebaseStorageBackend implements StorageBackend {
     if (!this.currentUser) throw new Error('Not authenticated');
     const uid = this.currentUser.uid;
     const ref = doc(this.firestore, `users/${uid}/entries/${entryId}`);
+    const { createdAt: rawCreatedAt, updatedAt: rawUpdatedAt, ...rest } = data;
     const payload: Record<string, unknown> = {
-      ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      ...rest,
+      createdAt: rawCreatedAt ? Timestamp.fromDate(new Date(rawCreatedAt)) : serverTimestamp(),
+      updatedAt: rawUpdatedAt ? Timestamp.fromDate(new Date(rawUpdatedAt)) : serverTimestamp(),
     };
     if (data.conversationHistory) {
       payload.conversationHistory = data.conversationHistory.map((m) => ({

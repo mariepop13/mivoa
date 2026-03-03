@@ -1,6 +1,6 @@
-import { collection, getDocs, doc } from 'firebase/firestore';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
+import type { StorageBackend } from '@/repositories/storage-backend';
+import type { EntryCreateData } from '@/repositories/types';
 import { useCallback, useState } from 'react';
 import type { JournalEntryData } from './use-journal-entries';
 
@@ -58,13 +58,28 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
   };
 }
 
+function getAllEntryIds(backend: StorageBackend): Promise<Set<string>> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    let unsubscribeFn: (() => void) | undefined;
+
+    unsubscribeFn = backend.subscribeToAllEntries((entries) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(new Set(entries.map((e) => e.id)));
+      unsubscribeFn?.();
+    });
+
+    if (resolved) unsubscribeFn();
+  });
+}
+
 export function useImport() {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const [isImporting, setIsImporting] = useState(false);
 
   const parseFile = useCallback(async (file: File): Promise<ImportPreview | null> => {
-    if (!firestore || !user) return null;
+    if (!backend) return null;
 
     const text = await file.text();
     let parsed: Record<string, unknown>;
@@ -80,9 +95,7 @@ export function useImport() {
     const rawEntries = parsed.entries as Array<Record<string, unknown>>;
     rawEntries.forEach(validateRawEntry);
 
-    const col = collection(firestore, `users/${user.uid}/entries`);
-    const snapshot = await getDocs(col);
-    const existingIds = new Set(snapshot.docs.map((d) => d.id));
+    const existingIds = await getAllEntryIds(backend);
 
     const entriesById = new Map<string, JournalEntryData & { id: string }>();
     rawEntries.forEach((raw) => {
@@ -98,24 +111,22 @@ export function useImport() {
       skippedCount: entries.length - newEntries.length,
       entries: newEntries,
     };
-  }, [firestore, user]);
+  }, [backend]);
 
   const importEntries = useCallback(async (preview: ImportPreview): Promise<number> => {
-    if (!firestore || !user) return 0;
+    if (!backend) return 0;
     setIsImporting(true);
     try {
       await Promise.all(
-        preview.entries.map((entry) => {
-          const { id, ...data } = entry;
-          const ref = doc(firestore, `users/${user.uid}/entries/${id}`);
-          return setDocumentNonBlocking(ref, data, {});
-        })
+        preview.entries.map(({ id, createdAt, updatedAt, ...data }) =>
+          backend.createEntry(id, { ...data, createdAt, updatedAt } as EntryCreateData)
+        )
       );
       return preview.newCount;
     } finally {
       setIsImporting(false);
     }
-  }, [firestore, user]);
+  }, [backend]);
 
   return { parseFile, importEntries, isImporting };
 }

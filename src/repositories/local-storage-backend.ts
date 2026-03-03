@@ -86,7 +86,7 @@ export class LocalStorageBackend implements StorageBackend {
   async createEntry(entryId: string, data: EntryCreateData): Promise<void> {
     const now = new Date().toISOString();
     const entries = readEntries();
-    entries[entryId] = { ...data, id: entryId, createdAt: now, updatedAt: now };
+    entries[entryId] = { ...data, id: entryId, createdAt: data.createdAt ?? now, updatedAt: data.updatedAt ?? now };
     writeEntries(entries);
   }
 

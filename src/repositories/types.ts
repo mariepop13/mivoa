@@ -34,7 +34,10 @@ export interface Entry {
   linkedEntryIds?: string[];
 }
 
-export type EntryCreateData = Omit<Entry, 'id' | 'createdAt' | 'updatedAt'>;
+export type EntryCreateData = Omit<Entry, 'id' | 'createdAt' | 'updatedAt'> & {
+  createdAt?: string;
+  updatedAt?: string;
+};
 export type EntryUpdateData = Partial<Omit<Entry, 'id' | 'createdAt'>>;
 
 export interface Settings {
