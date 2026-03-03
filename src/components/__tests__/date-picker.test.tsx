@@ -5,8 +5,6 @@ import { DatePicker } from '../date-picker';
 import { LanguageContext } from '@/context/LanguageContext';
 import { useEntryDates } from '@/hooks/use-entry-dates';
 import { useTranslation } from '@/hooks/use-translation';
-import { format } from 'date-fns';
-import { enUS, fr } from 'date-fns/locale';
 
 vi.mock('@/hooks/use-entry-dates');
 vi.mock('@/hooks/use-translation');
@@ -76,22 +74,12 @@ describe('DatePicker', () => {
   it('should render formatted date in English when language is en', () => {
     renderWithLanguage('en');
 
-    expect(format).toHaveBeenCalledWith(
-      mockDate,
-      'EEEE, MMMM d, yyyy',
-      { locale: enUS }
-    );
     expect(screen.getByText('Monday, January 15, 2024')).toBeInTheDocument();
   });
 
   it('should render formatted date in French when language is fr', () => {
     renderWithLanguage('fr');
 
-    expect(format).toHaveBeenCalledWith(
-      mockDate,
-      'EEEE, do MMMM yyyy',
-      { locale: fr }
-    );
     expect(screen.getByText('lundi, 15 janvier 2024')).toBeInTheDocument();
   });
 
