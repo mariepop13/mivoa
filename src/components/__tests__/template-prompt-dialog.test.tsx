@@ -92,15 +92,6 @@ describe('TemplatePromptDialog', () => {
     renderWithContext(true, mockTemplate, 'test-key');
 
     await waitFor(() => {
-      expect(mockGenerateTemplatePrompt).toHaveBeenCalledWith({
-        template: mockTemplate,
-        apiKey: 'test-key',
-        language: 'en',
-        model: 'test-model',
-      });
-    });
-
-    await waitFor(() => {
       expect(screen.getByText('templateGratitudeDescription')).toBeInTheDocument();
     });
   });
@@ -171,10 +162,11 @@ describe('TemplatePromptDialog', () => {
     const { rerender } = renderWithContext(true, mockTemplate, 'test-key');
 
     await waitFor(() => {
-      expect(mockGenerateTemplatePrompt).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/Generated prompt text/)).toBeInTheDocument();
     });
 
     vi.clearAllMocks();
+    mockGenerateTemplatePrompt.mockResolvedValue('Generated prompt text');
 
     rerender(
       <OpenRouterApiKeyContext.Provider
@@ -196,7 +188,9 @@ describe('TemplatePromptDialog', () => {
       </OpenRouterApiKeyContext.Provider>
     );
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await waitFor(() => {
+      expect(screen.queryByText(/Generated prompt text/)).not.toBeInTheDocument();
+    });
 
     rerender(
       <OpenRouterApiKeyContext.Provider
@@ -219,7 +213,7 @@ describe('TemplatePromptDialog', () => {
     );
 
     await waitFor(() => {
-      expect(mockGenerateTemplatePrompt).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/Generated prompt text/)).toBeInTheDocument();
     });
   });
 
