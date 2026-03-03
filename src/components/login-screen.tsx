@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/firebase';
-import { signInWithGoogle, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { signInWithGoogle } from '@/firebase/non-blocking-login';
 import { useTranslation } from '@/hooks/use-translation';
 
 function useLoginHandlers(
@@ -18,8 +18,8 @@ function useLoginHandlers(
       await signInWithGoogle(auth);
     } catch (error) {
       console.error('Login failed:', error);
-      const message = error instanceof Error 
-        ? `${t('signInFailed')} ${error.message}` 
+      const message = error instanceof Error
+        ? `${t('signInFailed')} ${error.message}`
         : t('signInFailedGeneric');
       setErrorMessage(message);
     } finally {
@@ -27,36 +27,18 @@ function useLoginHandlers(
     }
   };
 
-  const handleAnonymousLogin = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      await initiateAnonymousSignIn(auth);
-    } catch (error) {
-      console.error('Anonymous login failed:', error);
-      const message = error instanceof Error 
-        ? `${t('anonymousSignInFailed')} ${error.message}` 
-        : t('anonymousSignInFailedGeneric');
-      setErrorMessage(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { handleGoogleLogin, handleAnonymousLogin };
+  return { handleGoogleLogin };
 }
 
 function LoginForm({
   isLoading,
   errorMessage,
   onGoogleLogin,
-  onAnonymousLogin,
   t,
 }: {
   isLoading: boolean;
   errorMessage: string | null;
   onGoogleLogin: () => void;
-  onAnonymousLogin: () => void;
   t: (key: string) => string;
 }): React.JSX.Element {
   return (
@@ -66,21 +48,13 @@ function LoginForm({
           {errorMessage}
         </div>
       )}
-      
+
       <button
         onClick={onGoogleLogin}
         disabled={isLoading}
         className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? t('signingIn') : t('signInWithGoogle')}
-      </button>
-      
-      <button
-        onClick={onAnonymousLogin}
-        disabled={isLoading}
-        className="w-full px-4 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? t('signingIn') : t('continueAnonymously')}
       </button>
     </div>
   );
@@ -92,7 +66,7 @@ export function LoginScreen(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { handleGoogleLogin, handleAnonymousLogin } = useLoginHandlers(
+  const { handleGoogleLogin } = useLoginHandlers(
     auth,
     t,
     setIsLoading,
@@ -108,12 +82,11 @@ export function LoginScreen(): React.JSX.Element {
         <p className="text-muted-foreground mb-8">
           {t('appSubtitle')}
         </p>
-        
+
         <LoginForm
           isLoading={isLoading}
           errorMessage={errorMessage}
           onGoogleLogin={handleGoogleLogin}
-          onAnonymousLogin={handleAnonymousLogin}
           t={t}
         />
       </div>
