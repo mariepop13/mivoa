@@ -78,6 +78,11 @@ export class LocalStorageBackend implements StorageBackend {
     return () => window.removeEventListener('mivoa:settings:changed', notify);
   }
 
+  async getEntries(ids: string[]): Promise<Entry[]> {
+    const all = readEntries();
+    return ids.map((id) => all[id]).filter((e): e is Entry => e !== undefined);
+  }
+
   async createEntry(entryId: string, data: EntryCreateData): Promise<void> {
     const now = new Date().toISOString();
     const entries = readEntries();

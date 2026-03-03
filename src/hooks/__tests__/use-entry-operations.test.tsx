@@ -1,25 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useEntryOperations } from '../use-entry-operations';
-import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { useEntryAnalysis } from '../use-entry-analysis';
 import * as journalHandlers from '@/app/handlers/journal-handlers';
-import { serverTimestamp } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+  useEntriesByDate: vi.fn(),
+  useEntry: vi.fn(),
+  useAllEntries: vi.fn(),
+}));
 vi.mock('../use-entry-analysis');
 vi.mock('@/app/handlers/journal-handlers');
-vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(() => ({ _methodName: 'serverTimestamp' })),
-}));
 
 describe('useEntryOperations', () => {
-  const mockFirestore = { id: 'mock-firestore' } as any;
-  const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
-  const mockDocRef = { id: 'mock-doc-ref' } as any;
+  let mockBackend: StorageBackend;
   const mockAnalyze = vi.fn().mockResolvedValue({ mood: 'happy', themes: [], keyTakeaways: [] });
 
   const mockUpdateEntryState = vi.fn();
@@ -33,11 +30,10 @@ describe('useEntryOperations', () => {
 
   const defaultParams = {
     dateKey: '2024-01-15',
-    selectedEntryDocRef: mockDocRef,
     selectedEntryId: 'entry-1',
     entries: [
-      { id: 'entry-1', content: 'Content 1', title: 'Title 1', date: '2024-01-15' },
-      { id: 'entry-2', content: 'Content 2', title: 'Title 2', date: '2024-01-15' },
+      { id: 'entry-1', content: 'Content 1', title: 'Title 1', date: '2024-01-15', createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z' },
+      { id: 'entry-2', content: 'Content 2', title: 'Title 2', date: '2024-01-15', createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z' },
     ] as any,
     updateEntryState: mockUpdateEntryState,
     setIsSaving: mockSetIsSaving,
@@ -51,11 +47,25 @@ describe('useEntryOperations', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({
-      user: mockUser,
-      isLoading: false,
-      error: null,
+    mockBackend = {
+      subscribeToAuthState: vi.fn(),
+      subscribeToEntriesByDate: vi.fn(),
+      subscribeToEntry: vi.fn(),
+      subscribeToAllEntries: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      getEntries: vi.fn(),
+      createEntry: vi.fn().mockResolvedValue(undefined),
+      updateEntry: vi.fn().mockResolvedValue(undefined),
+      deleteEntry: vi.fn().mockResolvedValue(undefined),
+      linkEntries: vi.fn(),
+      unlinkEntries: vi.fn(),
+      updateSettings: vi.fn(),
+      signOut: vi.fn(),
+    };
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend,
+      user: { uid: 'test-user-id', displayName: null, email: null, photoURL: null },
+      isUserLoading: false,
     });
     vi.mocked(useEntryAnalysis).mockReturnValue({
       analyze: mockAnalyze,
@@ -64,10 +74,8 @@ describe('useEntryOperations', () => {
     });
     vi.mocked(journalHandlers.generateEntryId).mockReturnValue('new-entry-id');
     vi.mocked(journalHandlers.createEntryDocument).mockResolvedValue(undefined);
-    vi.mocked(journalHandlers.triggerEntryAnalysis).mockResolvedValue(undefined);
+    vi.mocked(journalHandlers.triggerEntryAnalysis).mockReturnValue(undefined);
     vi.mocked(journalHandlers.changeEntryDate).mockResolvedValue(undefined);
-    vi.mocked(updateDocumentNonBlocking).mockResolvedValue(undefined);
-    vi.mocked(deleteDocumentNonBlocking).mockResolvedValue(undefined);
   });
 
   describe('createNewEntry', () => {
@@ -86,32 +94,19 @@ describe('useEntryOperations', () => {
         content: 'New content',
         title: 'New title',
         dateKey: '2024-01-15',
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       });
       expect(mockUpdateEntryState).toHaveBeenCalledWith('new-entry-id', 'New content', 'New title');
       expect(journalHandlers.triggerEntryAnalysis).toHaveBeenCalled();
       expect(mockSetIsSaving).toHaveBeenCalledWith(false);
     });
 
-  it('should not create entry when user is missing', async () => {
-    vi.mocked(useUser).mockReturnValue({
-      user: null,
-      isLoading: false,
-      error: null,
-    });
-
-      const { result } = renderHook(() => useEntryOperations(defaultParams));
-
-      await act(async () => {
-        await result.current.createNewEntry('Content');
+    it('should not create entry when backend is missing', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
       });
-
-      expect(journalHandlers.createEntryDocument).not.toHaveBeenCalled();
-    });
-
-    it('should not create entry when firestore is missing', async () => {
-      vi.mocked(useFirestore).mockReturnValue(null as any);
 
       const { result } = renderHook(() => useEntryOperations(defaultParams));
 
@@ -147,33 +142,32 @@ describe('useEntryOperations', () => {
 
       expect(mockSetIsSaving).toHaveBeenCalledWith(true);
       expect(mockSetSaveError).toHaveBeenCalledWith(null);
-      expect(updateDocumentNonBlocking).toHaveBeenCalledWith(mockDocRef, {
+      expect(mockBackend.updateEntry).toHaveBeenCalledWith('entry-1', {
         content: 'Updated content',
-        updatedAt: serverTimestamp(),
       });
       expect(mockSetLastSavedAt).toHaveBeenCalled();
       expect(mockSetIsSaving).toHaveBeenCalledWith(false);
     });
 
-    it('should not save when docRef is missing', async () => {
+    it('should not save when selectedEntryId is missing', async () => {
       const { result } = renderHook(() =>
-        useEntryOperations({ ...defaultParams, selectedEntryDocRef: null })
+        useEntryOperations({ ...defaultParams, selectedEntryId: null })
       );
 
       await act(async () => {
         await result.current.saveEntry('Content');
       });
 
-      expect(updateDocumentNonBlocking).not.toHaveBeenCalled();
+      expect(mockBackend.updateEntry).not.toHaveBeenCalled();
       expect(mockSetIsSaving).not.toHaveBeenCalled();
     });
 
-  it('should not save when user is missing', async () => {
-    vi.mocked(useUser).mockReturnValue({
-      user: null,
-      isLoading: false,
-      error: null,
-    });
+    it('should not save when backend is missing', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
 
       const { result } = renderHook(() => useEntryOperations(defaultParams));
 
@@ -181,12 +175,12 @@ describe('useEntryOperations', () => {
         await result.current.saveEntry('Content');
       });
 
-      expect(updateDocumentNonBlocking).not.toHaveBeenCalled();
+      expect(mockSetIsSaving).not.toHaveBeenCalled();
     });
 
     it('should handle errors when saving entry', async () => {
       const error = new Error('Save failed');
-      vi.mocked(updateDocumentNonBlocking).mockRejectedValue(error);
+      vi.mocked(mockBackend.updateEntry).mockRejectedValue(error);
 
       const { result } = renderHook(() => useEntryOperations(defaultParams));
 
@@ -210,7 +204,7 @@ describe('useEntryOperations', () => {
 
       expect(mockSetIsSaving).toHaveBeenCalledWith(true);
       expect(mockSetSaveError).toHaveBeenCalledWith(null);
-      expect(deleteDocumentNonBlocking).toHaveBeenCalledWith(mockDocRef);
+      expect(mockBackend.deleteEntry).toHaveBeenCalledWith('entry-1');
       expect(mockSetSelectedEntryId).toHaveBeenCalledWith('entry-2');
       expect(mockHasInitializedRef.current).toBe(false);
       expect(mockSetIsSaving).toHaveBeenCalledWith(false);
@@ -220,7 +214,7 @@ describe('useEntryOperations', () => {
       const { result } = renderHook(() =>
         useEntryOperations({
           ...defaultParams,
-          entries: [{ id: 'entry-1', content: 'Content', title: 'Title', date: '2024-01-15' }] as any,
+          entries: [{ id: 'entry-1', content: 'Content', title: 'Title', date: '2024-01-15', createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z' }] as any,
         })
       );
 
@@ -234,16 +228,20 @@ describe('useEntryOperations', () => {
       expect(mockSetLastSavedAt).toHaveBeenCalledWith(null);
     });
 
-    it('should not delete when docRef is missing', async () => {
-      const { result } = renderHook(() =>
-        useEntryOperations({ ...defaultParams, selectedEntryDocRef: null })
-      );
+    it('should not delete when backend is missing', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
+
+      const { result } = renderHook(() => useEntryOperations(defaultParams));
 
       await act(async () => {
         await result.current.handleDelete();
       });
 
-      expect(deleteDocumentNonBlocking).not.toHaveBeenCalled();
+      expect(mockSetIsSaving).not.toHaveBeenCalled();
     });
 
     it('should not delete when entryId is missing', async () => {
@@ -255,12 +253,12 @@ describe('useEntryOperations', () => {
         await result.current.handleDelete();
       });
 
-      expect(deleteDocumentNonBlocking).not.toHaveBeenCalled();
+      expect(mockBackend.deleteEntry).not.toHaveBeenCalled();
     });
 
     it('should handle errors when deleting entry', async () => {
       const error = new Error('Delete failed');
-      vi.mocked(deleteDocumentNonBlocking).mockRejectedValue(error);
+      vi.mocked(mockBackend.deleteEntry).mockRejectedValue(error);
 
       const { result } = renderHook(() => useEntryOperations(defaultParams));
 
@@ -294,8 +292,7 @@ describe('useEntryOperations', () => {
       expect(journalHandlers.changeEntryDate).toHaveBeenCalledWith({
         entryId: 'entry-1',
         newDate: mockNewDate,
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       });
       expect(mockOnDateChange).toHaveBeenCalledWith(mockNewDate);
       expect(mockSetIsSaving).toHaveBeenCalledWith(false);
@@ -312,11 +309,16 @@ describe('useEntryOperations', () => {
       expect(mockOnDateChange).not.toHaveBeenCalled();
     });
 
-    it('should not change date when docRef is missing', async () => {
+    it('should not change date when backend is missing', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
+
       const { result } = renderHook(() =>
         useEntryOperations({
           ...defaultParams,
-          selectedEntryDocRef: null,
           onDateChange: mockOnDateChange,
         })
       );
@@ -334,46 +336,6 @@ describe('useEntryOperations', () => {
         useEntryOperations({
           ...defaultParams,
           selectedEntryId: null,
-          onDateChange: mockOnDateChange,
-        })
-      );
-
-      await act(async () => {
-        await result.current.changeEntryDate(mockNewDate);
-      });
-
-      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
-      expect(mockOnDateChange).not.toHaveBeenCalled();
-    });
-
-    it('should not change date when user is missing', async () => {
-      vi.mocked(useUser).mockReturnValue({
-        user: null,
-        isLoading: false,
-        error: null,
-      });
-
-      const { result } = renderHook(() =>
-        useEntryOperations({
-          ...defaultParams,
-          onDateChange: mockOnDateChange,
-        })
-      );
-
-      await act(async () => {
-        await result.current.changeEntryDate(mockNewDate);
-      });
-
-      expect(journalHandlers.changeEntryDate).not.toHaveBeenCalled();
-      expect(mockOnDateChange).not.toHaveBeenCalled();
-    });
-
-    it('should not change date when firestore is missing', async () => {
-      vi.mocked(useFirestore).mockReturnValue(null as any);
-
-      const { result } = renderHook(() =>
-        useEntryOperations({
-          ...defaultParams,
           onDateChange: mockOnDateChange,
         })
       );
@@ -422,11 +384,9 @@ describe('useEntryOperations', () => {
       expect(journalHandlers.changeEntryDate).toHaveBeenCalledWith({
         entryId: 'entry-1',
         newDate: differentDate,
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       });
       expect(mockOnDateChange).toHaveBeenCalledWith(differentDate);
     });
   });
 });
-

@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
-import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { serverTimestamp } from 'firebase/firestore';
+import { useStorage } from '@/repositories/storage-provider';
 import { generateEntryId, createEntryDocument, triggerEntryAnalysis, changeEntryDate } from '@/app/handlers/journal-handlers';
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { JournalEntryData } from './use-journal-entries';
@@ -12,18 +10,17 @@ function getNextEntryId(
 ): string | null {
   const currentIndex = entries.findIndex(e => e.id === currentEntryId);
   const remainingEntries = entries.filter(e => e.id !== currentEntryId);
-  
+
   if (remainingEntries.length === 0) {
     return null;
   }
-  
+
   const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
   return remainingEntries[nextIndex].id;
 }
 
 interface UseEntryOperationsParams {
   dateKey: string;
-  selectedEntryDocRef: ReturnType<typeof import('firebase/firestore').doc> | null;
   selectedEntryId: string | null;
   entries: (JournalEntryData & { id: string })[] | null;
   updateEntryState: (entryId: string, newContent: string, newTitle: string) => void;
@@ -47,7 +44,6 @@ interface UseEntryOperationsResult {
 // eslint-disable-next-line max-lines-per-function
 export function useEntryOperations({
   dateKey,
-  selectedEntryDocRef,
   selectedEntryId,
   entries,
   updateEntryState,
@@ -60,13 +56,12 @@ export function useEntryOperations({
   hasInitializedRef,
   onDateChange,
 }: UseEntryOperationsParams): UseEntryOperationsResult {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const { analyze } = useEntryAnalysis();
 
   const createNewEntry = useCallback(async (initialContent: string = '', initialTitle: string = '') => {
-    if (!user || !firestore) {
-      console.warn('Cannot create entry: missing user or firestore');
+    if (!backend) {
+      console.warn('Cannot create entry: missing backend');
       return;
     }
 
@@ -80,12 +75,11 @@ export function useEntryOperations({
         content: initialContent,
         title: initialTitle,
         dateKey,
-        firestore,
-        user,
+        backend,
       });
-      
+
       updateEntryState(entryId, initialContent, initialTitle);
-      triggerEntryAnalysis({ content: initialContent, entryId, firestore, user, analyze });
+      triggerEntryAnalysis({ content: initialContent, entryId, backend, analyze });
     } catch (error) {
       console.error('setDoc error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error creating entry';
@@ -93,24 +87,19 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [user, firestore, dateKey, updateEntryState, analyze, setIsSaving, setSaveError]);
+  }, [backend, dateKey, updateEntryState, analyze, setIsSaving, setSaveError]);
 
   const saveEntry = useCallback(async (newContent: string) => {
-    if (!selectedEntryDocRef || !user) {
-      console.warn('Cannot save: missing entryDocRef or user');
+    if (!backend || !selectedEntryId) {
+      console.warn('Cannot save: missing backend or selectedEntryId');
       return;
     }
 
     setIsSaving(true);
     setSaveError(null);
-    
-    try {
-      const data: Record<string, unknown> = {
-        content: newContent,
-        updatedAt: serverTimestamp(),
-      };
 
-      await updateDocumentNonBlocking(selectedEntryDocRef, data);
+    try {
+      await backend.updateEntry(selectedEntryId, { content: newContent });
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('updateDoc error:', error);
@@ -120,10 +109,10 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [selectedEntryDocRef, user, setIsSaving, setSaveError, setLastSavedAt]);
+  }, [backend, selectedEntryId, setIsSaving, setSaveError, setLastSavedAt]);
 
   const handleDelete = useCallback(async () => {
-    if (!selectedEntryDocRef || !selectedEntryId || !entries) {
+    if (!backend || !selectedEntryId || !entries) {
       return;
     }
 
@@ -131,10 +120,10 @@ export function useEntryOperations({
     setSaveError(null);
 
     try {
-      await deleteDocumentNonBlocking(selectedEntryDocRef);
-      
+      await backend.deleteEntry(selectedEntryId);
+
       const nextEntryId = getNextEntryId(entries, selectedEntryId);
-      
+
       if (nextEntryId) {
         setSelectedEntryId(nextEntryId);
       } else {
@@ -143,7 +132,7 @@ export function useEntryOperations({
         setTitle('');
         setLastSavedAt(null);
       }
-      
+
       hasInitializedRef.current = false;
     } catch (error) {
       console.error('deleteDoc error:', error);
@@ -153,7 +142,7 @@ export function useEntryOperations({
       setIsSaving(false);
     }
   }, [
-    selectedEntryDocRef,
+    backend,
     selectedEntryId,
     entries,
     setSelectedEntryId,
@@ -166,8 +155,8 @@ export function useEntryOperations({
   ]);
 
   const changeEntryDateHandler = useCallback(async (newDate: Date) => {
-    if (!selectedEntryDocRef || !selectedEntryId || !user || !firestore) {
-      console.warn('Cannot change date: missing entryDocRef, entryId, user, or firestore');
+    if (!backend || !selectedEntryId) {
+      console.warn('Cannot change date: missing backend or selectedEntryId');
       return;
     }
 
@@ -178,8 +167,7 @@ export function useEntryOperations({
       await changeEntryDate({
         entryId: selectedEntryId,
         newDate,
-        firestore,
-        user,
+        backend,
       });
 
       if (onDateChange) {
@@ -192,7 +180,7 @@ export function useEntryOperations({
     } finally {
       setIsSaving(false);
     }
-  }, [selectedEntryDocRef, selectedEntryId, user, firestore, setIsSaving, setSaveError, onDateChange]);
+  }, [backend, selectedEntryId, setIsSaving, setSaveError, onDateChange]);
 
   return {
     createNewEntry,
@@ -201,5 +189,3 @@ export function useEntryOperations({
     changeEntryDate: changeEntryDateHandler,
   } satisfies UseEntryOperationsResult;
 }
-
-

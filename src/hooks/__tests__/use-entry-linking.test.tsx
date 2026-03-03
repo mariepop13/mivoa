@@ -1,233 +1,179 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useEntryLinking } from '../use-entry-linking';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { useStorage } from '@/repositories/storage-provider';
 import * as journalHandlers from '@/app/handlers/journal-handlers';
 import * as entryLinkingUtils from '@/utils/entry-linking-utils';
-import type { User } from 'firebase/auth';
+import type { StorageBackend } from '@/repositories/storage-backend';
 import type { JournalEntryData } from '../use-journal-entries';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+  useEntriesByDate: vi.fn(),
+  useEntry: vi.fn(),
+  useAllEntries: vi.fn(),
+}));
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/utils/entry-linking-utils');
 
-vi.mock('firebase/firestore', () => {
-  return {
-    collection: vi.fn(),
-    doc: vi.fn(),
-    getDoc: vi.fn(),
-  };
-});
-
-const mockFirestore = { id: 'mock-firestore' } as any;
-const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
-
-const createMockDocSnapshot = (id: string, data: JournalEntryData | null) => {
-  return {
-    id,
-    exists: () => data !== null,
-    data: () => data,
-  } as any;
-};
+let mockBackend: StorageBackend;
 
 describe('useEntryLinking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({ user: mockUser, isLoading: false, error: null });
-    vi.mocked(collection).mockReturnValue({ id: 'mock-collection' } as any);
-    vi.mocked(doc).mockReturnValue({ id: 'mock-doc' } as any);
+    mockBackend = {
+      subscribeToAuthState: vi.fn(),
+      subscribeToEntriesByDate: vi.fn(),
+      subscribeToEntry: vi.fn(),
+      subscribeToAllEntries: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      getEntries: vi.fn().mockResolvedValue([]),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn(),
+      deleteEntry: vi.fn(),
+      linkEntries: vi.fn(),
+      unlinkEntries: vi.fn(),
+      updateSettings: vi.fn(),
+      signOut: vi.fn(),
+    };
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend,
+      user: { uid: 'test-user-id', displayName: null, email: null, photoURL: null },
+      isUserLoading: false,
+    });
     vi.mocked(journalHandlers.createEntryLink).mockResolvedValue(undefined);
     vi.mocked(journalHandlers.deleteEntryLink).mockResolvedValue(undefined);
     vi.mocked(entryLinkingUtils.validateLink).mockReturnValue({ valid: true });
   });
 
   describe('getLinkedEntries', () => {
-    it('should return empty array when no firestore', async () => {
-      vi.mocked(useFirestore).mockReturnValue(null as any);
-      
-      const { result } = renderHook(() => useEntryLinking());
-      
-      const entries = await result.current.getLinkedEntries('entry-1', ['entry-2']);
-      
-      expect(entries).toEqual([]);
-    });
+    it('should return empty array when no backend', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
 
-    it('should return empty array when no user', async () => {
-      vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
-      
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', ['entry-2']);
-      
+
       expect(entries).toEqual([]);
     });
 
     it('should return empty array when no linkedEntryIds', async () => {
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', undefined);
-      
+
       expect(entries).toEqual([]);
     });
 
     it('should return empty array when linkedEntryIds is empty', async () => {
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', []);
-      
+
       expect(entries).toEqual([]);
     });
 
-    it('should fetch entries from Firestore for single chunk', async () => {
-      const mockEntry1: JournalEntryData = {
+    it('should fetch entries via backend.getEntries for single chunk', async () => {
+      const mockEntry1 = {
+        id: 'entry-2',
         content: 'Content 1',
         date: '2024-01-15',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: '2024-01-15T00:00:00Z',
       };
-      const mockEntry2: JournalEntryData = {
+      const mockEntry2 = {
+        id: 'entry-3',
         content: 'Content 2',
         date: '2024-01-16',
-        createdAt: '2024-01-16',
-        updatedAt: '2024-01-16',
+        createdAt: '2024-01-16T00:00:00Z',
+        updatedAt: '2024-01-16T00:00:00Z',
       };
 
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockEntry1))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-3', mockEntry2));
+      vi.mocked(mockBackend.getEntries).mockResolvedValue([mockEntry1, mockEntry2] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', ['entry-2', 'entry-3']);
-      
+
       expect(entries).toHaveLength(2);
       expect(entries[0].id).toBe('entry-2');
       expect(entries[1].id).toBe('entry-3');
-      expect(collection).toHaveBeenCalledWith(mockFirestore, 'users/test-user-id/entries');
+      expect(mockBackend.getEntries).toHaveBeenCalledWith(['entry-2', 'entry-3']);
     });
 
-    it('should fetch entries from Firestore for multiple chunks (>10)', async () => {
+    it('should fetch entries for multiple chunks (>10)', async () => {
       const linkedIds = Array.from({ length: 15 }, (_, i) => `entry-${i + 2}`);
       const mockEntries = linkedIds.map((id) => ({
         id,
         content: `Content ${id}`,
         date: '2024-01-15',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: '2024-01-15T00:00:00Z',
       }));
 
-      linkedIds.forEach((id, index) => {
-        vi.mocked(getDoc).mockResolvedValueOnce(
-          createMockDocSnapshot(id, mockEntries[index] as JournalEntryData)
-        );
-      });
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce(mockEntries.slice(0, 10) as any)
+        .mockResolvedValueOnce(mockEntries.slice(10) as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', linkedIds);
-      
+
       expect(entries).toHaveLength(15);
-      expect(getDoc).toHaveBeenCalledTimes(15);
+      expect(mockBackend.getEntries).toHaveBeenCalledTimes(2);
     });
 
     it('should use cache when available', async () => {
-      const mockEntry: JournalEntryData = {
+      const mockEntry = {
+        id: 'entry-2',
         content: 'Content',
         date: '2024-01-15',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: '2024-01-15T00:00:00Z',
       };
 
-      vi.mocked(getDoc).mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockEntry));
+      vi.mocked(mockBackend.getEntries).mockResolvedValue([mockEntry] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries1 = await result.current.getLinkedEntries('entry-1', ['entry-2']);
       const entries2 = await result.current.getLinkedEntries('entry-1', ['entry-2']);
-      
+
       expect(entries1).toHaveLength(1);
       expect(entries2).toHaveLength(1);
-      expect(getDoc).toHaveBeenCalledTimes(1);
-    });
-
-    it('should filter out non-existent entries', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', null))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-3', {
-          content: 'Content',
-          date: '2024-01-15',
-          createdAt: '2024-01-15',
-          updatedAt: '2024-01-15',
-        }));
-
-      const { result } = renderHook(() => useEntryLinking());
-      
-      const entries = await result.current.getLinkedEntries('entry-1', ['entry-2', 'entry-3']);
-      
-      expect(entries).toHaveLength(1);
-      expect(entries[0].id).toBe('entry-3');
+      expect(mockBackend.getEntries).toHaveBeenCalledTimes(1);
     });
 
     it('should handle errors gracefully', async () => {
-      vi.mocked(getDoc).mockRejectedValueOnce(new Error('Firestore error'));
+      vi.mocked(mockBackend.getEntries).mockRejectedValueOnce(new Error('Backend error'));
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-1', ['entry-2']);
-      
+
       expect(entries).toEqual([]);
       expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch linked entries:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
 
-    it('should return all requested entries', async () => {
-      const mockEntry1: JournalEntryData = {
-        content: 'Content 1',
-        date: '2024-01-15',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
-      };
-      const mockEntry2: JournalEntryData = {
-        content: 'Content 2',
-        date: '2024-01-16',
-        createdAt: '2024-01-16',
-        updatedAt: '2024-01-16',
-      };
-      const mockEntry3: JournalEntryData = {
-        content: 'Content 3',
-        date: '2024-01-17',
-        createdAt: '2024-01-17',
-        updatedAt: '2024-01-17',
-      };
+    it('should return all requested entries in order', async () => {
+      const mockEntry1 = { id: 'entry-3', content: 'Content 3', date: '2024-01-17', createdAt: '2024-01-17T00:00:00Z', updatedAt: '2024-01-17T00:00:00Z' };
+      const mockEntry2 = { id: 'entry-1', content: 'Content 1', date: '2024-01-15', createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z' };
+      const mockEntry3 = { id: 'entry-2', content: 'Content 2', date: '2024-01-16', createdAt: '2024-01-16T00:00:00Z', updatedAt: '2024-01-16T00:00:00Z' };
 
-      const entryMap = new Map<string, JournalEntryData>([
-        ['entry-3', mockEntry3],
-        ['entry-1', mockEntry1],
-        ['entry-2', mockEntry2],
-      ]);
-
-      vi.mocked(doc).mockImplementation((collectionRef: any, ...pathSegments: string[]) => {
-        const entryId = pathSegments[pathSegments.length - 1];
-        return { id: entryId, path: pathSegments.join('/') } as any;
-      });
-
-      vi.mocked(getDoc).mockImplementation((docRef: any) => {
-        const id = docRef?.id || 'unknown';
-        const entryData = entryMap.get(id);
-        return Promise.resolve(createMockDocSnapshot(id, entryData || null));
-      });
+      vi.mocked(mockBackend.getEntries).mockResolvedValue([mockEntry1, mockEntry2, mockEntry3] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       const entries = await result.current.getLinkedEntries('entry-0', ['entry-3', 'entry-1', 'entry-2']);
-      
+
       expect(entries).toHaveLength(3);
       const entryIds = entries.map(e => e.id).sort();
       expect(entryIds).toEqual(['entry-1', 'entry-2', 'entry-3']);
@@ -238,25 +184,25 @@ describe('useEntryLinking', () => {
     const mockFromEntry: JournalEntryData = {
       content: 'From entry',
       date: '2024-01-15',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15',
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z',
       linkedEntryIds: [],
     };
     const mockToEntry: JournalEntryData = {
       content: 'To entry',
       date: '2024-01-16',
-      createdAt: '2024-01-16',
-      updatedAt: '2024-01-16',
+      createdAt: '2024-01-16T00:00:00Z',
+      updatedAt: '2024-01-16T00:00:00Z',
       linkedEntryIds: [],
     };
 
     it('should successfully link two entries', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.linkEntry('entry-1', 'entry-2');
       });
@@ -264,16 +210,15 @@ describe('useEntryLinking', () => {
       expect(journalHandlers.createEntryLink).toHaveBeenCalledWith({
         fromEntryId: 'entry-1',
         toEntryId: 'entry-2',
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       });
       expect(result.current.error).toBeNull();
     });
 
     it('should set loading state during operation', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       let resolveLink: () => void;
       const linkPromise = new Promise<void>((resolve) => {
@@ -282,7 +227,7 @@ describe('useEntryLinking', () => {
       vi.mocked(journalHandlers.createEntryLink).mockImplementation(() => linkPromise);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       act(() => {
         result.current.linkEntry('entry-1', 'entry-2');
       });
@@ -290,11 +235,11 @@ describe('useEntryLinking', () => {
       await waitFor(() => {
         expect(result.current.isLoading).toBe(true);
       });
-      
+
       act(() => {
         resolveLink!();
       });
-      
+
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
@@ -302,7 +247,7 @@ describe('useEntryLinking', () => {
 
     it('should prevent self-linking', async () => {
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.linkEntry('entry-1', 'entry-1');
       });
@@ -312,10 +257,10 @@ describe('useEntryLinking', () => {
     });
 
     it('should handle missing source entry', async () => {
-      vi.mocked(getDoc).mockResolvedValueOnce(createMockDocSnapshot('entry-1', null));
+      vi.mocked(mockBackend.getEntries).mockResolvedValueOnce([]);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await expect(result.current.linkEntry('entry-1', 'entry-2')).rejects.toThrow('Source entry not found');
       });
@@ -325,12 +270,12 @@ describe('useEntryLinking', () => {
     });
 
     it('should handle missing target entry', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', null));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([]);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await expect(result.current.linkEntry('entry-1', 'entry-2')).rejects.toThrow('Target entry not found');
       });
@@ -345,9 +290,9 @@ describe('useEntryLinking', () => {
         linkedEntryIds: ['entry-2'],
       };
 
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', fromEntryWithLink))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...fromEntryWithLink, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       vi.mocked(entryLinkingUtils.validateLink).mockReturnValue({
         valid: false,
@@ -355,7 +300,7 @@ describe('useEntryLinking', () => {
       });
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.linkEntry('entry-1', 'entry-2');
       });
@@ -364,29 +309,29 @@ describe('useEntryLinking', () => {
       expect(journalHandlers.createEntryLink).not.toHaveBeenCalled();
     });
 
-    it('should handle Firestore errors with rollback', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+    it('should handle backend errors with rollback', async () => {
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
-      vi.mocked(journalHandlers.createEntryLink).mockRejectedValueOnce(new Error('Firestore error'));
+      vi.mocked(journalHandlers.createEntryLink).mockRejectedValueOnce(new Error('Backend error'));
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
-        await expect(result.current.linkEntry('entry-1', 'entry-2')).rejects.toThrow('Firestore error');
+        await expect(result.current.linkEntry('entry-1', 'entry-2')).rejects.toThrow('Backend error');
       });
 
-      expect(result.current.error).toBe('Firestore error');
+      expect(result.current.error).toBe('Backend error');
     });
 
     it('should clear error state on success', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.linkEntry('entry-1', 'entry-2');
       });
@@ -394,11 +339,15 @@ describe('useEntryLinking', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should handle user not authenticated', async () => {
-      vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
-      
+    it('should handle user not authenticated (backend missing)', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
+
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.linkEntry('entry-1', 'entry-2');
       });
@@ -412,25 +361,25 @@ describe('useEntryLinking', () => {
     const mockFromEntry: JournalEntryData = {
       content: 'From entry',
       date: '2024-01-15',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15',
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z',
       linkedEntryIds: ['entry-2'],
     };
     const mockToEntry: JournalEntryData = {
       content: 'To entry',
       date: '2024-01-16',
-      createdAt: '2024-01-16',
-      updatedAt: '2024-01-16',
+      createdAt: '2024-01-16T00:00:00Z',
+      updatedAt: '2024-01-16T00:00:00Z',
       linkedEntryIds: ['entry-1'],
     };
 
     it('should successfully unlink two entries', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.unlinkEntry('entry-1', 'entry-2');
       });
@@ -438,16 +387,15 @@ describe('useEntryLinking', () => {
       expect(journalHandlers.deleteEntryLink).toHaveBeenCalledWith({
         fromEntryId: 'entry-1',
         toEntryId: 'entry-2',
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       });
       expect(result.current.error).toBeNull();
     });
 
     it('should set loading state during operation', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       let resolveUnlink: () => void;
       const unlinkPromise = new Promise<void>((resolve) => {
@@ -456,7 +404,7 @@ describe('useEntryLinking', () => {
       vi.mocked(journalHandlers.deleteEntryLink).mockImplementation(() => unlinkPromise);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       act(() => {
         result.current.unlinkEntry('entry-1', 'entry-2');
       });
@@ -464,21 +412,21 @@ describe('useEntryLinking', () => {
       await waitFor(() => {
         expect(result.current.isLoading).toBe(true);
       });
-      
+
       act(() => {
         resolveUnlink!();
       });
-      
+
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
     });
 
     it('should handle missing source entry', async () => {
-      vi.mocked(getDoc).mockResolvedValueOnce(createMockDocSnapshot('entry-1', null));
+      vi.mocked(mockBackend.getEntries).mockResolvedValueOnce([]);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await expect(result.current.unlinkEntry('entry-1', 'entry-2')).rejects.toThrow('Source entry not found');
       });
@@ -488,12 +436,12 @@ describe('useEntryLinking', () => {
     });
 
     it('should handle missing target entry', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', null));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([]);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await expect(result.current.unlinkEntry('entry-1', 'entry-2')).rejects.toThrow('Target entry not found');
       });
@@ -508,10 +456,10 @@ describe('useEntryLinking', () => {
         linkedEntryIds: [],
       };
 
-      vi.mocked(getDoc).mockResolvedValueOnce(createMockDocSnapshot('entry-1', fromEntryWithoutLink));
+      vi.mocked(mockBackend.getEntries).mockResolvedValueOnce([{ ...fromEntryWithoutLink, id: 'entry-1' }] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.unlinkEntry('entry-1', 'entry-2');
       });
@@ -520,29 +468,29 @@ describe('useEntryLinking', () => {
       expect(journalHandlers.deleteEntryLink).not.toHaveBeenCalled();
     });
 
-    it('should handle Firestore errors with rollback', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+    it('should handle backend errors with rollback', async () => {
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
-      vi.mocked(journalHandlers.deleteEntryLink).mockRejectedValueOnce(new Error('Firestore error'));
+      vi.mocked(journalHandlers.deleteEntryLink).mockRejectedValueOnce(new Error('Backend error'));
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
-        await expect(result.current.unlinkEntry('entry-1', 'entry-2')).rejects.toThrow('Firestore error');
+        await expect(result.current.unlinkEntry('entry-1', 'entry-2')).rejects.toThrow('Backend error');
       });
 
-      expect(result.current.error).toBe('Firestore error');
+      expect(result.current.error).toBe('Backend error');
     });
 
     it('should clear error state on success', async () => {
-      vi.mocked(getDoc)
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-1', mockFromEntry))
-        .mockResolvedValueOnce(createMockDocSnapshot('entry-2', mockToEntry));
+      vi.mocked(mockBackend.getEntries)
+        .mockResolvedValueOnce([{ ...mockFromEntry, id: 'entry-1' }] as any)
+        .mockResolvedValueOnce([{ ...mockToEntry, id: 'entry-2' }] as any);
 
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.unlinkEntry('entry-1', 'entry-2');
       });
@@ -550,11 +498,15 @@ describe('useEntryLinking', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should handle user not authenticated', async () => {
-      vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
-      
+    it('should handle user not authenticated (backend missing)', async () => {
+      vi.mocked(useStorage).mockReturnValue({
+        backend: null,
+        user: null,
+        isUserLoading: false,
+      });
+
       const { result } = renderHook(() => useEntryLinking());
-      
+
       await act(async () => {
         await result.current.unlinkEntry('entry-1', 'entry-2');
       });
@@ -576,4 +528,3 @@ describe('useEntryLinking', () => {
     });
   });
 });
-

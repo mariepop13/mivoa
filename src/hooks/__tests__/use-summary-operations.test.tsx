@@ -1,25 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSummaryOperations } from '../use-summary-operations';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { useEntryAnalysis } from '../use-entry-analysis';
 import { LanguageContext } from '@/context/LanguageContext';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { ModelContext } from '@/context/ModelContext';
 import * as conversationSummaryService from '@/ai/services/conversation-summary-service';
 import * as journalHandlers from '@/app/handlers/journal-handlers';
-import type { User } from 'firebase/auth';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+  useEntriesByDate: vi.fn(),
+  useEntry: vi.fn(),
+  useAllEntries: vi.fn(),
+}));
 vi.mock('../use-entry-analysis');
 vi.mock('@/ai/services/conversation-summary-service');
 vi.mock('@/app/handlers/journal-handlers');
 
 describe('useSummaryOperations', () => {
-  const mockFirestore = { id: 'mock-firestore' } as any;
-  const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
+  let mockBackend: StorageBackend;
   const mockAnalyze = vi.fn().mockResolvedValue({ mood: 'happy', themes: [], keyTakeaways: [] });
 
   const mockUpdateEntryState = vi.fn();
@@ -38,43 +40,57 @@ describe('useSummaryOperations', () => {
     language: 'en' | 'fr',
     selectedModel: string | undefined
   ) => renderHook(() => useSummaryOperations(defaultParams), {
-      wrapper: ({ children }) => (
-        <LanguageContext.Provider
+    wrapper: ({ children }) => (
+      <LanguageContext.Provider
+        value={{
+          language,
+          setLanguage: vi.fn(),
+          supportedLanguages: ['en', 'fr'],
+        }}
+      >
+        <OpenRouterApiKeyContext.Provider
           value={{
-            language,
-            setLanguage: vi.fn(),
-            supportedLanguages: ['en', 'fr'],
+            apiKey,
+            setApiKey: vi.fn(),
+            resetApiKey: vi.fn(),
+            isLoading: false,
           }}
         >
-          <OpenRouterApiKeyContext.Provider
+          <ModelContext.Provider
             value={{
-              apiKey,
-              setApiKey: vi.fn(),
-              resetApiKey: vi.fn(),
+              selectedModel: selectedModel || 'google/gemini-3-flash-preview',
+              setSelectedModel: vi.fn(),
               isLoading: false,
             }}
           >
-            <ModelContext.Provider
-              value={{
-                selectedModel: selectedModel || 'google/gemini-3-flash-preview',
-                setSelectedModel: vi.fn(),
-                isLoading: false,
-              }}
-            >
-              {children}
-            </ModelContext.Provider>
-          </OpenRouterApiKeyContext.Provider>
-        </LanguageContext.Provider>
-      ),
-    });
+            {children}
+          </ModelContext.Provider>
+        </OpenRouterApiKeyContext.Provider>
+      </LanguageContext.Provider>
+    ),
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({
-      user: mockUser,
-      isLoading: false,
-      error: null,
+    mockBackend = {
+      subscribeToAuthState: vi.fn(),
+      subscribeToEntriesByDate: vi.fn(),
+      subscribeToEntry: vi.fn(),
+      subscribeToAllEntries: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      getEntries: vi.fn(),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn(),
+      deleteEntry: vi.fn(),
+      linkEntries: vi.fn(),
+      unlinkEntries: vi.fn(),
+      updateSettings: vi.fn(),
+      signOut: vi.fn(),
+    };
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend,
+      user: { uid: 'test-user-id', displayName: null, email: null, photoURL: null },
+      isUserLoading: false,
     });
     vi.mocked(useEntryAnalysis).mockReturnValue({
       analyze: mockAnalyze,
@@ -87,7 +103,7 @@ describe('useSummaryOperations', () => {
     });
     vi.mocked(journalHandlers.generateEntryId).mockReturnValue('summary-entry-id');
     vi.mocked(journalHandlers.saveSummaryAsEntry).mockResolvedValue(undefined);
-    vi.mocked(journalHandlers.triggerEntryAnalysis).mockResolvedValue(undefined);
+    vi.mocked(journalHandlers.triggerEntryAnalysis).mockReturnValue(undefined);
   });
 
   it('should generate summary successfully', async () => {
@@ -130,24 +146,12 @@ describe('useSummaryOperations', () => {
     expect(conversationSummaryService.generateConversationSummary).not.toHaveBeenCalled();
   });
 
-  it('should not generate summary when user is missing', async () => {
-    vi.mocked(useUser).mockReturnValue({
+  it('should not generate summary when backend is missing', async () => {
+    vi.mocked(useStorage).mockReturnValue({
+      backend: null,
       user: null,
-      isLoading: false,
-      error: null,
+      isUserLoading: false,
     });
-
-    const { result } = renderWithContexts('test-api-key', 'en', undefined);
-
-    await act(async () => {
-      await result.current.handleSummarizeConversation([]);
-    });
-
-    expect(mockSetSaveError).toHaveBeenCalledWith('API key not configured or services unavailable');
-  });
-
-  it('should not generate summary when firestore is missing', async () => {
-    vi.mocked(useFirestore).mockReturnValue(null as any);
 
     const { result } = renderWithContexts('test-api-key', 'en', undefined);
 
@@ -224,4 +228,3 @@ describe('useSummaryOperations', () => {
     expect(callArgs?.[2]).toBe('en');
   });
 });
-

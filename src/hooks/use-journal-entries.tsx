@@ -1,32 +1,26 @@
 import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
-import { useFirestore, useCollection, useDoc, applyMemoMarker } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
+import { useStorage, useEntriesByDate, useEntry } from '@/repositories/storage-provider';
 import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
 import { saveConversationDraft, deleteDraft, updateConversationEntry } from '@/app/handlers/journal-handlers';
 import type { ChatMessage } from '@/ai/types/chat';
+import type { Entry } from '@/repositories/types';
+import { Timestamp } from 'firebase/firestore';
 
 const DAYS_TO_LOOK_BACK = 7;
 const MAX_RECENT_ENTRIES = 7;
 
-function getTimestampMillis(value: string | Timestamp | unknown): number {
-  if (value instanceof Timestamp) {
-    return value.toMillis();
-  }
-  if (typeof value === 'string') {
-    return new Date(value).getTime();
-  }
-  return 0;
+function getTimestampMillis(value: string): number {
+  return new Date(value).getTime();
 }
 
-export interface JournalEntryData extends Record<string, unknown> {
+export interface JournalEntryData {
   content: string;
   title?: string;
   date: string;
-  createdAt: string | Timestamp;
-  updatedAt: string | Timestamp;
+  createdAt: string;
+  updatedAt: string;
   moods?: string[];
   moodEmojis?: Record<string, string>;
   subjectEmoji?: string;
@@ -35,13 +29,13 @@ export interface JournalEntryData extends Record<string, unknown> {
   keyTakeaways?: string[];
   characters?: string[];
   places?: string[];
-  aiProcessedAt?: Timestamp;
+  aiProcessedAt?: string;
   conversationHistory?: Array<{
     role: 'user' | 'assistant';
     content: string;
-    timestamp: Timestamp | Date | string;
+    timestamp: string;
   }>;
-  summaryGeneratedAt?: Timestamp;
+  summaryGeneratedAt?: string;
   conversationMode?: boolean;
   isDraft?: boolean;
   linkedEntryIds?: string[];
@@ -85,31 +79,16 @@ interface UseJournalEntriesResult {
 
 // eslint-disable-next-line max-lines-per-function
 export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntriesParams): UseJournalEntriesResult {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
-  const entriesCollectionRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/entries`);
-  }, [firestore, user]);
-
-  const entriesQuery = useMemo(() => {
-    if (!entriesCollectionRef) return null;
-    return applyMemoMarker(query(
-      entriesCollectionRef,
-      where('date', '==', dateKey)
-    ));
-  }, [entriesCollectionRef, dateKey]);
-
-  const { data: entriesRaw, isLoading: entriesLoading } = useCollection<JournalEntryData>(
-    entriesQuery
-  );
+  const { data: entriesRaw, isLoading: entriesLoading } = useEntriesByDate(dateKey);
 
   const entries = useMemo(() => {
     if (!entriesRaw) return null;
-    return [...entriesRaw].sort((a, b) => {
+    const cast = entriesRaw as unknown as (JournalEntryData & { id: string })[];
+    return [...cast].sort((a, b) => {
       const aTime = getTimestampMillis(a.createdAt);
       const bTime = getTimestampMillis(b.createdAt);
       return bTime - aTime;
@@ -125,12 +104,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const hasInitializedRef = useRef(false);
 
-  const selectedEntryDocRef = useMemo(() => {
-    if (!firestore || !user || !selectedEntryId) return null;
-    return doc(firestore, `users/${user.uid}/entries/${selectedEntryId}`);
-  }, [firestore, user, selectedEntryId]);
-
-  const { data: selectedEntryData, isLoading: selectedEntryLoading } = useDoc<JournalEntryData>(selectedEntryDocRef);
+  const { data: selectedEntryData, isLoading: selectedEntryLoading } = useEntry(selectedEntryId);
 
   const prevEntryIdRef = useRef<string | null>(null);
 
@@ -149,8 +123,8 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
   }, [selectedEntryData]);
 
   const initialTitle = useMemo(() => {
-    if (selectedEntryData?.title !== undefined) {
-      return selectedEntryData.title || '';
+    if ((selectedEntryData as Entry | null)?.title !== undefined) {
+      return (selectedEntryData as Entry | null)?.title || '';
     }
     return '';
   }, [selectedEntryData]);
@@ -177,7 +151,6 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
 
   const { createNewEntry, saveEntry, handleDelete, changeEntryDate } = useEntryOperations({
     dateKey,
-    selectedEntryDocRef,
     selectedEntryId,
     entries,
     updateEntryState,
@@ -200,11 +173,11 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
 
   const recentEntries = useMemo(() => {
     if (!entries) return [];
-    
+
     const sevenDaysAgo = new Date(selectedDate);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DAYS_TO_LOOK_BACK);
     const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
-    
+
     return entries
       .filter((entry) => entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId)
       .slice(0, MAX_RECENT_ENTRIES)
@@ -232,7 +205,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
     currentDraftId: string | null,
     entryId?: string | null
   ): Promise<string | null> => {
-    if (!firestore || !user || !messages.length) {
+    if (!backend || !messages.length) {
       return null;
     }
 
@@ -240,15 +213,18 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
       const conversationHistory = messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
+        timestamp: msg.timestamp instanceof Timestamp
+          ? msg.timestamp.toDate()
+          : msg.timestamp instanceof Date
+            ? msg.timestamp
+            : new Date(msg.timestamp as string),
       }));
 
       if (entryId && !currentDraftId) {
         await updateConversationEntry({
           entryId,
           conversationHistory,
-          firestore,
-          user,
+          backend,
         });
         return entryId;
       }
@@ -257,8 +233,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
         draftId: currentDraftId,
         entryDateKey: dateKey,
         conversationHistory,
-        firestore,
-        user,
+        backend,
       });
 
       return savedDraftId;
@@ -266,28 +241,27 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
       console.error('Failed to save draft:', error);
       return null;
     }
-  }, [firestore, user, dateKey]);
+  }, [backend, dateKey]);
 
   const handleDeleteDraft = useCallback(async (draftIdToDelete: string): Promise<void> => {
-    if (!firestore || !user) {
+    if (!backend) {
       return;
     }
 
     try {
       await deleteDraft({
         draftId: draftIdToDelete,
-        firestore,
-        user,
+        backend,
       });
     } catch (error) {
       console.error('Failed to delete draft:', error);
     }
-  }, [firestore, user]);
+  }, [backend]);
 
   return {
     entries,
     selectedEntry,
-    selectedEntryData: selectedEntryData || null,
+    selectedEntryData: selectedEntryData ? (selectedEntryData as unknown as JournalEntryData) : null,
     entriesLoading,
     selectedEntryLoading,
     selectedEntryId,
@@ -312,4 +286,3 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
     changeEntryDate,
   };
 }
-

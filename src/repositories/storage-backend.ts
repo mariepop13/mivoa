@@ -17,6 +17,7 @@ export interface StorageBackend {
 
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe;
 
+  getEntries(ids: string[]): Promise<Entry[]>;
   createEntry(entryId: string, data: EntryCreateData): Promise<void>;
   updateEntry(entryId: string, data: EntryUpdateData): Promise<void>;
   deleteEntry(entryId: string): Promise<void>;

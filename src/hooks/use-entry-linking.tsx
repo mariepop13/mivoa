@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, doc, getDoc, type DocumentSnapshot, type Firestore } from 'firebase/firestore';
+import { useStorage } from '@/repositories/storage-provider';
 import { createEntryLink, deleteEntryLink } from '@/app/handlers/journal-handlers';
 import { validateLink } from '@/utils/entry-linking-utils';
 import type { JournalEntryData } from './use-journal-entries';
+import type { StorageBackend } from '@/repositories/storage-backend';
+import type { Entry } from '@/repositories/types';
 
 interface UseEntryLinkingResult {
   linkEntry: (fromEntryId: string, toEntryId: string) => Promise<void>;
@@ -37,22 +37,20 @@ interface EntryData {
 }
 
 async function fetchEntryData(
-  firestore: Firestore,
-  userId: string,
+  backend: StorageBackend,
   entryId: string,
   errorMessage = 'Entry not found'
 ): Promise<EntryData> {
-  const entryRef = doc(firestore, `users/${userId}/entries/${entryId}`);
-  const entryDoc = await getDoc(entryRef);
-  
-  if (!entryDoc.exists()) {
+  const results = await backend.getEntries([entryId]);
+
+  if (results.length === 0) {
     throw new Error(errorMessage);
   }
 
-  const entryData = entryDoc.data() as JournalEntryData;
+  const entry = results[0] as unknown as JournalEntryData;
   return {
-    data: entryData,
-    linkedIds: entryData.linkedEntryIds || [],
+    data: entry,
+    linkedIds: entry.linkedEntryIds || [],
   };
 }
 
@@ -81,7 +79,7 @@ function applyOptimisticLinkUpdate(
   const fromCurrentCacheKey = createCacheKey(fromLinkedIds);
   const fromNewLinkedIds = [...fromLinkedIds, toEntryId];
   const fromNewCacheKey = createCacheKey(fromNewLinkedIds);
-  
+
   const fromEntryCache = cacheRef.current.get(fromEntryId);
   if (fromEntryCache?.has(fromCurrentCacheKey)) {
     previousFromCacheState = fromEntryCache.get(fromCurrentCacheKey)!;
@@ -92,7 +90,7 @@ function applyOptimisticLinkUpdate(
   const toCurrentCacheKey = createCacheKey(toLinkedIds);
   const toNewLinkedIds = [...toLinkedIds, fromEntryId];
   const toNewCacheKey = createCacheKey(toNewLinkedIds);
-  
+
   const toEntryCache = cacheRef.current.get(toEntryId);
   if (toEntryCache?.has(toCurrentCacheKey)) {
     previousToCacheState = toEntryCache.get(toCurrentCacheKey)!;
@@ -121,7 +119,7 @@ function applyOptimisticUnlinkUpdate(
   const fromCurrentCacheKey = createCacheKey(fromLinkedIds);
   const fromNewLinkedIds = fromLinkedIds.filter((id) => id !== toEntryId);
   const fromNewCacheKey = createCacheKey(fromNewLinkedIds);
-  
+
   const fromEntryCache = cacheRef.current.get(fromEntryId);
   if (fromEntryCache?.has(fromCurrentCacheKey)) {
     previousFromCacheState = fromEntryCache.get(fromCurrentCacheKey)!;
@@ -132,7 +130,7 @@ function applyOptimisticUnlinkUpdate(
   const toCurrentCacheKey = createCacheKey(toLinkedIds);
   const toNewLinkedIds = toLinkedIds.filter((id) => id !== fromEntryId);
   const toNewCacheKey = createCacheKey(toNewLinkedIds);
-  
+
   const toEntryCache = cacheRef.current.get(toEntryId);
   if (toEntryCache?.has(toCurrentCacheKey)) {
     previousToCacheState = toEntryCache.get(toCurrentCacheKey)!;
@@ -149,8 +147,7 @@ function applyOptimisticUnlinkUpdate(
 }
 
 async function rollbackCacheState(
-  firestore: Firestore,
-  userId: string,
+  backend: StorageBackend,
   entryId: string,
   cacheRef: React.MutableRefObject<Map<string, CacheMap>>,
   previousState: CachedEntries | null
@@ -161,9 +158,8 @@ async function rollbackCacheState(
   if (!entryCache) return;
 
   try {
-    const entryRef = doc(firestore, `users/${userId}/entries/${entryId}`);
-    const entryDoc = await getDoc(entryRef);
-    const currentLinkedIds = entryDoc.data()?.linkedEntryIds || [];
+    const results = await backend.getEntries([entryId]);
+    const currentLinkedIds = (results[0] as unknown as JournalEntryData)?.linkedEntryIds || [];
     const oldCacheKey = createCacheKey(currentLinkedIds);
     entryCache.set(oldCacheKey, previousState);
   } catch (fetchError) {
@@ -171,36 +167,25 @@ async function rollbackCacheState(
       entryId,
       error: fetchError instanceof Error ? fetchError.message : String(fetchError),
     });
-    
+
     const fallbackLinkedIds = previousState.map((entry) => entry.id);
     const fallbackCacheKey = createCacheKey(fallbackLinkedIds);
     entryCache.set(fallbackCacheKey, previousState);
   }
 }
 
-async function fetchLinkedEntriesFromFirestore(
-  firestore: Firestore,
-  userId: string,
+async function fetchLinkedEntriesFromBackend(
+  backend: StorageBackend,
   linkedEntryIds: string[]
 ): Promise<Map<string, JournalEntryData & { id: string }>> {
-  const entriesCollectionRef = collection(firestore, `users/${userId}/entries`);
   const linkedEntriesMap = new Map<string, JournalEntryData & { id: string }>();
-  
+
   const chunks = chunkArray(linkedEntryIds, WHERE_IN_LIMIT);
-  
+
   for (const chunk of chunks) {
-    const docPromises = chunk.map((entryId) => {
-      const entryDocRef = doc(entriesCollectionRef, entryId);
-      return getDoc(entryDocRef);
-    });
-    
-    const docResults = await Promise.all(docPromises);
-    
-    docResults.forEach((docSnapshot: DocumentSnapshot) => {
-      if (docSnapshot.exists()) {
-        const entryData = docSnapshot.data() as JournalEntryData;
-        linkedEntriesMap.set(docSnapshot.id, { ...entryData, id: docSnapshot.id });
-      }
+    const results = await backend.getEntries(chunk);
+    results.forEach((entry: Entry) => {
+      linkedEntriesMap.set(entry.id, { ...(entry as unknown as JournalEntryData), id: entry.id });
     });
   }
 
@@ -208,8 +193,7 @@ async function fetchLinkedEntriesFromFirestore(
 }
 
 export function useEntryLinking(): UseEntryLinkingResult {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cacheRef = useRef<Map<string, CacheMap>>(new Map());
@@ -225,19 +209,19 @@ export function useEntryLinking(): UseEntryLinkingResult {
     entryId: string,
     linkedEntryIds?: string[]
   ): Promise<Array<JournalEntryData & { id: string }>> => {
-    if (!firestore || !user || !linkedEntryIds || linkedEntryIds.length === 0) {
+    if (!backend || !linkedEntryIds || linkedEntryIds.length === 0) {
       return [];
     }
 
     const cacheKey = createCacheKey(linkedEntryIds);
     const entryCache = cacheRef.current.get(entryId);
-    
+
     if (entryCache?.has(cacheKey)) {
       return entryCache.get(cacheKey)!;
     }
 
     try {
-      const linkedEntriesMap = await fetchLinkedEntriesFromFirestore(firestore, user.uid, linkedEntryIds);
+      const linkedEntriesMap = await fetchLinkedEntriesFromBackend(backend, linkedEntryIds);
 
       const linkedEntries = linkedEntryIds
         .map((id) => linkedEntriesMap.get(id))
@@ -253,10 +237,10 @@ export function useEntryLinking(): UseEntryLinkingResult {
       console.error('Failed to fetch linked entries:', err);
       return [];
     }
-  }, [firestore, user]);
+  }, [backend]);
 
   const linkEntry = useCallback(async (fromEntryId: string, toEntryId: string): Promise<void> => {
-    if (!firestore || !user) {
+    if (!backend) {
       setError('User not authenticated');
       return;
     }
@@ -275,8 +259,8 @@ export function useEntryLinking(): UseEntryLinkingResult {
     let toCurrentCacheKey = '';
 
     try {
-      const fromEntry = await fetchEntryData(firestore, user.uid, fromEntryId, 'Source entry not found');
-      const toEntry = await fetchEntryData(firestore, user.uid, toEntryId, 'Target entry not found');
+      const fromEntry = await fetchEntryData(backend, fromEntryId, 'Source entry not found');
+      const toEntry = await fetchEntryData(backend, toEntryId, 'Target entry not found');
 
       const validation = validateLink(fromEntryId, toEntryId, fromEntry.linkedIds, toEntry.linkedIds);
 
@@ -303,8 +287,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
       await createEntryLink({
         fromEntryId,
         toEntryId,
-        firestore,
-        user,
+        backend,
       });
 
       invalidateCacheKey(fromEntryId, fromCurrentCacheKey);
@@ -312,7 +295,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
     } catch (err) {
       if (previousFromCacheState) {
         try {
-          await rollbackCacheState(firestore, user.uid, fromEntryId, cacheRef, previousFromCacheState);
+          await rollbackCacheState(backend, fromEntryId, cacheRef, previousFromCacheState);
         } catch (rollbackError) {
           console.error('Failed to rollback cache for fromEntry:', {
             entryId: fromEntryId,
@@ -323,7 +306,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
 
       if (previousToCacheState) {
         try {
-          await rollbackCacheState(firestore, user.uid, toEntryId, cacheRef, previousToCacheState);
+          await rollbackCacheState(backend, toEntryId, cacheRef, previousToCacheState);
         } catch (rollbackError) {
           console.error('Failed to rollback cache for toEntry:', {
             entryId: toEntryId,
@@ -338,10 +321,10 @@ export function useEntryLinking(): UseEntryLinkingResult {
     } finally {
       setIsLoading(false);
     }
-  }, [firestore, user, invalidateCacheKey]);
+  }, [backend, invalidateCacheKey]);
 
   const unlinkEntry = useCallback(async (fromEntryId: string, toEntryId: string): Promise<void> => {
-    if (!firestore || !user) {
+    if (!backend) {
       setError('User not authenticated');
       return;
     }
@@ -355,15 +338,15 @@ export function useEntryLinking(): UseEntryLinkingResult {
     let toCurrentCacheKey = '';
 
     try {
-      const fromEntry = await fetchEntryData(firestore, user.uid, fromEntryId, 'Source entry not found');
-      
+      const fromEntry = await fetchEntryData(backend, fromEntryId, 'Source entry not found');
+
       if (!fromEntry.linkedIds.includes(toEntryId)) {
         setError('Link does not exist');
         setIsLoading(false);
         return;
       }
 
-      const toEntry = await fetchEntryData(firestore, user.uid, toEntryId, 'Target entry not found');
+      const toEntry = await fetchEntryData(backend, toEntryId, 'Target entry not found');
 
       const optimisticState = applyOptimisticUnlinkUpdate(
         cacheRef,
@@ -380,8 +363,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
       await deleteEntryLink({
         fromEntryId,
         toEntryId,
-        firestore,
-        user,
+        backend,
       });
 
       invalidateCacheKey(fromEntryId, fromCurrentCacheKey);
@@ -389,7 +371,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
     } catch (err) {
       if (previousFromCacheState) {
         try {
-          await rollbackCacheState(firestore, user.uid, fromEntryId, cacheRef, previousFromCacheState);
+          await rollbackCacheState(backend, fromEntryId, cacheRef, previousFromCacheState);
         } catch (rollbackError) {
           console.error('Failed to rollback cache for fromEntry:', {
             entryId: fromEntryId,
@@ -400,7 +382,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
 
       if (previousToCacheState) {
         try {
-          await rollbackCacheState(firestore, user.uid, toEntryId, cacheRef, previousToCacheState);
+          await rollbackCacheState(backend, toEntryId, cacheRef, previousToCacheState);
         } catch (rollbackError) {
           console.error('Failed to rollback cache for toEntry:', {
             entryId: toEntryId,
@@ -415,7 +397,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
     } finally {
       setIsLoading(false);
     }
-  }, [firestore, user, invalidateCacheKey]);
+  }, [backend, invalidateCacheKey]);
 
   return {
     linkEntry,

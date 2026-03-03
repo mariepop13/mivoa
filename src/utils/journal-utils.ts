@@ -1,23 +1,15 @@
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 export function formatEntryTime(entry: JournalEntryData & { id: string }): string {
   const { createdAt } = entry;
-  let date: Date;
-  
-  if (createdAt instanceof Date) {
-    date = createdAt;
-  } else if (typeof createdAt === 'string') {
-    date = new Date(createdAt);
-  } else {
-    return '';
-  }
-  
+  if (!createdAt) return '';
+  const date = new Date(createdAt);
+
   if (isNaN(date.getTime())) {
     return '';
   }
-  
+
   return format(date, 'HH:mm:ss');
 }
 
@@ -31,15 +23,15 @@ export function getEntryTitle(
   return '';
 }
 
-export function convertTimestampToDate(timestamp: Date | Timestamp | string): Date {
+export function convertTimestampToDate(timestamp: Date | string | { toDate(): Date }): Date {
   if (timestamp instanceof Date) {
     return timestamp;
   }
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate();
-  }
   if (typeof timestamp === 'string') {
     return new Date(timestamp);
+  }
+  if (typeof timestamp === 'object' && 'toDate' in timestamp) {
+    return timestamp.toDate();
   }
   return new Date();
 }

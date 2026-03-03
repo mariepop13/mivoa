@@ -3,14 +3,12 @@
 import { useCallback } from 'react';
 import { format } from 'date-fns';
 import { useContext } from 'react';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
 import { convertTimestampToDate } from '@/utils/journal-utils';
 import type { ChatMessage } from '@/ai/types/chat';
-import type { Firestore } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
 const MAX_PROMPT_LENGTH = 2000;
 const MIN_PROMPT_LENGTH = 1;
@@ -31,12 +29,11 @@ function validatePrompt(prompt: string): { isValid: boolean; error?: string } {
 }
 
 function validateDependencies(
-  firestore: Firestore | null,
-  user: User | null,
+  backend: StorageBackend | null,
   apiKey: string | null
 ): { isValid: boolean; error?: Error } {
-  if (!firestore || !user || !apiKey) {
-    const error = new Error('Cannot create conversation: missing firestore, user, or API key');
+  if (!backend || !apiKey) {
+    const error = new Error('Cannot create conversation: missing backend or API key');
     if (process.env.NODE_ENV === 'development') {
       console.warn(error.message);
     }
@@ -82,13 +79,12 @@ export function useTemplateConversation({
   onSuccess,
   onError,
 }: UseTemplateConversationParams): UseTemplateConversationResult {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const { apiKey } = useContext(OpenRouterApiKeyContext);
 
   const createConversationFromPrompt = useCallback(
     async (prompt: string) => {
-      const dependencyValidation = validateDependencies(firestore, user, apiKey);
+      const dependencyValidation = validateDependencies(backend, apiKey);
       if (!dependencyValidation.isValid) {
         onError?.(dependencyValidation.error!);
         return;
@@ -113,8 +109,7 @@ export function useTemplateConversation({
           draftId: null,
           entryDateKey: dateKey,
           conversationHistory: conversationHistoryForStorage,
-          firestore: firestore!,
-          user: user!,
+          backend: backend!,
         });
 
         onSuccess(draftId);
@@ -124,7 +119,7 @@ export function useTemplateConversation({
         onError?.(err);
       }
     },
-    [firestore, user, apiKey, selectedDate, onSuccess, onError]
+    [backend, apiKey, selectedDate, onSuccess, onError]
   );
 
   return { createConversationFromPrompt };

@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc } from 'firebase/firestore';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCallback, useState } from 'react';
@@ -22,9 +22,9 @@ function validateRawEntry(raw: Record<string, unknown>): void {
   }
 }
 
-function isoToTimestamp(value: unknown): Timestamp {
-  if (typeof value === 'string') return Timestamp.fromDate(new Date(value));
-  return Timestamp.now();
+function isoToString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  return new Date().toISOString();
 }
 
 function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id: string } {
@@ -39,8 +39,8 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
     content: (raw.content as string) ?? '',
     title: raw.title as string | undefined,
     date: raw.date as string,
-    createdAt: isoToTimestamp(raw.createdAt),
-    updatedAt: isoToTimestamp(raw.updatedAt),
+    createdAt: isoToString(raw.createdAt),
+    updatedAt: isoToString(raw.updatedAt),
     moods: raw.moods as string[] | undefined,
     moodEmojis: raw.moodEmojis as Record<string, string> | undefined,
     subjectEmoji: raw.subjectEmoji as string | undefined,
@@ -53,7 +53,7 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
     conversationHistory: history?.map((msg) => ({
       role: msg.role,
       content: msg.content,
-      timestamp: isoToTimestamp(msg.timestamp),
+      timestamp: isoToString(msg.timestamp),
     })),
   };
 }

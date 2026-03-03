@@ -1,6 +1,6 @@
 import {
   collection, doc, query, where, onSnapshot,
-  setDoc, updateDoc, deleteDoc, writeBatch,
+  setDoc, updateDoc, deleteDoc, writeBatch, getDoc,
   serverTimestamp, Timestamp, arrayUnion, arrayRemove,
   type Firestore,
 } from 'firebase/firestore';
@@ -121,6 +121,17 @@ export class FirebaseStorageBackend implements StorageBackend {
         selectedModel: data.selectedModel as string | undefined,
       });
     });
+  }
+
+  async getEntries(ids: string[]): Promise<Entry[]> {
+    if (!this.currentUser) return [];
+    const uid = this.currentUser.uid;
+    const results = await Promise.all(
+      ids.map((id) => getDoc(doc(this.firestore, `users/${uid}/entries/${id}`)))
+    );
+    return results
+      .filter((snap) => snap.exists())
+      .map((snap) => firestoreDocToEntry(snap.id, snap.data() as Record<string, unknown>));
   }
 
   async createEntry(entryId: string, data: EntryCreateData): Promise<void> {

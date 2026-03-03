@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { changeEntryDate } from '../journal-handlers';
-import { updateDocumentNonBlocking } from '@/firebase';
 import { format } from 'date-fns';
-import { doc, serverTimestamp, type Firestore } from 'firebase/firestore';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
-vi.mock('@/firebase');
 vi.mock('date-fns', () => ({
   format: vi.fn((date: Date, formatStr: string) => {
     if (formatStr === 'yyyy-MM-dd') {
@@ -17,77 +15,79 @@ vi.mock('date-fns', () => ({
   }),
 }));
 
-vi.mock('firebase/firestore', () => ({
-  doc: vi.fn((firestore, path) => ({ id: 'mock-doc', path })),
-  serverTimestamp: vi.fn(() => ({ _methodName: 'serverTimestamp' })),
-}));
-
 describe('changeEntryDate', () => {
-  const mockFirestore = { id: 'mock-firestore' } as unknown as Firestore;
-  const mockUser = { uid: 'test-user-id' };
   const mockEntryId = 'test-entry-id';
   const mockNewDate = new Date(2024, 0, 20);
 
+  let mockBackend: StorageBackend;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(updateDocumentNonBlocking).mockResolvedValue(undefined);
+    mockBackend = {
+      subscribeToAuthState: vi.fn(),
+      subscribeToEntriesByDate: vi.fn(),
+      subscribeToEntry: vi.fn(),
+      subscribeToAllEntries: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      getEntries: vi.fn(),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn().mockResolvedValue(undefined),
+      deleteEntry: vi.fn(),
+      linkEntries: vi.fn(),
+      unlinkEntries: vi.fn(),
+      updateSettings: vi.fn(),
+      signOut: vi.fn(),
+    };
   });
 
   it('should format date correctly', async () => {
     await changeEntryDate({
       entryId: mockEntryId,
       newDate: mockNewDate,
-      firestore: mockFirestore,
-      user: mockUser,
+      backend: mockBackend,
     });
 
     expect(format).toHaveBeenCalledWith(mockNewDate, 'yyyy-MM-dd');
   });
 
-  it('should create correct document reference', async () => {
+  it('should call backend.updateEntry with new date', async () => {
     await changeEntryDate({
       entryId: mockEntryId,
       newDate: mockNewDate,
-      firestore: mockFirestore,
-      user: mockUser,
+      backend: mockBackend,
     });
 
-    expect(doc).toHaveBeenCalledWith(mockFirestore, `users/${mockUser.uid}/entries/${mockEntryId}`);
+    expect(mockBackend.updateEntry).toHaveBeenCalledWith(mockEntryId, {
+      date: '2024-01-20',
+    });
   });
 
-  it('should update document with new date and updatedAt timestamp', async () => {
+  it('should update document with new date', async () => {
     await changeEntryDate({
       entryId: mockEntryId,
       newDate: mockNewDate,
-      firestore: mockFirestore,
-      user: mockUser,
+      backend: mockBackend,
     });
 
-    expect(updateDocumentNonBlocking).toHaveBeenCalledWith(
-      { id: 'mock-doc', path: `users/${mockUser.uid}/entries/${mockEntryId}` },
-      {
-        date: '2024-01-20',
-        updatedAt: { _methodName: 'serverTimestamp' },
-      }
+    expect(mockBackend.updateEntry).toHaveBeenCalledWith(
+      mockEntryId,
+      expect.objectContaining({ date: '2024-01-20' })
     );
   });
 
   it('should handle different dates correctly', async () => {
     const differentDate = new Date(2024, 11, 31);
-    
+
     await changeEntryDate({
       entryId: mockEntryId,
       newDate: differentDate,
-      firestore: mockFirestore,
-      user: mockUser,
+      backend: mockBackend,
     });
 
     expect(format).toHaveBeenCalledWith(differentDate, 'yyyy-MM-dd');
-    expect(updateDocumentNonBlocking).toHaveBeenCalledWith(
-      expect.any(Object),
-      expect.objectContaining({
-        date: '2024-12-31',
-      })
+    expect(mockBackend.updateEntry).toHaveBeenCalledWith(
+      mockEntryId,
+      expect.objectContaining({ date: '2024-12-31' })
     );
   });
 
@@ -95,8 +95,7 @@ describe('changeEntryDate', () => {
     const promise = changeEntryDate({
       entryId: mockEntryId,
       newDate: mockNewDate,
-      firestore: mockFirestore,
-      user: mockUser,
+      backend: mockBackend,
     });
 
     expect(promise).toBeInstanceOf(Promise);
@@ -105,27 +104,14 @@ describe('changeEntryDate', () => {
 
   it('should handle update errors', async () => {
     const mockError = new Error('Update failed');
-    vi.mocked(updateDocumentNonBlocking).mockRejectedValue(mockError);
+    vi.mocked(mockBackend.updateEntry).mockRejectedValue(mockError);
 
     await expect(
       changeEntryDate({
         entryId: mockEntryId,
         newDate: mockNewDate,
-        firestore: mockFirestore,
-        user: mockUser,
+        backend: mockBackend,
       })
     ).rejects.toThrow('Update failed');
   });
-
-  it('should use serverTimestamp for updatedAt', async () => {
-    await changeEntryDate({
-      entryId: mockEntryId,
-      newDate: mockNewDate,
-      firestore: mockFirestore,
-      user: mockUser,
-    });
-
-    expect(serverTimestamp).toHaveBeenCalled();
-  });
 });
-
