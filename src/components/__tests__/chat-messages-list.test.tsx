@@ -2,9 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatMessagesList } from '../chat-messages-list';
 import { useTranslation } from '@/hooks/use-translation';
-import { ChatEmptyState } from '../chat-empty-state';
-import { ChatTypingIndicator } from '../chat-typing-indicator';
-import { ChatMessage } from '../chat-message';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 
