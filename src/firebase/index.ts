@@ -4,14 +4,25 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { connectAuthEmulator } from 'firebase/auth';
+import { connectFirestoreEmulator } from 'firebase/firestore';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 import { isAppOfflineError } from './utils';
+
+let emulatorsConnected = false;
 
 interface FirebaseSdks {
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
   analytics: Analytics | null;
+}
+
+function connectToEmulators(auth: Auth, firestore: Firestore): void {
+  if (emulatorsConnected) return;
+  emulatorsConnected = true;
+  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+  connectFirestoreEmulator(firestore, 'localhost', 8080);
 }
 
 export function initializeFirebase(): FirebaseSdks {
@@ -26,7 +37,11 @@ export function initializeFirebase(): FirebaseSdks {
 export function getSdks(firebaseApp: FirebaseApp): FirebaseSdks {
   const auth = getAuth(firebaseApp);
   const firestore = getFirestore(firebaseApp);
-  
+
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+    connectToEmulators(auth, firestore);
+  }
+
   let analytics: Analytics | null = null;
   if (typeof window !== 'undefined') {
     try {
