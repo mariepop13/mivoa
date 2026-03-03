@@ -9,6 +9,7 @@ import { OpenRouterApiKeyProvider } from '@/context/OpenRouterApiKeyContext';
 import { ModelProvider } from '@/context/ModelContext';
 import { Toaster } from '@/components/ui/toaster';
 import { Footer } from '@/components/Footer';
+import { AuthGuard } from '@/components/auth-guard';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({
@@ -49,7 +50,9 @@ export default function RootLayout({
           <FirebaseClientProvider>
               <OpenRouterApiKeyProvider>
                 <ModelProvider>
-                  {children}
+                  <AuthGuard>
+                    {children}
+                  </AuthGuard>
                   <Footer />
                   <Toaster />
                 </ModelProvider>

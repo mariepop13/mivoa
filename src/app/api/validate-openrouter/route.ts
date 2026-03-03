@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const VALIDATION_URL = 'https://openrouter.ai/api/v1/key';
+const FIREBASE_LOOKUP_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:lookup';
 const MIN_API_KEY_LENGTH = 10;
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
@@ -22,7 +23,7 @@ function isValidResponseData(data: unknown): boolean {
   }
 
   const responseData = data as Record<string, unknown>;
-  
+
   if (responseData.error) {
     return false;
   }
@@ -43,6 +44,22 @@ function createErrorResponse(message: string, status: number): NextResponse {
     { valid: false, error: message },
     { status }
   );
+}
+
+async function verifyFirebaseIdToken(idToken: string): Promise<boolean> {
+  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!firebaseApiKey) return false;
+
+  try {
+    const response = await fetch(`${FIREBASE_LOOKUP_URL}?key=${firebaseApiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function validateApiKeyWithOpenRouter(apiKey: string): Promise<{ isValid: boolean }> {
@@ -73,6 +90,18 @@ async function validateApiKeyWithOpenRouter(apiKey: string): Promise<{ isValid: 
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const authHeader = request.headers.get('Authorization');
+  const idToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!idToken) {
+    return createErrorResponse('Authentication required', 401);
+  }
+
+  const isAuthenticated = await verifyFirebaseIdToken(idToken);
+  if (!isAuthenticated) {
+    return createErrorResponse('Invalid or expired token', 401);
+  }
+
   try {
     const body = await request.json();
     const { apiKey } = body;
@@ -92,4 +121,3 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return createErrorResponse('Invalid request', 400);
   }
 }
-

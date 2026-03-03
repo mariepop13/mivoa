@@ -24,7 +24,7 @@ export const OpenRouterApiKeyContext = createContext<OpenRouterApiKeyContextType
 });
 
 export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
 
   const settingsDocRef = useMemo(() => {
@@ -32,16 +32,12 @@ export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }):
     return doc(firestore, `users/${user.uid}/settings/api`);
   }, [firestore, user]);
 
-  const { data: settingsData, isLoading: isSettingsLoading } = useDoc<UserSettings>(settingsDocRef);
+  const { data: settingsData, isLoading } = useDoc<UserSettings>(settingsDocRef);
 
   const apiKey = settingsData?.openRouterApiKey || null;
-  const isLoading = isSettingsLoading || isUserLoading;
 
   const setApiKey = useCallback(async (key: string | null) => {
-    if (!settingsDocRef || !user) {
-      console.warn('Cannot save API key: missing settings doc ref or user');
-      return;
-    }
+    if (!settingsDocRef) return;
 
     try {
       if (key) {
@@ -63,7 +59,7 @@ export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }):
       console.error('Failed to save OpenRouter API key to Firestore', error);
       throw error;
     }
-  }, [settingsDocRef, user]);
+  }, [settingsDocRef]);
 
   const resetApiKey = useCallback(async () => {
     await setApiKey(null);
@@ -75,4 +71,3 @@ export function OpenRouterApiKeyProvider({ children }: { children: ReactNode }):
     </OpenRouterApiKeyContext.Provider>
   );
 }
-
