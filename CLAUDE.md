@@ -165,7 +165,7 @@ All API routes use helper functions from `src/lib/api-auth.ts` for Firebase Admi
 
 ## Environment Configuration
 
-Required environment variables for local development (see `.env.example`):
+Required environment variables for local development (see `.env.local.example`):
 - Firebase configuration (8 variables starting with `NEXT_PUBLIC_FIREBASE_`)
 - Optional: `TEST_OPENROUTER_API_KEY` for API key validation tests
 
