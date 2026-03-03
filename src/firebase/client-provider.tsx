@@ -1,7 +1,10 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useEffect, useState, type ReactNode } from 'react';
 import { FirebaseProvider, initializeFirebase } from '@/firebase';
+import { StorageProvider } from '@/repositories/storage-provider';
+import { createBackend } from '@/repositories/create-backend';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
 function reportProductionError(error: unknown): void {
   if (process.env.NODE_ENV !== 'production') {
@@ -47,21 +50,13 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }): R
     () => initializeFirebaseServices(),
     []
   );
+  const [backend, setBackend] = useState<StorageBackend | null>(null);
 
-  if (!firebaseServices) {
-    return (
-      <FirebaseProvider
-        areServicesAvailable={false}
-        firebaseApp={null}
-        firestore={null}
-        auth={null}
-      >
-        {children}
-      </FirebaseProvider>
-    );
-  }
+  useEffect(() => {
+    createBackend().then(setBackend);
+  }, []);
 
-  return (
+  const firebaseProvider = firebaseServices ? (
     <FirebaseProvider
       areServicesAvailable={true}
       firebaseApp={firebaseServices.firebaseApp}
@@ -70,6 +65,23 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }): R
     >
       {children}
     </FirebaseProvider>
+  ) : (
+    <FirebaseProvider
+      areServicesAvailable={false}
+      firebaseApp={null}
+      firestore={null}
+      auth={null}
+    >
+      {children}
+    </FirebaseProvider>
+  );
+
+  if (!backend) return firebaseProvider;
+
+  return (
+    <StorageProvider backend={backend}>
+      {firebaseProvider}
+    </StorageProvider>
   );
 }
 
