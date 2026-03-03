@@ -41,6 +41,14 @@ function serializeEntry(entry: JournalEntryData & { id: string }): Record<string
   };
 }
 
+function toSafeZipFileName(entryId: string): string {
+  const sanitized = entryId
+    .replace(/[/\\]/g, '_')
+    .replace(/\.\./g, '_')
+    .replace(/[^a-zA-Z0-9._-]/g, '_');
+  return `${sanitized || 'entry'}.md`;
+}
+
 function entryToMarkdown(entry: JournalEntryData & { id: string }): string {
   const lines: string[] = ['---'];
   if (entry.title) lines.push(`title: ${entry.title}`);
@@ -95,7 +103,7 @@ export function useExport() {
       const entries = await fetchAllEntries();
       const zip = new JSZip();
       entries.forEach((entry) => {
-        zip.file(`${entry.id}.md`, entryToMarkdown(entry));
+        zip.file(toSafeZipFileName(entry.id), entryToMarkdown(entry));
       });
       const dateStr = new Date().toISOString().slice(0, 10);
       const blob = await zip.generateAsync({ type: 'blob' });

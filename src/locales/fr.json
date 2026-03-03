@@ -195,6 +195,7 @@
   "exportJSON": "Exporter en JSON",
   "exportMarkdown": "Exporter en Markdown",
   "exportSuccess": "Export téléchargé",
+  "exportError": "Erreur lors de l'export",
   "importJSON": "Importer un JSON",
   "importConfirmTitle": "Importer des entrées",
   "importConfirmDescription": "{{total}} entrées trouvées. {{new}} nouvelles entrées seront importées ({{skipped}} déjà présentes seront ignorées).",

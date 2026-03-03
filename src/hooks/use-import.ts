@@ -1,5 +1,5 @@
-import { collection, getDocs, setDoc, doc, Timestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, getDocs, doc, Timestamp } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCallback, useState } from 'react';
 import type { JournalEntryData } from './use-journal-entries';
@@ -9,6 +9,17 @@ export interface ImportPreview {
   newCount: number;
   skippedCount: number;
   entries: (JournalEntryData & { id: string })[];
+}
+
+const ENTRY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateRawEntry(raw: Record<string, unknown>): void {
+  if (typeof raw.id !== 'string' || raw.id.trim() === '') {
+    throw new Error('invalid_file');
+  }
+  if (typeof raw.date !== 'string' || !ENTRY_DATE_PATTERN.test(raw.date)) {
+    throw new Error('invalid_file');
+  }
 }
 
 function isoToTimestamp(value: unknown): Timestamp {
@@ -65,12 +76,20 @@ export function useImport() {
 
     if (parsed.version !== 1) throw new Error('unsupported_version');
 
+    if (!Array.isArray(parsed.entries)) throw new Error('invalid_file');
     const rawEntries = parsed.entries as Array<Record<string, unknown>>;
+    rawEntries.forEach(validateRawEntry);
+
     const col = collection(firestore, `users/${user.uid}/entries`);
     const snapshot = await getDocs(col);
     const existingIds = new Set(snapshot.docs.map((d) => d.id));
 
-    const entries = rawEntries.map(deserializeEntry);
+    const entriesById = new Map<string, JournalEntryData & { id: string }>();
+    rawEntries.forEach((raw) => {
+      const entry = deserializeEntry(raw);
+      entriesById.set(entry.id, entry);
+    });
+    const entries = [...entriesById.values()];
     const newEntries = entries.filter((e) => !existingIds.has(e.id));
 
     return {
@@ -89,7 +108,7 @@ export function useImport() {
         preview.entries.map((entry) => {
           const { id, ...data } = entry;
           const ref = doc(firestore, `users/${user.uid}/entries/${id}`);
-          return setDoc(ref, data);
+          return setDocumentNonBlocking(ref, data, {});
         })
       );
       return preview.newCount;

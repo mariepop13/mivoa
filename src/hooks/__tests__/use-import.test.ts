@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useImport } from '../use-import';
-import { useFirestore } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, doc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 
 vi.mock('@/firebase');
@@ -12,7 +12,6 @@ vi.mock('@/firebase/auth/use-user');
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   getDocs: vi.fn(),
-  setDoc: vi.fn(),
   doc: vi.fn(),
   Timestamp: {
     fromDate: vi.fn((d: Date) => ({ toDate: () => d, seconds: 0, nanoseconds: 0 })),
@@ -75,7 +74,7 @@ describe('useImport', () => {
     vi.mocked(getDocs).mockResolvedValue({
       docs: [{ id: '2026-03-01-100000000' }],
     } as any);
-    vi.mocked(setDoc).mockResolvedValue(undefined);
+    vi.mocked(setDocumentNonBlocking).mockResolvedValue(undefined);
   });
 
   it('exposes isImporting as false initially', () => {
@@ -114,7 +113,7 @@ describe('useImport', () => {
     expect(preview!.skippedCount).toBe(1);
   });
 
-  it('calls setDoc for each new entry on importEntries', async () => {
+  it('calls setDocumentNonBlocking for each new entry on importEntries', async () => {
     const { result } = renderHook(() => useImport());
     const file = makeFile(JSON.stringify(validExportPayload));
     let preview: Awaited<ReturnType<typeof result.current.parseFile>>;
@@ -124,6 +123,6 @@ describe('useImport', () => {
     await act(async () => {
       await result.current.importEntries(preview!);
     });
-    expect(setDoc).toHaveBeenCalledTimes(1);
+    expect(setDocumentNonBlocking).toHaveBeenCalledTimes(1);
   });
 });

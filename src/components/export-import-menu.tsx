@@ -40,7 +40,7 @@ export function ExportImportMenu(): React.JSX.Element {
       await exportJSON();
       toast({ title: t('exportSuccess') });
     } catch {
-      toast({ title: t('importError'), variant: 'destructive' });
+      toast({ title: t('exportError'), variant: 'destructive' });
     }
   };
 
@@ -49,7 +49,7 @@ export function ExportImportMenu(): React.JSX.Element {
       await exportMarkdown();
       toast({ title: t('exportSuccess') });
     } catch {
-      toast({ title: t('importError'), variant: 'destructive' });
+      toast({ title: t('exportError'), variant: 'destructive' });
     }
   };
 
@@ -80,7 +80,7 @@ export function ExportImportMenu(): React.JSX.Element {
       setPreview(null);
       toast({ title: t('importSuccess').replace('{{count}}', String(count)) });
     } catch {
-      toast({ title: t('importError'), variant: 'destructive' });
+      toast({ title: t('exportError'), variant: 'destructive' });
     }
   };
 
