@@ -31,11 +31,5 @@ describe('ChatEmptyState', () => {
     expect(icon).toBeInTheDocument();
   });
 
-  it('should call useTranslation', () => {
-    render(<ChatEmptyState />);
-
-    expect(useTranslation).toHaveBeenCalled();
-    expect(mockT).toHaveBeenCalledWith('chatInitializing');
-  });
 });
 

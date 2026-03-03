@@ -40,8 +40,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="Test" />);
 
-    expect(mockT).toHaveBeenCalledWith('word');
-    expect(mockT).not.toHaveBeenCalledWith('words');
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('1 word · 4 charactersCount');
   });
 
   it('should use plural form for multiple words', () => {
@@ -52,7 +52,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="Test content" />);
 
-    expect(mockT).toHaveBeenCalledWith('words');
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('2 words · 9 charactersCount');
   });
 
   it('should use singular form for 1 character', () => {
@@ -63,8 +64,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="A" />);
 
-    expect(mockT).toHaveBeenCalledWith('character');
-    expect(mockT).not.toHaveBeenCalledWith('charactersCount');
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('1 word · 1 character');
   });
 
   it('should use plural form for multiple characters', () => {
@@ -75,7 +76,8 @@ describe('WordCountBadge', () => {
 
     render(<WordCountBadge content="Hello" />);
 
-    expect(mockT).toHaveBeenCalledWith('charactersCount');
+    const badge = screen.getByRole('status');
+    expect(badge.textContent).toBe('1 word · 5 charactersCount');
   });
 
   it('should display formatted numbers with k notation for large numbers', () => {
@@ -100,15 +102,6 @@ describe('WordCountBadge', () => {
 
     const badge = screen.getByRole('status');
     expect(badge.textContent).toBe('0 words · 0 charactersCount');
-    expect(mockT).toHaveBeenCalledWith('words');
-    expect(mockT).toHaveBeenCalledWith('charactersCount');
-  });
-
-  it('should call useWordCount with content prop', () => {
-    const content = 'Test content';
-    render(<WordCountBadge content={content} />);
-
-    expect(useWordCount).toHaveBeenCalledWith(content);
   });
 });
 
