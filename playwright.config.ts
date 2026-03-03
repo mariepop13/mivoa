@@ -4,7 +4,7 @@
  * Quick start:
  *   Terminal 1: firebase emulators:start --only auth,firestore --project demo-mivoa
  *   Terminal 2: NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true npm run dev -- -p 3100
- *   Terminal 3: npm run test:e2e
+ *   Terminal 3: npm run test:e2e  (or E2E_BASE_URL=http://localhost:3101 npm run test:e2e)
  *
  * CI: use `firebase emulators:exec` to wrap the test command.
  */
@@ -18,7 +18,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3100',
     trace: 'on-first-retry',
   },
   projects: [

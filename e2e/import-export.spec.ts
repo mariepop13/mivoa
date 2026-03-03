@@ -15,6 +15,9 @@ const i18n = {
   importUnsupportedVersion: 'Unsupported format version',
 };
 
+// First test may be slow (cold-start: Firebase SDK init + emulator connection + anonymous auth)
+test.setTimeout(60000);
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/test-auth');
   await page.waitForURL('/');
@@ -38,14 +41,14 @@ test('Export JSON shows success toast', async ({ page }) => {
   await page.getByRole('button', { name: i18n.dataManagement }).click();
   await page.getByRole('menuitem', { name: i18n.exportJSON }).click();
 
-  await expect(page.getByText(i18n.exportSuccess)).toBeVisible();
+  await expect(page.getByText(i18n.exportSuccess).first()).toBeVisible();
 });
 
 test('Export Markdown shows success toast', async ({ page }) => {
   await page.getByRole('button', { name: i18n.dataManagement }).click();
   await page.getByRole('menuitem', { name: i18n.exportMarkdown }).click();
 
-  await expect(page.getByText(i18n.exportSuccess)).toBeVisible();
+  await expect(page.getByText(i18n.exportSuccess).first()).toBeVisible();
 });
 
 test('Import JSON — confirmation dialog shows entry counts', async ({ page }) => {
@@ -76,7 +79,7 @@ test('Import JSON — confirm imports and shows success toast', async ({ page })
 
   await dialog.getByRole('button', { name: 'Import' }).click();
 
-  await expect(page.getByText(/\d+ entries imported/)).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText(/\d+ entries imported/).first()).toBeVisible({ timeout: 5000 });
 });
 
 test('Import invalid version — shows error toast', async ({ page }) => {
@@ -89,5 +92,5 @@ test('Import invalid version — shows error toast', async ({ page }) => {
   await fileChooser.setFiles(INVALID_FIXTURE);
 
   await expect(page.getByRole('alertdialog')).not.toBeVisible();
-  await expect(page.getByText(i18n.importUnsupportedVersion)).toBeVisible();
+  await expect(page.getByText(i18n.importUnsupportedVersion).first()).toBeVisible();
 });
