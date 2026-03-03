@@ -15,6 +15,6 @@ export function ApiKeyGuard({ children }: { children: ReactNode }): React.JSX.El
     }
   }, [apiKey, isLoading, router]);
 
-  if (isLoading) return <JournalLoadingState />;
+  if (isLoading || !apiKey) return <JournalLoadingState />;
   return <>{children}</>;
 }
