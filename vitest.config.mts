@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
     environment: 'happy-dom',
     setupFiles: './src/test/setup.ts',
     include: ['**/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', '**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['node_modules/**', 'e2e/**'],
     testTimeout: 10000,
     hookTimeout: 10000,
     maxConcurrency: 2,
@@ -22,6 +23,7 @@ export default defineConfig(({ mode }) => {
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
+        'e2e/**',
         'src/test/',
         '**/*.d.ts',
         '**/*.config.*',
