@@ -159,14 +159,15 @@ describe('TemplatePromptDialog', () => {
   });
 
   it('should regenerate prompt when dialog is reopened after closing', async () => {
+    mockGenerateTemplatePrompt.mockResolvedValueOnce('Generated prompt text - first open');
     const { rerender } = renderWithContext(true, mockTemplate, 'test-key');
 
     await waitFor(() => {
-      expect(screen.getByText(/Generated prompt text/)).toBeInTheDocument();
+      expect(screen.getByText(/Generated prompt text - first open/)).toBeInTheDocument();
     });
 
     vi.clearAllMocks();
-    mockGenerateTemplatePrompt.mockResolvedValue('Generated prompt text');
+    mockGenerateTemplatePrompt.mockResolvedValueOnce('Generated prompt text - second open');
 
     rerender(
       <OpenRouterApiKeyContext.Provider
@@ -213,7 +214,8 @@ describe('TemplatePromptDialog', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Generated prompt text/)).toBeInTheDocument();
+      expect(screen.queryByText(/Generated prompt text - first open/)).not.toBeInTheDocument();
+      expect(screen.getByText(/Generated prompt text - second open/)).toBeInTheDocument();
     });
   });
 
