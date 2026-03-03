@@ -1,24 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { validateOpenRouterApiKey } from '../openrouter-client';
 
+const VALID_ID_TOKEN = 'valid-firebase-id-token';
+
 describe('validateOpenRouterApiKey', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should return false for empty string', async () => {
-    const result = await validateOpenRouterApiKey('');
+    const result = await validateOpenRouterApiKey('', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
   it('should return false for non-string input', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await validateOpenRouterApiKey(null as any);
+    const result = await validateOpenRouterApiKey(null as any, VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
   it('should return false for key shorter than 10 characters', async () => {
-    const result = await validateOpenRouterApiKey('short');
+    const result = await validateOpenRouterApiKey('short', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
@@ -28,7 +30,7 @@ describe('validateOpenRouterApiKey', () => {
       json: async () => ({ valid: false }),
     } as Response);
 
-    const result = await validateOpenRouterApiKey('invalid-key-1234567890');
+    const result = await validateOpenRouterApiKey('invalid-key-1234567890', VALID_ID_TOKEN);
     expect(result).toBe(false);
     expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.any(Object));
   });
@@ -39,7 +41,7 @@ describe('validateOpenRouterApiKey', () => {
       json: async () => ({ valid: false }),
     } as Response);
 
-    const result = await validateOpenRouterApiKey('forbidden-key-1234567890');
+    const result = await validateOpenRouterApiKey('forbidden-key-1234567890', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
@@ -49,7 +51,7 @@ describe('validateOpenRouterApiKey', () => {
       json: async () => ({ valid: false }),
     } as Response);
 
-    const result = await validateOpenRouterApiKey('error-key-1234567890');
+    const result = await validateOpenRouterApiKey('error-key-1234567890', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
@@ -59,7 +61,7 @@ describe('validateOpenRouterApiKey', () => {
       json: async () => ({ valid: false }),
     } as Response);
 
-    const result = await validateOpenRouterApiKey('missing-id-key-1234567890');
+    const result = await validateOpenRouterApiKey('missing-id-key-1234567890', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 
@@ -75,12 +77,13 @@ describe('validateOpenRouterApiKey', () => {
         json: async () => testCase.response,
       } as Response);
 
-      const result = await validateOpenRouterApiKey('valid-key-1234567890');
+      const result = await validateOpenRouterApiKey('valid-key-1234567890', VALID_ID_TOKEN);
       expect(result).toBe(true);
       expect(global.fetch).toHaveBeenCalledWith('/api/validate-openrouter', expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${VALID_ID_TOKEN}`,
         }),
         body: expect.stringContaining('valid-key-1234567890'),
       }));
@@ -91,8 +94,7 @@ describe('validateOpenRouterApiKey', () => {
   it('should handle fetch errors', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-    const result = await validateOpenRouterApiKey('test-key-1234567890');
+    const result = await validateOpenRouterApiKey('test-key-1234567890', VALID_ID_TOKEN);
     expect(result).toBe(false);
   });
 });
-

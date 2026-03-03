@@ -1,3 +1,5 @@
+/* eslint-disable react/display-name */
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { Firestore } from 'firebase/firestore';
@@ -13,6 +15,20 @@ vi.mock('@/firebase');
 vi.mock('@/firebase/auth/use-user');
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/utils/journal-utils');
+
+const createWrapper = (apiKey: string | null) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider
+      value={{
+        apiKey,
+        setApiKey: vi.fn(),
+        resetApiKey: vi.fn(),
+        isLoading: false,
+      }}
+    >
+      {children}
+    </OpenRouterApiKeyContext.Provider>
+  );
 
 describe('useTemplateConversation', () => {
   const mockFirestore = { collection: vi.fn(), doc: vi.fn() } as unknown as Firestore;
@@ -38,29 +54,16 @@ describe('useTemplateConversation', () => {
     apiKey: string | null,
     onError?: (error: Error) => void
   ) => {
-    vi.mocked(useFirestore).mockReturnValue(firestore as Firestore);
+    vi.mocked(useFirestore).mockReturnValue(firestore as unknown as Firestore);
     vi.mocked(useUser).mockReturnValue({ user, isLoading: false, error: null });
-    
+
     return renderHook(
       () => useTemplateConversation({
         selectedDate: mockSelectedDate,
         onSuccess: mockOnSuccess,
         onError: onError || mockOnError,
       }),
-      {
-        wrapper: ({ children }) => (
-          <OpenRouterApiKeyContext.Provider
-            value={{
-              apiKey,
-              setApiKey: vi.fn(),
-              resetApiKey: vi.fn(),
-              isLoading: false,
-            }}
-          >
-            {children}
-          </OpenRouterApiKeyContext.Provider>
-        ),
-      }
+      { wrapper: createWrapper(apiKey) }
     );
   };
 
@@ -155,20 +158,7 @@ describe('useTemplateConversation', () => {
         selectedDate: mockSelectedDate,
         onSuccess: mockOnSuccess,
       }),
-      {
-        wrapper: ({ children }) => (
-          <OpenRouterApiKeyContext.Provider
-            value={{
-              apiKey: mockApiKey,
-              setApiKey: vi.fn(),
-              resetApiKey: vi.fn(),
-              isLoading: false,
-            }}
-          >
-            {children}
-          </OpenRouterApiKeyContext.Provider>
-        ),
-      }
+      { wrapper: createWrapper(mockApiKey) }
     );
 
     await act(async () => {

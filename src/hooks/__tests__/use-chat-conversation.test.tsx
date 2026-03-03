@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -13,15 +14,16 @@ const mockApiKey = 'test-api-key';
 const mockLanguage = 'en';
 const mockModel = 'test-model';
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <OpenRouterApiKeyContext.Provider value={{ apiKey: mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-    <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-      <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-        {children}
-      </ModelContext.Provider>
-    </LanguageContext.Provider>
-  </OpenRouterApiKeyContext.Provider>
-);
+const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider value={{ apiKey: 'apiKey' in overrides ? (overrides.apiKey as string | null) : mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
+      <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+        <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
+          {children}
+        </ModelContext.Provider>
+      </LanguageContext.Provider>
+    </OpenRouterApiKeyContext.Provider>
+  );
 
 describe('useChatConversation', () => {
   beforeEach(() => {
@@ -31,7 +33,7 @@ describe('useChatConversation', () => {
   });
 
   it('initializes with initial message when apiKey is available', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(1);
@@ -41,7 +43,7 @@ describe('useChatConversation', () => {
   });
 
   it('sends message and updates conversation', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -66,7 +68,7 @@ describe('useChatConversation', () => {
   it('sets error when sendMessage fails', async () => {
     vi.spyOn(chatService, 'sendChatMessage').mockRejectedValue(new Error('API Error'));
 
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -82,7 +84,7 @@ describe('useChatConversation', () => {
   });
 
   it('does not send empty message', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -96,7 +98,7 @@ describe('useChatConversation', () => {
   });
 
   it('resets conversation', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -120,7 +122,7 @@ describe('useChatConversation', () => {
     });
     vi.spyOn(chatService, 'sendChatMessage').mockReturnValue(promise);
 
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -144,17 +146,7 @@ describe('useChatConversation', () => {
   });
 
   it('sets error when apiKey is not configured', async () => {
-    const wrapperWithoutApiKey = ({ children }: { children: React.ReactNode }) => (
-      <OpenRouterApiKeyContext.Provider value={{ apiKey: null, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-        <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-          <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-            {children}
-          </ModelContext.Provider>
-        </LanguageContext.Provider>
-      </OpenRouterApiKeyContext.Provider>
-    );
-
-    const { result } = renderHook(() => useChatConversation(), { wrapper: wrapperWithoutApiKey });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper({ apiKey: null }) });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -170,7 +162,7 @@ describe('useChatConversation', () => {
   });
 
   it('loads conversation with messages and draftId', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
     const testMessages = [
       { role: 'user' as const, content: 'Hello', timestamp: new Date() },
       { role: 'assistant' as const, content: 'Hi there', timestamp: new Date() },
@@ -187,7 +179,7 @@ describe('useChatConversation', () => {
   });
 
   it('loads conversation with messages but no draftId', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
     const testMessages = [
       { role: 'user' as const, content: 'Hello', timestamp: new Date() },
     ];
@@ -201,7 +193,7 @@ describe('useChatConversation', () => {
   });
 
   it('loads empty conversation and resets draftId', async () => {
-    const { result } = renderHook(() => useChatConversation(), { wrapper });
+    const { result } = renderHook(() => useChatConversation(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.messages.length).toBeGreaterThan(0);
@@ -221,7 +213,7 @@ describe('useChatConversation', () => {
 
     const { result } = renderHook(
       () => useChatConversation({ dateKey, onDraftSave: mockOnDraftSave }),
-      { wrapper }
+      { wrapper: createWrapper() }
     );
 
     await waitFor(() => {
@@ -244,7 +236,7 @@ describe('useChatConversation', () => {
     const mockOnDraftDelete = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(
       () => useChatConversation({ onDraftDelete: mockOnDraftDelete }),
-      { wrapper }
+      { wrapper: createWrapper() }
     );
 
     await waitFor(() => {

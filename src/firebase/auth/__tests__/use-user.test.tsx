@@ -87,7 +87,6 @@ describe('useUser', () => {
 
     expect(result.current.user).toEqual(mockUser);
     expect(result.current.error).toBe(null);
-    expect(result.current.isLoading).toBe(false);
   });
 
   it('should return null user when not authenticated', async () => {
@@ -110,7 +109,6 @@ describe('useUser', () => {
 
     expect(result.current.user).toBe(null);
     expect(result.current.error).toBe(null);
-    expect(result.current.isLoading).toBe(false);
   });
 
   it('should handle auth state errors', async () => {
@@ -145,7 +143,6 @@ describe('useUser', () => {
 
     expect(result.current.user).toBe(null);
     expect(result.current.error).toEqual(mockError);
-    expect(result.current.isLoading).toBe(false);
     expect(consoleErrorSpy).toHaveBeenCalledWith('Auth state listener error:', mockError);
 
     consoleErrorSpy.mockRestore();

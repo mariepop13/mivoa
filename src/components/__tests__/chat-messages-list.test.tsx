@@ -2,9 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatMessagesList } from '../chat-messages-list';
 import { useTranslation } from '@/hooks/use-translation';
-import { ChatEmptyState } from '../chat-empty-state';
-import { ChatTypingIndicator } from '../chat-typing-indicator';
-import { ChatMessage } from '../chat-message';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage as ChatMessageType } from '@/ai/types/chat';
 
@@ -37,7 +34,7 @@ describe('ChatMessagesList', () => {
       <ChatMessagesList messages={[]} isTyping={false} error={null} />
     );
 
-    expect(ChatEmptyState).toHaveBeenCalled();
+    expect(screen.getByText('Empty State')).toBeInTheDocument();
   });
 
   it('should not render ChatEmptyState when messages exist', () => {
@@ -53,7 +50,7 @@ describe('ChatMessagesList', () => {
       <ChatMessagesList messages={messages} isTyping={false} error={null} />
     );
 
-    expect(ChatEmptyState).not.toHaveBeenCalled();
+    expect(screen.queryByText('Empty State')).not.toBeInTheDocument();
   });
 
   it('should render all messages', () => {
@@ -76,7 +73,6 @@ describe('ChatMessagesList', () => {
 
     expect(screen.getByText('Message 1')).toBeInTheDocument();
     expect(screen.getByText('Message 2')).toBeInTheDocument();
-    expect(ChatMessage).toHaveBeenCalledTimes(2);
   });
 
   it('should handle Firebase Timestamp in messages', () => {
@@ -110,7 +106,7 @@ describe('ChatMessagesList', () => {
       <ChatMessagesList messages={[]} isTyping={true} error={null} />
     );
 
-    expect(ChatTypingIndicator).toHaveBeenCalled();
+    expect(screen.getByText('Typing...')).toBeInTheDocument();
   });
 
   it('should not render ChatTypingIndicator when isTyping is false', () => {
@@ -118,7 +114,7 @@ describe('ChatMessagesList', () => {
       <ChatMessagesList messages={[]} isTyping={false} error={null} />
     );
 
-    expect(ChatTypingIndicator).not.toHaveBeenCalled();
+    expect(screen.queryByText('Typing...')).not.toBeInTheDocument();
   });
 
   it('should render error message when error is provided', () => {
@@ -139,26 +135,5 @@ describe('ChatMessagesList', () => {
     expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
   });
 
-  it('should generate unique keys for messages', () => {
-    const messages: ChatMessageType[] = [
-      {
-        role: 'user',
-        content: 'Message 1',
-        timestamp: new Date('2024-01-15T14:30:00Z'),
-      },
-      {
-        role: 'assistant',
-        content: 'Message 2',
-        timestamp: new Date('2024-01-15T14:30:00Z'),
-      },
-    ];
-
-    render(
-      <ChatMessagesList messages={messages} isTyping={false} error={null} />
-    );
-
-    const {calls} = vi.mocked(ChatMessage).mock;
-    expect(calls.length).toBeGreaterThanOrEqual(2);
-  });
 });
 

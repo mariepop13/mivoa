@@ -208,13 +208,12 @@ describe('OpenRouterApiKeyContext', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('should warn when trying to save without user or doc ref', async () => {
+  it('should do nothing when trying to save without a doc ref', async () => {
     vi.mocked(useUser).mockReturnValue({
       user: null,
       isLoading: false,
       error: null,
     });
-    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const { result } = renderHook(() => {
       const context = React.useContext(OpenRouterApiKeyContext);
@@ -225,9 +224,7 @@ describe('OpenRouterApiKeyContext', () => {
       await result.current.setApiKey('new-key');
     });
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Cannot save API key: missing settings doc ref or user');
     expect(setDocumentNonBlocking).not.toHaveBeenCalled();
-    consoleWarnSpy.mockRestore();
   });
 });
 

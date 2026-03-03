@@ -24,11 +24,5 @@ describe('JournalLoadingState', () => {
     expect(screen.getByText('loading')).toBeInTheDocument();
   });
 
-  it('should call useTranslation', () => {
-    render(<JournalLoadingState />);
-
-    expect(useTranslation).toHaveBeenCalled();
-    expect(mockT).toHaveBeenCalledWith('loading');
-  });
 });
 

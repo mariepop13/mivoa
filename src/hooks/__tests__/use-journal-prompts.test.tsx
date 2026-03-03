@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -6,6 +7,7 @@ import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
 import { ModelContext } from '@/context/ModelContext';
 import * as journalPromptService from '@/ai/services/journal-prompt-service';
+import type { RecentEntry } from '@/ai/types/journal';
 
 vi.mock('@/ai/services/journal-prompt-service', () => ({
   generateDailyPrompt: vi.fn(),
@@ -24,17 +26,18 @@ vi.mock('date-fns', async () => {
   };
 });
 
-const EMPTY_RECENT_ENTRIES: never[] = [];
+const EMPTY_RECENT_ENTRIES: RecentEntry[] = [];
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <OpenRouterApiKeyContext.Provider value={{ apiKey: mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-    <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-      <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-        {children}
-      </ModelContext.Provider>
-    </LanguageContext.Provider>
-  </OpenRouterApiKeyContext.Provider>
-);
+const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider value={{ apiKey: 'apiKey' in overrides ? (overrides.apiKey as string | null) : mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
+      <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+        <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
+          {children}
+        </ModelContext.Provider>
+      </LanguageContext.Provider>
+    </OpenRouterApiKeyContext.Provider>
+  );
 
 describe('useJournalPrompts', () => {
   beforeEach(() => {
@@ -55,7 +58,7 @@ describe('useJournalPrompts', () => {
   });
 
   it('generates prompt when API key is available', async () => {
-    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper });
+    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.prompt).toBe('Test prompt');
@@ -66,17 +69,7 @@ describe('useJournalPrompts', () => {
   });
 
   it('returns error when API key is not configured', () => {
-    const wrapperWithoutKey = ({ children }: { children: React.ReactNode }) => (
-      <OpenRouterApiKeyContext.Provider value={{ apiKey: null, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-        <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
-          <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
-            {children}
-          </ModelContext.Provider>
-        </LanguageContext.Provider>
-      </OpenRouterApiKeyContext.Provider>
-    );
-
-    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: wrapperWithoutKey });
+    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: createWrapper({ apiKey: null }) });
 
     expect(result.current.prompt).toBeNull();
     expect(result.current.error).toBe('API key not configured');
@@ -90,14 +83,14 @@ describe('useJournalPrompts', () => {
     };
     localStorage.setItem(`journal_prompt_${TODAY_KEY}`, JSON.stringify(cachedPrompt));
 
-    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper });
+    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: createWrapper() });
 
     expect(result.current.prompt).toBe('Cached prompt');
     expect(journalPromptService.generateDailyPrompt).not.toHaveBeenCalled();
   });
 
   it('regenerates prompt when regenerate is called', async () => {
-    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper });
+    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.prompt).toBe('Test prompt');
@@ -123,7 +116,7 @@ describe('useJournalPrompts', () => {
       () => Promise.reject(new Error('API Error'))
     );
 
-    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper });
+    const { result } = renderHook(() => useJournalPrompts(EMPTY_RECENT_ENTRIES), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.error).toBe('API Error');

@@ -7,6 +7,9 @@ import { useTranslation } from '@/hooks/use-translation';
 
 vi.mock('@/lib/openrouter-client');
 vi.mock('@/hooks/use-translation');
+vi.mock('@/firebase', () => ({
+  useUser: () => ({ user: { getIdToken: vi.fn().mockResolvedValue('mock-id-token') }, isLoading: false }),
+}));
 
 describe('ApiKeyForm', () => {
   const mockOnSubmit = vi.fn();
@@ -59,7 +62,7 @@ describe('ApiKeyForm', () => {
     await user.click(screen.getByRole('button'));
 
     await waitFor(() => {
-      expect(validateOpenRouterApiKey).toHaveBeenCalledWith('valid-key-1234567890');
+      expect(validateOpenRouterApiKey).toHaveBeenCalledWith('valid-key-1234567890', 'mock-id-token');
       expect(mockOnSubmit).toHaveBeenCalledWith('valid-key-1234567890');
     });
   });

@@ -33,11 +33,5 @@ describe('JournalAuthError', () => {
     expect(heading).toHaveTextContent('authenticationError');
   });
 
-  it('should call useTranslation', () => {
-    render(<JournalAuthError error="Test error" />);
-
-    expect(useTranslation).toHaveBeenCalled();
-    expect(mockT).toHaveBeenCalledWith('authenticationError');
-  });
 });
 

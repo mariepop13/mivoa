@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -50,34 +51,35 @@ const mockModels: OpenRouterModel[] = [
   },
 ];
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <OpenRouterApiKeyContext.Provider
-    value={{
-      apiKey: 'test-api-key',
-      setApiKey: vi.fn(),
-      resetApiKey: vi.fn(),
-      isLoading: false,
-    }}
-  >
-    <LanguageContext.Provider
+const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <OpenRouterApiKeyContext.Provider
       value={{
-        language: 'en',
-        setLanguage: vi.fn(),
-        supportedLanguages: SUPPORTED_LANGUAGES,
+        apiKey: 'apiKey' in overrides ? (overrides.apiKey as string | null) : 'test-api-key',
+        setApiKey: vi.fn(),
+        resetApiKey: vi.fn(),
+        isLoading: false,
       }}
     >
-      <ModelContext.Provider
+      <LanguageContext.Provider
         value={{
-          selectedModel: 'model-1',
-          setSelectedModel: vi.fn(),
-          isLoading: false,
+          language: 'en',
+          setLanguage: vi.fn(),
+          supportedLanguages: SUPPORTED_LANGUAGES,
         }}
       >
-        {children}
-      </ModelContext.Provider>
-    </LanguageContext.Provider>
-  </OpenRouterApiKeyContext.Provider>
-);
+        <ModelContext.Provider
+          value={{
+            selectedModel: 'model-1',
+            setSelectedModel: vi.fn(),
+            isLoading: false,
+          }}
+        >
+          {children}
+        </ModelContext.Provider>
+      </LanguageContext.Provider>
+    </OpenRouterApiKeyContext.Provider>
+  );
 
 describe('useModelLoader', () => {
   beforeEach(() => {
@@ -86,7 +88,7 @@ describe('useModelLoader', () => {
   });
 
   it('should load models when shouldLoad is true and apiKey is available', async () => {
-    const { result } = renderHook(() => useModelLoader(true), { wrapper });
+    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -98,7 +100,7 @@ describe('useModelLoader', () => {
   });
 
   it('should not load models when shouldLoad is false', async () => {
-    const { result } = renderHook(() => useModelLoader(false), { wrapper });
+    const { result } = renderHook(() => useModelLoader(false), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -109,36 +111,7 @@ describe('useModelLoader', () => {
   });
 
   it('should not load models when apiKey is missing', () => {
-    const wrapperWithoutKey = ({ children }: { children: React.ReactNode }) => (
-      <OpenRouterApiKeyContext.Provider
-        value={{
-          apiKey: null,
-          setApiKey: vi.fn(),
-          resetApiKey: vi.fn(),
-          isLoading: false,
-        }}
-      >
-        <LanguageContext.Provider
-          value={{
-            language: 'en',
-            setLanguage: vi.fn(),
-            supportedLanguages: SUPPORTED_LANGUAGES,
-          }}
-        >
-          <ModelContext.Provider
-            value={{
-              selectedModel: 'model-1',
-              setSelectedModel: vi.fn(),
-              isLoading: false,
-            }}
-          >
-            {children}
-          </ModelContext.Provider>
-        </LanguageContext.Provider>
-      </OpenRouterApiKeyContext.Provider>
-    );
-
-    const { result } = renderHook(() => useModelLoader(true), { wrapper: wrapperWithoutKey });
+    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper({ apiKey: null }) });
 
     expect(result.current.models).toEqual([]);
     expect(modelService.fetchAvailableModels).not.toHaveBeenCalled();
@@ -148,7 +121,7 @@ describe('useModelLoader', () => {
     const error = new Error('Failed to fetch models');
     vi.mocked(modelService.fetchAvailableModels).mockRejectedValue(error);
 
-    const { result } = renderHook(() => useModelLoader(true), { wrapper });
+    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -161,7 +134,7 @@ describe('useModelLoader', () => {
   it('should use translation for error message when error is not an Error instance', async () => {
     vi.mocked(modelService.fetchAvailableModels).mockRejectedValue('String error');
 
-    const { result } = renderHook(() => useModelLoader(true), { wrapper });
+    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -171,7 +144,7 @@ describe('useModelLoader', () => {
   });
 
   it('should allow manual loading via loadModels', async () => {
-    const { result } = renderHook(() => useModelLoader(false), { wrapper });
+    const { result } = renderHook(() => useModelLoader(false), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.loadModels();
@@ -184,7 +157,7 @@ describe('useModelLoader', () => {
   it('should not load models when models already exist', async () => {
     const { result, rerender } = renderHook(
       ({ shouldLoad }: { shouldLoad: boolean }) => useModelLoader(shouldLoad),
-      { wrapper, initialProps: { shouldLoad: true } }
+      { wrapper: createWrapper(), initialProps: { shouldLoad: true } }
     );
 
     await waitFor(() => {

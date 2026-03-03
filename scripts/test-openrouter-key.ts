@@ -23,7 +23,7 @@ async function main() {
   console.log('');
 
   try {
-    const isValid = await validateOpenRouterApiKey(apiKey, true);
+    const isValid = await validateOpenRouterApiKey(apiKey, '', true);
     
     if (isValid) {
       console.log('✅ API key is VALID');

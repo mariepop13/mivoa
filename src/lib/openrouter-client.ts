@@ -7,7 +7,7 @@ function isValidApiKeyFormat(apiKey: string): boolean {
   return apiKey.trim().length >= MIN_API_KEY_LENGTH;
 }
 
-export async function validateOpenRouterApiKey(apiKey: string, debug = false): Promise<boolean> {
+export async function validateOpenRouterApiKey(apiKey: string, idToken: string, debug = false): Promise<boolean> {
   if (!isValidApiKeyFormat(apiKey)) {
     return false;
   }
@@ -19,6 +19,7 @@ export async function validateOpenRouterApiKey(apiKey: string, debug = false): P
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
       },
       body: JSON.stringify({ apiKey: trimmedKey }),
     });
@@ -39,4 +40,3 @@ export async function validateOpenRouterApiKey(apiKey: string, debug = false): P
     return false;
   }
 }
-

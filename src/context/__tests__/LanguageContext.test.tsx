@@ -106,7 +106,6 @@ describe('LanguageContext', () => {
       await user.click(button);
     });
 
-    expect(contextValueRef.current).not.toBeNull();
     expect(contextValueRef.current!.language).toBe('fr');
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('fr');
   });
@@ -142,7 +141,6 @@ describe('LanguageContext', () => {
       await user.click(button);
     });
 
-    expect(contextValueRef.current).not.toBeNull();
     expect(contextValueRef.current!.language).toBe('en');
     expect(consoleWarnSpy).toHaveBeenCalledWith("Unsupported language: invalid. Defaulting to 'en'.");
 

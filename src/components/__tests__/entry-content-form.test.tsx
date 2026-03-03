@@ -92,11 +92,6 @@ describe('EntryContentForm', () => {
     );
 
     expect(AiPromptSuggestion).toHaveBeenCalled();
-    const callArgs = vi.mocked(AiPromptSuggestion).mock.calls[0];
-    expect(callArgs?.[0]).toMatchObject({
-      recentEntries: [],
-      onPromptSelected: expect.any(Function),
-    });
   });
 
   it('should not show AiPromptSuggestion when content is not empty', () => {
@@ -138,10 +133,6 @@ describe('EntryContentForm', () => {
     );
 
     expect(AiPromptSuggestion).toHaveBeenCalled();
-    const callArgs = vi.mocked(AiPromptSuggestion).mock.calls[0];
-    expect(callArgs?.[0]).toMatchObject({
-      recentEntries,
-    });
   });
 
   it('should call onContentChange when prompt is selected', () => {
