@@ -45,7 +45,7 @@ npm run start               # Start production server
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript with strict type checking
 - **Styling**: Tailwind CSS + Shadcn UI components
-- **Backend**: Firebase (Auth + Firestore)
+- **Backend**: Firebase (Auth + Firestore) — optional; replaceable via StorageBackend abstraction
 - **AI**: OpenRouter API for chat and analysis features
 - **Testing**: Vitest + Testing Library + Happy-DOM
 - **State Management**: React Context + Custom Hooks
@@ -72,6 +72,29 @@ users/{userId}/
 - `conversationSummary`: ConversationSummary - AI-generated summary
 - `linkedEntries`: string[] - references to other entries
 
+### StorageBackend Abstraction
+
+All data access goes through the `StorageBackend` interface (`src/repositories/`), which decouples the app from Firebase:
+
+- `storage-backend.ts`: Interface (`subscribeToAuthState`, `subscribeToEntriesByDate`, `subscribeToAllEntries`, `subscribeToSettings`, `createEntry`, `updateEntry`, `deleteEntry`, `signOut`, …)
+- `firebase-storage-backend.ts`: Firebase implementation (default)
+- `local-storage-backend.ts`: In-memory implementation (no Firebase required, enabled via `NEXT_PUBLIC_STORAGE_BACKEND=local`)
+- `storage-provider.tsx`: React context wrapping the backend — provides `useStorage()`, `useEntriesByDate()`, `useEntry()`, `useAllEntries()`, `useSettings()`
+
+**Primary data access pattern** — use these hooks from `storage-provider.tsx`:
+- `useStorage()` → `{ user, isUserLoading, backend }` (replaces `useUser` / `useAuth`)
+- `useEntriesByDate(dateKey)`, `useEntry(id)`, `useAllEntries()`, `useSettings()`
+
+**One-shot subscription gotcha**: `LocalStorageBackend` fires callbacks synchronously on subscribe. To convert a subscription to a Promise:
+```ts
+const unsubscribe = backend.subscribeToAllEntries((entries) => {
+  if (resolved) return;
+  resolved = true;
+  resolve(entries);
+});
+if (resolved) unsubscribe(); // handles synchronous callbacks safely
+```
+
 ### Firebase Integration Patterns
 
 **Non-Blocking Authentication** (src/firebase/non-blocking-login.ts):
@@ -87,7 +110,7 @@ users/{userId}/
 **Custom Firestore Hooks** (src/firebase/firestore/):
 - `useCollection`: Real-time collection subscription with loading/error states
 - `useDoc`: Real-time document subscription with loading/error states
-- Both hooks handle Firebase auth state changes automatically
+- These are low-level hooks used internally by `FirebaseStorageBackend`; prefer `useStorage()` et al. in components
 
 ### AI Services Architecture
 
@@ -121,9 +144,7 @@ All AI services use the OpenRouter SDK and handle streaming responses.
 ### API Routes
 
 **Other APIs**:
-- `validate-openrouter/route.ts`: Validate OpenRouter API keys
-
-All API routes use helper functions from `src/lib/api-auth.ts` for Firebase Admin authentication.
+- `validate-openrouter/route.ts`: Validate OpenRouter API keys (calls Firebase Identity Toolkit directly; no `api-auth.ts`)
 
 ## Code Style Standards
 
@@ -165,17 +186,21 @@ All API routes use helper functions from `src/lib/api-auth.ts` for Firebase Admi
 
 ## Environment Configuration
 
-Required environment variables for local development (see `.env.local.example`):
-- Firebase configuration (8 variables starting with `NEXT_PUBLIC_FIREBASE_`)
-- Optional: `TEST_OPENROUTER_API_KEY` for API key validation tests
+Copy `.env.local.example` to `.env.local`. Two modes:
 
-Users configure their OpenRouter API key in the app's Settings page (stored in Firestore, not environment).
+- **Local mode** (default): set `NEXT_PUBLIC_STORAGE_BACKEND=local` — no Firebase required
+- **Firebase mode**: set `NEXT_PUBLIC_STORAGE_BACKEND=firebase` and fill in the 8 `NEXT_PUBLIC_FIREBASE_*` variables (see `.env.local.example`)
+
+Optional: `TEST_OPENROUTER_API_KEY` for API key validation tests.
+
+Users configure their OpenRouter API key in the app's Settings page (stored via `StorageBackend`, not environment).
 
 ## Development Notes
 
 - The app uses App Router (not Pages Router) - pages are in `src/app/`
 - AI features require users to provide their own OpenRouter API key (BYOK model)
-- Firebase Admin SDK is used in API routes for server-side operations
+- `NEXT_PUBLIC_STORAGE_BACKEND=local` runs fully offline with no Firebase account
+- Firebase Admin SDK is used in API routes for server-side operations (Firebase mode only)
 - All dates in Firestore use Firebase Timestamp type
 - Entry date keys use format: YYYY-MM-DD
 - Multi-language support via `src/locales/` (en.json, fr.json)
