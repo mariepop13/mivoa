@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useStorage } from '@/repositories/storage-provider';
 import { LoginScreen } from '@/components/login-screen';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 
 export default function AuthPage(): React.JSX.Element {
-  const { user, isLoading } = useUser();
+  const { user, isUserLoading: isLoading } = useStorage();
   const router = useRouter();
 
   useEffect(() => {

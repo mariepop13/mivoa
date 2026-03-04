@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { validateOpenRouterApiKey } from '@/lib/openrouter-client';
-import { useUser } from '@/firebase';
+import { FirebaseContext } from '@/firebase';
 
 interface UseApiKeyValidationResult {
   localApiKey: string;
@@ -12,7 +12,7 @@ interface UseApiKeyValidationResult {
 export function useApiKeyValidation(): UseApiKeyValidationResult {
   const [localApiKey, setLocalApiKey] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const { user } = useUser();
+  const firebaseCtx = useContext(FirebaseContext);
 
   const handleSubmit = async (
     e: React.FormEvent,
@@ -20,25 +20,22 @@ export function useApiKeyValidation(): UseApiKeyValidationResult {
     onError: (_message: string) => void
   ): Promise<void> => {
     e.preventDefault();
-    if (!localApiKey.trim()) {
-      return;
-    }
-
-    const idToken = await user?.getIdToken();
-    if (!idToken) {
-      onError('Authentication required');
-      return;
-    }
+    if (!localApiKey.trim()) return;
 
     setIsVerifying(true);
     try {
-      const isValid = await validateOpenRouterApiKey(localApiKey.trim(), idToken);
-      if (isValid) {
-        await onSubmit(localApiKey.trim());
-        setLocalApiKey('');
-      } else {
-        onError('Invalid API key');
+      const idToken = await firebaseCtx?.auth?.currentUser?.getIdToken();
+
+      if (idToken) {
+        const isValid = await validateOpenRouterApiKey(localApiKey.trim(), idToken);
+        if (!isValid) {
+          onError('Invalid API key');
+          return;
+        }
       }
+
+      await onSubmit(localApiKey.trim());
+      setLocalApiKey('');
     } catch (error) {
       console.error('Error validating or saving OpenRouter API key', error);
       onError('Invalid API key');

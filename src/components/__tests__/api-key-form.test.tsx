@@ -4,12 +4,28 @@ import userEvent from '@testing-library/user-event';
 import { ApiKeyForm } from '../api-key-form';
 import { validateOpenRouterApiKey } from '@/lib/openrouter-client';
 import { useTranslation } from '@/hooks/use-translation';
+import { FirebaseContext } from '@/firebase';
+import type { FirebaseContextState } from '@/firebase/provider';
 
 vi.mock('@/lib/openrouter-client');
 vi.mock('@/hooks/use-translation');
-vi.mock('@/firebase', () => ({
-  useUser: () => ({ user: { getIdToken: vi.fn().mockResolvedValue('mock-id-token') }, isLoading: false }),
-}));
+
+const mockGetIdToken = vi.fn().mockResolvedValue('mock-id-token');
+
+const mockFirebaseContext: FirebaseContextState = {
+  areServicesAvailable: true,
+  firebaseApp: {} as never,
+  firestore: {} as never,
+  auth: { currentUser: { getIdToken: mockGetIdToken } } as never,
+};
+
+function wrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <FirebaseContext.Provider value={mockFirebaseContext}>
+      {children}
+    </FirebaseContext.Provider>
+  );
+}
 
 describe('ApiKeyForm', () => {
   const mockOnSubmit = vi.fn();
@@ -27,14 +43,14 @@ describe('ApiKeyForm', () => {
   });
 
   it('should render form with input and button', () => {
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     expect(screen.getByLabelText(/openRouterApiKey/i)).toBeInTheDocument();
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('should disable submit button when input is empty', () => {
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
@@ -42,7 +58,7 @@ describe('ApiKeyForm', () => {
 
   it('should enable submit button when input has value', async () => {
     const user = userEvent.setup();
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i);
     await user.type(input, 'test-key-1234567890');
@@ -55,7 +71,7 @@ describe('ApiKeyForm', () => {
     const user = userEvent.setup();
     vi.mocked(validateOpenRouterApiKey).mockResolvedValue(true);
 
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i);
     await user.type(input, 'valid-key-1234567890');
@@ -71,7 +87,7 @@ describe('ApiKeyForm', () => {
     const user = userEvent.setup();
     vi.mocked(validateOpenRouterApiKey).mockResolvedValue(false);
 
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i);
     await user.type(input, 'invalid-key-1234567890');
@@ -88,7 +104,7 @@ describe('ApiKeyForm', () => {
     const user = userEvent.setup();
     vi.mocked(validateOpenRouterApiKey).mockRejectedValue(new Error('Network error'));
 
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i);
     await user.type(input, 'test-key-1234567890');
@@ -104,7 +120,7 @@ describe('ApiKeyForm', () => {
     const user = userEvent.setup();
     vi.mocked(validateOpenRouterApiKey).mockResolvedValue(true);
 
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i) as HTMLInputElement;
     await user.type(input, 'valid-key-1234567890');
@@ -123,7 +139,7 @@ describe('ApiKeyForm', () => {
     });
     vi.mocked(validateOpenRouterApiKey).mockReturnValue(validationPromise);
 
-    render(<ApiKeyForm onSubmit={mockOnSubmit} />);
+    render(<ApiKeyForm onSubmit={mockOnSubmit} />, { wrapper });
 
     const input = screen.getByLabelText(/openRouterApiKey/i);
     const button = screen.getByRole('button');
@@ -142,4 +158,3 @@ describe('ApiKeyForm', () => {
     });
   });
 });
-

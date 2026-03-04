@@ -248,8 +248,9 @@ function JournalApp(): React.JSX.Element {
 export default function HomePage(): React.JSX.Element {
   const firebaseContext = useContext(FirebaseContext);
   const { t } = useTranslation();
-  
-  if (!firebaseContext?.areServicesAvailable) {
+  const isLocalMode = process.env.NEXT_PUBLIC_STORAGE_BACKEND === 'local';
+
+  if (!isLocalMode && !firebaseContext?.areServicesAvailable) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center max-w-md px-4">

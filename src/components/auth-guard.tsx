@@ -2,13 +2,13 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useStorage } from '@/repositories/storage-provider';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 
 const PUBLIC_ROUTES = ['/auth', '/about', '/contact', '/legal', '/privacy', '/terms', '/test-auth'];
 
 export function AuthGuard({ children }: { children: ReactNode }): React.JSX.Element {
-  const { user, isLoading } = useUser();
+  const { user, isUserLoading: isLoading } = useStorage();
   const router = useRouter();
   const pathname = usePathname();
 

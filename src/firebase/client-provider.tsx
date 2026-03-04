@@ -47,7 +47,7 @@ function initializeFirebaseServices(): ReturnType<typeof initializeFirebase> | n
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const firebaseServices = useMemo<ReturnType<typeof initializeFirebase> | null>(
-    () => initializeFirebaseServices(),
+    () => process.env.NEXT_PUBLIC_STORAGE_BACKEND === 'local' ? null : initializeFirebaseServices(),
     []
   );
   const [backend, setBackend] = useState<StorageBackend | null>(null);

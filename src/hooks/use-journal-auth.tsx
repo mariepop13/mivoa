@@ -1,18 +1,18 @@
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
+import type { AppUser } from '@/repositories/types';
 
 interface UseJournalAuthResult {
   authError: string | null;
   authLoading: boolean;
-  user: ReturnType<typeof useUser>['user'];
+  user: AppUser | null;
 }
 
 export function useJournalAuth(): UseJournalAuthResult {
-  const { user, isLoading: authLoading, error } = useUser();
+  const { user, isUserLoading: authLoading } = useStorage();
 
   return {
-    authError: error ? error.message : null,
+    authError: null,
     authLoading,
     user,
   };
 }
-
