@@ -1,33 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useExport } from '../use-export';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, getDocs } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+const mockSubscribeToAllEntries = vi.fn();
+
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+}));
+
+import { useStorage } from '@/repositories/storage-provider';
+
 vi.mock('jszip', () => ({
   default: vi.fn().mockImplementation(() => ({
     file: vi.fn(),
     generateAsync: vi.fn().mockResolvedValue(new Blob()),
   })),
 }));
-vi.mock('file-saver', () => ({
-  saveAs: vi.fn(),
-}));
 
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  getDocs: vi.fn(),
-  Timestamp: {
-    fromDate: vi.fn((d: Date) => ({ toDate: () => d, seconds: 0, nanoseconds: 0 })),
-  },
-}));
+// Mock URL methods used by triggerDownload
+URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+URL.revokeObjectURL = vi.fn();
 
-const mockFirestore = { id: 'mock-firestore' } as any;
-const mockUser = { uid: 'test-uid' } as Partial<User> as User;
+const mockBackend = { subscribeToAllEntries: mockSubscribeToAllEntries };
 
 const mockEntry = {
   id: '2026-03-02-143045123',
@@ -48,12 +42,15 @@ const mockEntry = {
 describe('useExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({ user: mockUser, isLoading: false, error: null });
-    vi.mocked(collection).mockReturnValue({ id: 'mock-col' } as any);
-    vi.mocked(getDocs).mockResolvedValue({
-      docs: [{ id: mockEntry.id, data: () => mockEntry }],
-    } as any);
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend as never,
+      user: { uid: 'test-uid' } as never,
+      isUserLoading: false,
+    });
+    mockSubscribeToAllEntries.mockImplementation((callback: (entries: typeof mockEntry[]) => void) => {
+      callback([mockEntry]);
+      return () => {};
+    });
   });
 
   it('exports isExporting as false initially', () => {
@@ -61,30 +58,37 @@ describe('useExport', () => {
     expect(result.current.isExporting).toBe(false);
   });
 
-  it('calls getDocs with the correct collection path', async () => {
+  it('calls subscribeToAllEntries on exportJSON', async () => {
     const { result } = renderHook(() => useExport());
     await act(async () => {
       await result.current.exportJSON();
     });
-    expect(collection).toHaveBeenCalledWith(mockFirestore, 'users/test-uid/entries');
-    expect(getDocs).toHaveBeenCalled();
+    expect(mockSubscribeToAllEntries).toHaveBeenCalled();
   });
 
-  it('does nothing when firestore is null', async () => {
-    vi.mocked(useFirestore).mockReturnValue(null as any);
+  it('does nothing when backend is null', async () => {
+    vi.mocked(useStorage).mockReturnValue({
+      backend: null,
+      user: null,
+      isUserLoading: false,
+    });
     const { result } = renderHook(() => useExport());
     await act(async () => {
       await result.current.exportJSON();
     });
-    expect(getDocs).not.toHaveBeenCalled();
+    expect(mockSubscribeToAllEntries).not.toHaveBeenCalled();
   });
 
   it('does nothing when user is null', async () => {
-    vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend as never,
+      user: null,
+      isUserLoading: false,
+    });
     const { result } = renderHook(() => useExport());
     await act(async () => {
       await result.current.exportJSON();
     });
-    expect(getDocs).not.toHaveBeenCalled();
+    expect(mockSubscribeToAllEntries).not.toHaveBeenCalled();
   });
 });

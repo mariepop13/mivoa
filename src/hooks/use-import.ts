@@ -61,16 +61,12 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
 function getAllEntryIds(backend: StorageBackend): Promise<Set<string>> {
   return new Promise((resolve) => {
     let resolved = false;
-    let unsubscribeFn: (() => void) | undefined;
-
-    unsubscribeFn = backend.subscribeToAllEntries((entries) => {
+    const unsubscribe = backend.subscribeToAllEntries((entries) => {
       if (resolved) return;
       resolved = true;
       resolve(new Set(entries.map((e) => e.id)));
-      unsubscribeFn?.();
     });
-
-    if (resolved) unsubscribeFn();
+    if (resolved) unsubscribe();
   });
 }
 

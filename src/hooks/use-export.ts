@@ -1,8 +1,19 @@
-import { collection, getDocs } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
+import type { StorageBackend } from '@/repositories/storage-backend';
+import type { Entry } from '@/repositories/types';
 import { useCallback, useState } from 'react';
-import type { JournalEntryData } from './use-journal-entries';
+
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 function isTimestampLike(value: unknown): value is { toDate(): Date } {
   return value !== null && typeof value === 'object' && typeof (value as { toDate?: unknown }).toDate === 'function';
@@ -14,7 +25,7 @@ function timestampToISO(value: unknown): string {
   return new Date().toISOString();
 }
 
-function serializeEntry(entry: JournalEntryData & { id: string }): Record<string, unknown> {
+function serializeEntry(entry: Entry): Record<string, unknown> {
   return {
     id: entry.id,
     content: entry.content,
@@ -47,7 +58,7 @@ function toSafeZipFileName(entryId: string): string {
   return `${sanitized || 'entry'}.md`;
 }
 
-function entryToMarkdown(entry: JournalEntryData & { id: string }): string {
+function entryToMarkdown(entry: Entry): string {
   const lines: string[] = ['---'];
   if (entry.title) lines.push(`title: ${entry.title}`);
   lines.push(`date: ${entry.date}`);
@@ -63,26 +74,27 @@ function entryToMarkdown(entry: JournalEntryData & { id: string }): string {
   return lines.join('\n');
 }
 
+function fetchAllEntries(backend: StorageBackend): Promise<Entry[]> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    const unsubscribe = backend.subscribeToAllEntries((entries) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(entries);
+    });
+    if (resolved) unsubscribe();
+  });
+}
+
 export function useExport() {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend, user } = useStorage();
   const [isExporting, setIsExporting] = useState(false);
 
-  const fetchAllEntries = useCallback(async (): Promise<(JournalEntryData & { id: string })[]> => {
-    if (!firestore || !user) return [];
-    const col = collection(firestore, `users/${user.uid}/entries`);
-    const snapshot = await getDocs(col);
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as JournalEntryData & { id: string }));
-  }, [firestore, user]);
-
   const exportJSON = useCallback(async (): Promise<void> => {
-    if (!firestore || !user) return;
+    if (!backend || !user) return;
     setIsExporting(true);
     try {
-      const [entries, { saveAs }] = await Promise.all([
-        fetchAllEntries(),
-        import('file-saver'),
-      ]);
+      const entries = await fetchAllEntries(backend);
       const dateStr = new Date().toISOString().slice(0, 10);
       const payload = {
         version: 1,
@@ -91,20 +103,19 @@ export function useExport() {
         entries: entries.map(serializeEntry),
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      saveAs(blob, `mivoa-export-${dateStr}.json`);
+      triggerDownload(blob, `mivoa-export-${dateStr}.json`);
     } finally {
       setIsExporting(false);
     }
-  }, [fetchAllEntries, firestore, user]);
+  }, [backend, user]);
 
   const exportMarkdown = useCallback(async (): Promise<void> => {
-    if (!firestore || !user) return;
+    if (!backend || !user) return;
     setIsExporting(true);
     try {
-      const [entries, { default: JSZip }, { saveAs }] = await Promise.all([
-        fetchAllEntries(),
+      const [entries, { default: JSZip }] = await Promise.all([
+        fetchAllEntries(backend),
         import('jszip'),
-        import('file-saver'),
       ]);
       const zip = new JSZip();
       entries.forEach((entry) => {
@@ -112,11 +123,11 @@ export function useExport() {
       });
       const dateStr = new Date().toISOString().slice(0, 10);
       const blob = await zip.generateAsync({ type: 'blob' });
-      saveAs(blob, `mivoa-export-${dateStr}.zip`);
+      triggerDownload(blob, `mivoa-export-${dateStr}.zip`);
     } finally {
       setIsExporting(false);
     }
-  }, [fetchAllEntries, firestore, user]);
+  }, [backend, user]);
 
   return { exportJSON, exportMarkdown, isExporting };
 }
