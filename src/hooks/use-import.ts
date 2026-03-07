@@ -71,20 +71,38 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
   };
 }
 
+const GET_ENTRY_IDS_TIMEOUT_MS = 10000;
+
 function getAllEntryIds(backend: StorageBackend): Promise<Set<string>> {
   return new Promise((resolve) => {
     let resolved = false;
     let unsubscribe: (() => void) | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribe?.();
+    };
 
     const handleEntries = (entries: Entry[]) => {
       if (resolved) return;
       resolved = true;
+      cleanup();
       resolve(new Set(entries.map((e) => e.id)));
-      unsubscribe?.();
     };
 
     unsubscribe = backend.subscribeToAllEntries(handleEntries);
-    if (resolved) unsubscribe();
+    if (resolved) {
+      unsubscribe();
+    } else {
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          unsubscribe?.();
+          resolve(new Set());
+        }
+      }, GET_ENTRY_IDS_TIMEOUT_MS);
+    }
   });
 }
 

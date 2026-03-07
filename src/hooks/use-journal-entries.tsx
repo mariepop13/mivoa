@@ -10,7 +10,8 @@ const DAYS_TO_LOOK_BACK = 7;
 const MAX_RECENT_ENTRIES = 7;
 
 function getTimestampMillis(value: string): number {
-  return new Date(value).getTime();
+  const ms = new Date(value).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
 }
 
 function toDate(value: Date | { toDate(): Date } | string): Date {

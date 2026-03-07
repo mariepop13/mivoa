@@ -45,8 +45,15 @@ export function UserMenu(): React.JSX.Element {
   };
 
   const handleLogout = async () => {
+    if (!backend) {
+      toast({
+        variant: 'destructive',
+        title: t('auth.logoutError') || 'Logout failed',
+      });
+      return;
+    }
     try {
-      await backend?.signOut();
+      await backend.signOut();
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
