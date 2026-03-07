@@ -1,6 +1,6 @@
 import { useStorage } from '@/repositories/storage-provider';
 import type { StorageBackend } from '@/repositories/storage-backend';
-import type { EntryCreateData } from '@/repositories/types';
+import type { Entry, EntryCreateData } from '@/repositories/types';
 import { useCallback, useState } from 'react';
 import type { JournalEntryData } from './use-journal-entries';
 
