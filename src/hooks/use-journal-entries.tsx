@@ -6,13 +6,19 @@ import { useSummaryOperations } from './use-summary-operations';
 import { saveConversationDraft, deleteDraft, updateConversationEntry } from '@/app/handlers/journal-handlers';
 import type { ChatMessage } from '@/ai/types/chat';
 import type { Entry } from '@/repositories/types';
-import { Timestamp } from 'firebase/firestore';
-
 const DAYS_TO_LOOK_BACK = 7;
 const MAX_RECENT_ENTRIES = 7;
 
 function getTimestampMillis(value: string): number {
   return new Date(value).getTime();
+}
+
+function toDate(value: Date | { toDate(): Date } | string): Date {
+  if (typeof (value as { toDate?: unknown }).toDate === 'function') {
+    return (value as { toDate(): Date }).toDate();
+  }
+  if (value instanceof Date) return value;
+  return new Date(value as string);
 }
 
 export interface JournalEntryData {
@@ -213,11 +219,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
       const conversationHistory = messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp
-          ? msg.timestamp.toDate()
-          : msg.timestamp instanceof Date
-            ? msg.timestamp
-            : new Date(msg.timestamp as string),
+        timestamp: toDate(msg.timestamp),
       }));
 
       if (entryId && !currentDraftId) {

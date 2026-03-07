@@ -13,11 +13,24 @@ export interface ImportPreview {
 
 const ENTRY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+const ARRAY_FIELDS = ['moods', 'themes', 'places', 'characters', 'keyTakeaways', 'linkedEntryIds'];
+
 function validateRawEntry(raw: Record<string, unknown>): void {
   if (typeof raw.id !== 'string' || raw.id.trim() === '') {
     throw new Error('invalid_file');
   }
   if (typeof raw.date !== 'string' || !ENTRY_DATE_PATTERN.test(raw.date)) {
+    throw new Error('invalid_file');
+  }
+  if (raw.content !== undefined && typeof raw.content !== 'string') {
+    throw new Error('invalid_file');
+  }
+  for (const field of ARRAY_FIELDS) {
+    if (raw[field] !== undefined && !Array.isArray(raw[field])) {
+      throw new Error('invalid_file');
+    }
+  }
+  if (raw.conversationHistory !== undefined && !Array.isArray(raw.conversationHistory)) {
     throw new Error('invalid_file');
   }
 }

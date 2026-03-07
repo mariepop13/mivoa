@@ -25,7 +25,13 @@ export function UserMenu(): React.JSX.Element {
   const { toast } = useToast();
 
   const handleLogin = async () => {
-    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) return;
+    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) {
+      toast({
+        variant: 'destructive',
+        title: t('signInFailedGeneric'),
+      });
+      return;
+    }
     try {
       await signInWithGoogle(firebaseCtx.auth);
     } catch (error) {
