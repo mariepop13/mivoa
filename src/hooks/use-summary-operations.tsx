@@ -1,6 +1,5 @@
 import { useCallback, useContext } from 'react';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { generateEntryId, saveSummaryAsEntry, triggerEntryAnalysis } from '@/app/handlers/journal-handlers';
 import { generateConversationSummary } from '@/ai/services/conversation-summary-service';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
@@ -8,8 +7,7 @@ import { LanguageContext } from '@/context/LanguageContext';
 import { useModel } from '@/context/ModelContext';
 import { useEntryAnalysis } from './use-entry-analysis';
 import type { ChatMessage } from '@/ai/types/chat';
-import type { User } from 'firebase/auth';
-import type { Firestore } from 'firebase/firestore';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
 interface UseSummaryOperationsParams {
   dateKey: string;
@@ -39,8 +37,7 @@ async function performSummarization({
   draftId,
   dateKey,
   apiKey,
-  user,
-  firestore,
+  backend,
   language,
   selectedModel,
   analyze,
@@ -50,8 +47,7 @@ async function performSummarization({
   draftId?: string | null;
   dateKey: string;
   apiKey: string;
-  user: User;
-  firestore: Firestore;
+  backend: StorageBackend;
   language: string | null;
   selectedModel: string | undefined;
   analyze: ReturnType<typeof useEntryAnalysis>['analyze'];
@@ -66,12 +62,11 @@ async function performSummarization({
     entryDateKey: dateKey,
     summary,
     conversationHistory,
-    firestore,
-    user,
+    backend,
     draftId,
   });
   updateEntryState(entryId, summary.content, summary.title);
-  triggerEntryAnalysis({ content: summary.content, entryId, firestore, user, analyze });
+  triggerEntryAnalysis({ content: summary.content, entryId, backend, analyze });
 }
 
 export function useSummaryOperations({
@@ -80,8 +75,7 @@ export function useSummaryOperations({
   setIsGeneratingSummary,
   setSaveError,
 }: UseSummaryOperationsParams): UseSummaryOperationsResult {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const { language } = useContext(LanguageContext);
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { selectedModel } = useModel();
@@ -91,7 +85,7 @@ export function useSummaryOperations({
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>,
     draftId?: string | null
   ) => {
-    if (!apiKey || !user || !firestore) {
+    if (!apiKey || !backend) {
       setSaveError('API key not configured or services unavailable');
       return;
     }
@@ -103,8 +97,7 @@ export function useSummaryOperations({
         draftId,
         dateKey,
         apiKey,
-        user,
-        firestore,
+        backend,
         language,
         selectedModel,
         analyze,
@@ -118,8 +111,7 @@ export function useSummaryOperations({
     }
   }, [
     apiKey,
-    user,
-    firestore,
+    backend,
     language,
     dateKey,
     updateEntryState,
@@ -131,4 +123,3 @@ export function useSummaryOperations({
 
   return { handleSummarizeConversation } satisfies UseSummaryOperationsResult;
 }
-

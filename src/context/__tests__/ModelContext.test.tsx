@@ -1,25 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { ModelProvider, useModel, DEFAULT_MODEL } from '../ModelContext';
-import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
-import type { Firestore } from 'firebase/firestore';
 
-vi.mock('@/firebase');
-vi.mock('firebase/firestore', async () => {
-  const actual = await vi.importActual('firebase/firestore');
-  return {
-    ...actual,
-    doc: vi.fn(),
-    serverTimestamp: vi.fn(() => ({ _methodName: 'serverTimestamp' })),
-    deleteField: vi.fn(() => ({ _methodName: 'deleteField' })),
-  };
-});
+const mockUpdateSettings = vi.fn();
 
-const mockFirestore = { id: 'mock-firestore' } as unknown as Firestore;
-const mockUser = { uid: 'test-user-id' } as Partial<User> as User;
-const mockDocRef = { id: 'mock-doc-ref' } as ReturnType<typeof doc>;
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+  useSettings: vi.fn(),
+}));
+
+import { useStorage, useSettings } from '@/repositories/storage-provider';
+
+const mockBackend = { updateSettings: mockUpdateSettings };
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ModelProvider>{children}</ModelProvider>
@@ -28,28 +20,22 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('ModelContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({
-      user: mockUser,
-      isLoading: false,
-      error: null,
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend as never,
+      user: { uid: 'test-user' } as never,
+      isUserLoading: false,
     });
-    vi.mocked(doc).mockReturnValue(mockDocRef);
-    vi.mocked(setDocumentNonBlocking).mockResolvedValue(undefined);
-    vi.mocked(updateDocumentNonBlocking).mockResolvedValue(undefined);
+    vi.mocked(useSettings).mockReturnValue({ data: null, isLoading: false });
+    mockUpdateSettings.mockResolvedValue(undefined);
   });
 
   it('should provide default model when loading', () => {
-    vi.mocked(useUser).mockReturnValue({
+    vi.mocked(useStorage).mockReturnValue({
+      backend: null,
       user: null,
-      isLoading: true,
-      error: null,
+      isUserLoading: true,
     });
-    vi.mocked(useDoc).mockReturnValue({
-      data: null,
-      isLoading: true,
-      error: null,
-    });
+    vi.mocked(useSettings).mockReturnValue({ data: null, isLoading: true });
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
@@ -58,10 +44,9 @@ describe('ModelContext', () => {
   });
 
   it('should load persisted model from Firestore', async () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: { id: 'settings', selectedModel: 'openai/gpt-4o-mini' },
+    vi.mocked(useSettings).mockReturnValue({
+      data: { selectedModel: 'openai/gpt-4o-mini' },
       isLoading: false,
-      error: null,
     });
 
     const { result } = renderHook(() => useModel(), { wrapper });
@@ -73,11 +58,7 @@ describe('ModelContext', () => {
   });
 
   it('should use default model when no persisted model exists', async () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: { id: 'settings' },
-      isLoading: false,
-      error: null,
-    });
+    vi.mocked(useSettings).mockReturnValue({ data: {}, isLoading: false });
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
@@ -87,89 +68,67 @@ describe('ModelContext', () => {
     });
   });
 
-  it('should update model and save to Firestore', async () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: { id: 'settings', selectedModel: 'google/gemini-3-flash-preview' },
+  it('should update model and save to backend', async () => {
+    vi.mocked(useSettings).mockReturnValue({
+      data: { selectedModel: DEFAULT_MODEL },
       isLoading: false,
-      error: null,
     });
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
       await result.current.setSelectedModel('openai/gpt-4o-mini');
     });
 
-    expect(setDocumentNonBlocking).toHaveBeenCalledWith(
-      mockDocRef,
-      {
-        selectedModel: 'openai/gpt-4o-mini',
-        updatedAt: expect.anything(),
-      },
-      { merge: true }
-    );
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ selectedModel: 'openai/gpt-4o-mini' });
     expect(result.current.selectedModel).toBe('openai/gpt-4o-mini');
   });
 
   it('should reset to default model when setSelectedModel is called with null', async () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: { id: 'settings', selectedModel: 'openai/gpt-4o-mini' },
+    vi.mocked(useSettings).mockReturnValue({
+      data: { selectedModel: 'openai/gpt-4o-mini' },
       isLoading: false,
-      error: null,
     });
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
       await result.current.setSelectedModel(null);
     });
 
-    expect(updateDocumentNonBlocking).toHaveBeenCalledWith(mockDocRef, {
-      selectedModel: expect.anything(),
-      updatedAt: expect.anything(),
-    });
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ selectedModel: DEFAULT_MODEL });
     expect(result.current.selectedModel).toBe(DEFAULT_MODEL);
   });
 
   it('should handle errors when saving model', async () => {
-    vi.mocked(useDoc).mockReturnValue({
-      data: { id: 'settings', selectedModel: 'google/gemini-3-flash-preview' },
+    vi.mocked(useSettings).mockReturnValue({
+      data: { selectedModel: DEFAULT_MODEL },
       isLoading: false,
-      error: null,
     });
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.mocked(setDocumentNonBlocking).mockRejectedValue(new Error('Save failed'));
+    mockUpdateSettings.mockRejectedValue(new Error('Save failed'));
 
     const { result } = renderHook(() => useModel(), { wrapper });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
       await expect(result.current.setSelectedModel('openai/gpt-4o-mini')).rejects.toThrow('Save failed');
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Failed to save selected model to Firestore',
-      expect.any(Error)
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to save selected model', expect.any(Error));
     consoleErrorSpy.mockRestore();
   });
 
-  it('should warn when trying to save without user or doc ref', async () => {
-    vi.mocked(useUser).mockReturnValue({
+  it('should warn when trying to save without backend', async () => {
+    vi.mocked(useStorage).mockReturnValue({
+      backend: null,
       user: null,
-      isLoading: false,
-      error: null,
+      isUserLoading: false,
     });
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -179,9 +138,8 @@ describe('ModelContext', () => {
       await result.current.setSelectedModel('openai/gpt-4o-mini');
     });
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Cannot save model: missing settings doc ref or user');
-    expect(setDocumentNonBlocking).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Cannot save model: storage backend not available');
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
     consoleWarnSpy.mockRestore();
   });
 });
-

@@ -1,26 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useImport } from '../use-import';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, getDocs, doc } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+const mockCreateEntry = vi.fn();
+const mockSubscribeToAllEntries = vi.fn();
 
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  getDocs: vi.fn(),
-  doc: vi.fn(),
-  Timestamp: {
-    fromDate: vi.fn((d: Date) => ({ toDate: () => d, seconds: 0, nanoseconds: 0 })),
-    now: vi.fn(() => ({ seconds: 0, nanoseconds: 0 })),
-  },
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
 }));
 
-const mockFirestore = { id: 'mock-firestore' } as any;
-const mockUser = { uid: 'test-uid' } as Partial<User> as User;
+import { useStorage } from '@/repositories/storage-provider';
+
+const mockBackend = {
+  createEntry: mockCreateEntry,
+  subscribeToAllEntries: mockSubscribeToAllEntries,
+};
 
 const validExportPayload = {
   version: 1,
@@ -67,14 +61,16 @@ function makeFile(content: string): File {
 describe('useImport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({ user: mockUser, isLoading: false, error: null });
-    vi.mocked(collection).mockReturnValue({ id: 'mock-col' } as any);
-    vi.mocked(doc).mockReturnValue({ id: 'mock-doc' } as any);
-    vi.mocked(getDocs).mockResolvedValue({
-      docs: [{ id: '2026-03-01-100000000' }],
-    } as any);
-    vi.mocked(setDocumentNonBlocking).mockResolvedValue(undefined);
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend as never,
+      user: { uid: 'test-uid' } as never,
+      isUserLoading: false,
+    });
+    mockSubscribeToAllEntries.mockImplementation((callback: (entries: { id: string }[]) => void) => {
+      callback([{ id: '2026-03-01-100000000' }]);
+      return () => {};
+    });
+    mockCreateEntry.mockResolvedValue(undefined);
   });
 
   it('exposes isImporting as false initially', () => {
@@ -82,8 +78,12 @@ describe('useImport', () => {
     expect(result.current.isImporting).toBe(false);
   });
 
-  it('returns null when firestore is null', async () => {
-    vi.mocked(useFirestore).mockReturnValue(null as any);
+  it('returns null when backend is null', async () => {
+    vi.mocked(useStorage).mockReturnValue({
+      backend: null,
+      user: null,
+      isUserLoading: false,
+    });
     const { result } = renderHook(() => useImport());
     const file = makeFile(JSON.stringify(validExportPayload));
     const preview = await result.current.parseFile(file);
@@ -113,7 +113,7 @@ describe('useImport', () => {
     expect(preview!.skippedCount).toBe(1);
   });
 
-  it('calls setDocumentNonBlocking for each new entry on importEntries', async () => {
+  it('calls createEntry for each new entry on importEntries', async () => {
     const { result } = renderHook(() => useImport());
     const file = makeFile(JSON.stringify(validExportPayload));
     let preview: Awaited<ReturnType<typeof result.current.parseFile>>;
@@ -123,6 +123,6 @@ describe('useImport', () => {
     await act(async () => {
       await result.current.importEntries(preview!);
     });
-    expect(setDocumentNonBlocking).toHaveBeenCalledTimes(1);
+    expect(mockCreateEntry).toHaveBeenCalledTimes(1);
   });
 });

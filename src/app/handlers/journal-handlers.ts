@@ -1,18 +1,7 @@
-import { doc, serverTimestamp, Timestamp, type Firestore, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
 const MIN_CONTENT_LENGTH_FOR_ANALYSIS = 50;
-
-function convertConversationHistoryForStorage(
-  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>
-): Array<{ role: 'user' | 'assistant'; content: string; timestamp: Timestamp }> {
-  return conversationHistory.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-    timestamp: Timestamp.fromDate(msg.timestamp),
-  }));
-}
 
 export function generateEntryId(dateKey: string): string {
   const now = new Date();
@@ -26,8 +15,7 @@ export function generateEntryId(dateKey: string): string {
 interface TriggerAnalysisParams {
   content: string;
   entryId: string;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
   analyze: (content: string) => Promise<{
     moods?: string[];
     moodEmojis?: Record<string, string>;
@@ -41,14 +29,14 @@ interface TriggerAnalysisParams {
 }
 
 export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
-  const { content, entryId, firestore, user, analyze } = params;
-  
+  const { content, entryId, backend, analyze } = params;
+
   if (content.trim().length <= MIN_CONTENT_LENGTH_FOR_ANALYSIS) return;
 
   analyze(content).then((analysis) => {
     if (!analysis) return;
 
-    const analysisData: Record<string, unknown> = {
+    backend.updateEntry(entryId, {
       moods: analysis.moods,
       moodEmojis: analysis.moodEmojis,
       subjectEmoji: analysis.subjectEmoji,
@@ -57,22 +45,15 @@ export function triggerEntryAnalysis(params: TriggerAnalysisParams): void {
       keyTakeaways: analysis.keyTakeaways,
       places: analysis.places,
       characters: analysis.characters,
-      aiProcessedAt: serverTimestamp(),
-    };
-    const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-    updateDocumentNonBlocking(entryDocRef, analysisData).catch((err) => {
-      console.error('Failed to save entry analysis:', {
-        entryId,
-        userId: user.uid,
-        error: err
-      });
+      aiProcessedAt: new Date().toISOString(),
+    }).catch((err) => {
+      console.error('Failed to save entry analysis:', { entryId, error: err });
     });
   }).catch((err) => {
     console.error('Failed to analyze entry:', {
       entryId,
-      userId: user.uid,
       contentLength: content.length,
-      error: err
+      error: err,
     });
   });
 }
@@ -82,23 +63,16 @@ interface CreateEntryDocumentParams {
   content: string;
   title: string;
   dateKey: string;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function createEntryDocument(params: CreateEntryDocumentParams): Promise<void> {
-  const { entryId, content, title, dateKey, firestore, user } = params;
-  const newDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-  const data: Record<string, unknown> = {
+  const { entryId, content, title, dateKey, backend } = params;
+  return backend.createEntry(entryId, {
     content,
     date: dateKey,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
-  if (title) {
-    data.title = title;
-  }
-  return setDocumentNonBlocking(newDocRef, data, {});
+    ...(title ? { title } : {}),
+  });
 }
 
 interface SaveSummaryParams {
@@ -106,170 +80,142 @@ interface SaveSummaryParams {
   entryDateKey: string;
   summary: { content: string; title: string; insights?: string[] };
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
   draftId?: string | null;
 }
 
 export function saveSummaryAsEntry(params: SaveSummaryParams): Promise<void> {
-  const { entryId, entryDateKey, summary, conversationHistory, firestore, user, draftId } = params;
+  const { entryId, entryDateKey, summary, conversationHistory, backend, draftId } = params;
   const finalEntryId = draftId || entryId;
-  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${finalEntryId}`);
-  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
-  
-  const data: Record<string, unknown> = {
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp.toISOString(),
+  }));
+
+  if (draftId) {
+    return backend.updateEntry(finalEntryId, {
+      content: summary.content,
+      title: summary.title,
+      date: entryDateKey,
+      conversationMode: true,
+      conversationHistory: conversationHistoryForStorage,
+      summaryGeneratedAt: new Date().toISOString(),
+      keyTakeaways: summary.insights,
+      isDraft: false,
+    });
+  }
+
+  return backend.createEntry(finalEntryId, {
     content: summary.content,
     title: summary.title,
     date: entryDateKey,
-    updatedAt: serverTimestamp(),
     conversationMode: true,
     conversationHistory: conversationHistoryForStorage,
-    summaryGeneratedAt: serverTimestamp(),
+    summaryGeneratedAt: new Date().toISOString(),
     keyTakeaways: summary.insights,
     isDraft: false,
-  };
-
-  if (!draftId) {
-    data.createdAt = serverTimestamp();
-  }
-
-  return setDocumentNonBlocking(entryDocRef, data, {});
+  });
 }
 
 interface SaveConversationDraftParams {
   draftId: string | null;
   entryDateKey: string;
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
-export function saveConversationDraft(params: SaveConversationDraftParams): Promise<string> {
-  const { draftId, entryDateKey, conversationHistory, firestore, user } = params;
-  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
+export async function saveConversationDraft(params: SaveConversationDraftParams): Promise<string> {
+  const { draftId, entryDateKey, conversationHistory, backend } = params;
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp.toISOString(),
+  }));
 
   const finalDraftId = draftId || generateEntryId(entryDateKey);
-  const draftDocRef = doc(firestore, `users/${user.uid}/entries/${finalDraftId}`);
-  
-  const data: Record<string, unknown> = {
-    content: '',
-    date: entryDateKey,
-    conversationMode: true,
-    isDraft: true,
-    conversationHistory: conversationHistoryForStorage,
-    updatedAt: serverTimestamp(),
-  };
 
-  if (!draftId) {
-    data.createdAt = serverTimestamp();
+  if (draftId) {
+    await backend.updateEntry(finalDraftId, {
+      content: '',
+      date: entryDateKey,
+      conversationMode: true,
+      isDraft: true,
+      conversationHistory: conversationHistoryForStorage,
+    });
+  } else {
+    await backend.createEntry(finalDraftId, {
+      content: '',
+      date: entryDateKey,
+      conversationMode: true,
+      isDraft: true,
+      conversationHistory: conversationHistoryForStorage,
+    });
   }
 
-  return setDocumentNonBlocking(draftDocRef, data, {}).then(() => finalDraftId);
+  return finalDraftId;
 }
 
 interface DeleteDraftParams {
   draftId: string;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function deleteDraft(params: DeleteDraftParams): Promise<void> {
-  const { draftId, firestore, user } = params;
-  const draftDocRef = doc(firestore, `users/${user.uid}/entries/${draftId}`);
-  return deleteDocumentNonBlocking(draftDocRef);
+  const { draftId, backend } = params;
+  return backend.deleteEntry(draftId);
 }
 
 interface UpdateConversationEntryParams {
   entryId: string;
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function updateConversationEntry(params: UpdateConversationEntryParams): Promise<void> {
-  const { entryId, conversationHistory, firestore, user } = params;
-  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-  const conversationHistoryForStorage = convertConversationHistoryForStorage(conversationHistory);
-  
-  const data: Record<string, unknown> = {
-    conversationHistory: conversationHistoryForStorage,
-    updatedAt: serverTimestamp(),
-  };
+  const { entryId, conversationHistory, backend } = params;
+  const conversationHistoryForStorage = conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp.toISOString(),
+  }));
 
-  return updateDocumentNonBlocking(entryDocRef, data);
+  return backend.updateEntry(entryId, {
+    conversationHistory: conversationHistoryForStorage,
+  });
 }
 
 interface ChangeEntryDateParams {
   entryId: string;
   newDate: Date;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function changeEntryDate(params: ChangeEntryDateParams): Promise<void> {
-  const { entryId, newDate, firestore, user } = params;
-  const entryDocRef = doc(firestore, `users/${user.uid}/entries/${entryId}`);
-  const newDateKey = format(newDate, 'yyyy-MM-dd');
-  
-  const data: Record<string, unknown> = {
-    date: newDateKey,
-    updatedAt: serverTimestamp(),
-  };
-
-  return updateDocumentNonBlocking(entryDocRef, data);
+  const { entryId, newDate, backend } = params;
+  return backend.updateEntry(entryId, {
+    date: format(newDate, 'yyyy-MM-dd'),
+  });
 }
 
 interface CreateEntryLinkParams {
   fromEntryId: string;
   toEntryId: string;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function createEntryLink(params: CreateEntryLinkParams): Promise<void> {
-  const { fromEntryId, toEntryId, firestore, user } = params;
-  const batch = writeBatch(firestore);
-  
-  const fromEntryRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
-  const toEntryRef = doc(firestore, `users/${user.uid}/entries/${toEntryId}`);
-  
-  batch.update(fromEntryRef, {
-    linkedEntryIds: arrayUnion(toEntryId),
-    updatedAt: serverTimestamp(),
-  });
-  
-  batch.update(toEntryRef, {
-    linkedEntryIds: arrayUnion(fromEntryId),
-    updatedAt: serverTimestamp(),
-  });
-
-  return batch.commit();
+  const { fromEntryId, toEntryId, backend } = params;
+  return backend.linkEntries(fromEntryId, toEntryId);
 }
 
 interface DeleteEntryLinkParams {
   fromEntryId: string;
   toEntryId: string;
-  firestore: Firestore;
-  user: { uid: string };
+  backend: StorageBackend;
 }
 
 export function deleteEntryLink(params: DeleteEntryLinkParams): Promise<void> {
-  const { fromEntryId, toEntryId, firestore, user } = params;
-  const batch = writeBatch(firestore);
-  
-  const fromEntryRef = doc(firestore, `users/${user.uid}/entries/${fromEntryId}`);
-  const toEntryRef = doc(firestore, `users/${user.uid}/entries/${toEntryId}`);
-  
-  batch.update(fromEntryRef, {
-    linkedEntryIds: arrayRemove(toEntryId),
-    updatedAt: serverTimestamp(),
-  });
-  
-  batch.update(toEntryRef, {
-    linkedEntryIds: arrayRemove(fromEntryId),
-    updatedAt: serverTimestamp(),
-  });
-
-  return batch.commit();
+  const { fromEntryId, toEntryId, backend } = params;
+  return backend.unlinkEntries(fromEntryId, toEntryId);
 }
-

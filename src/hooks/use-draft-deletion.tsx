@@ -7,8 +7,7 @@ import { ToastAction } from '@/components/ui/toast';
 import type { ToastActionElement } from '@/components/ui/toast';
 import { useTranslation } from '@/hooks/use-translation';
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { format } from 'date-fns';
 import type { JournalEntryData } from './use-journal-entries';
 
@@ -118,8 +117,7 @@ export function useDraftDeletion({
 }: UseDraftDeletionParams): UseDraftDeletionResult {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const [isDeleting, setIsDeleting] = useState(false);
   const deletingRef = useRef<Set<string>>(new Set());
   const [canUndo, setCanUndo] = useState(false);
@@ -152,14 +150,21 @@ export function useDraftDeletion({
 
   const undoDelete = useCallback(async (): Promise<void> => {
     const undoableDraft = getUndoableDraft();
-    if (!undoableDraft || !firestore || !user) {
+    if (!undoableDraft) {
+      return;
+    }
+    if (!backend) {
+      toast({
+        title: t('draftDeleteError'),
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
       const dateKey = format(selectedDate, 'yyyy-MM-dd');
       const conversationHistory = undoableDraft.draftData.conversationHistory || [];
-      
+
       await saveConversationDraft({
         draftId: undoableDraft.draftId,
         entryDateKey: dateKey,
@@ -168,8 +173,7 @@ export function useDraftDeletion({
           content: msg.content,
           timestamp: normalizeTimestamp(msg.timestamp),
         })),
-        firestore,
-        user,
+        backend,
       });
 
       removeDeletedDraft(undoableDraft.draftId);
@@ -192,7 +196,7 @@ export function useDraftDeletion({
         variant: 'destructive',
       });
     }
-  }, [firestore, user, selectedDate, onRestore, toast, t]);
+  }, [backend, selectedDate, onRestore, toast, t]);
 
   const deleteDraft = useCallback(async (
     draftId: string,

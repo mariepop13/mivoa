@@ -1,6 +1,6 @@
-import { collection, getDocs, doc, Timestamp } from 'firebase/firestore';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
+import type { StorageBackend } from '@/repositories/storage-backend';
+import type { Entry, EntryCreateData } from '@/repositories/types';
 import { useCallback, useState } from 'react';
 import type { JournalEntryData } from './use-journal-entries';
 
@@ -13,6 +13,8 @@ export interface ImportPreview {
 
 const ENTRY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+const ARRAY_FIELDS = ['moods', 'themes', 'places', 'characters', 'keyTakeaways', 'linkedEntryIds'];
+
 function validateRawEntry(raw: Record<string, unknown>): void {
   if (typeof raw.id !== 'string' || raw.id.trim() === '') {
     throw new Error('invalid_file');
@@ -20,11 +22,22 @@ function validateRawEntry(raw: Record<string, unknown>): void {
   if (typeof raw.date !== 'string' || !ENTRY_DATE_PATTERN.test(raw.date)) {
     throw new Error('invalid_file');
   }
+  if (raw.content !== undefined && typeof raw.content !== 'string') {
+    throw new Error('invalid_file');
+  }
+  for (const field of ARRAY_FIELDS) {
+    if (raw[field] !== undefined && !Array.isArray(raw[field])) {
+      throw new Error('invalid_file');
+    }
+  }
+  if (raw.conversationHistory !== undefined && !Array.isArray(raw.conversationHistory)) {
+    throw new Error('invalid_file');
+  }
 }
 
-function isoToTimestamp(value: unknown): Timestamp {
-  if (typeof value === 'string') return Timestamp.fromDate(new Date(value));
-  return Timestamp.now();
+function isoToString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  return new Date(0).toISOString();
 }
 
 function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id: string } {
@@ -39,8 +52,8 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
     content: (raw.content as string) ?? '',
     title: raw.title as string | undefined,
     date: raw.date as string,
-    createdAt: isoToTimestamp(raw.createdAt),
-    updatedAt: isoToTimestamp(raw.updatedAt),
+    createdAt: isoToString(raw.createdAt),
+    updatedAt: isoToString(raw.updatedAt),
     moods: raw.moods as string[] | undefined,
     moodEmojis: raw.moodEmojis as Record<string, string> | undefined,
     subjectEmoji: raw.subjectEmoji as string | undefined,
@@ -53,18 +66,52 @@ function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id
     conversationHistory: history?.map((msg) => ({
       role: msg.role,
       content: msg.content,
-      timestamp: isoToTimestamp(msg.timestamp),
+      timestamp: isoToString(msg.timestamp),
     })),
   };
 }
 
+const GET_ENTRY_IDS_TIMEOUT_MS = 10000;
+
+function getAllEntryIds(backend: StorageBackend): Promise<Set<string>> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    let unsubscribe: (() => void) | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribe?.();
+    };
+
+    const handleEntries = (entries: Entry[]) => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      resolve(new Set(entries.map((e) => e.id)));
+    };
+
+    unsubscribe = backend.subscribeToAllEntries(handleEntries);
+    if (resolved) {
+      unsubscribe();
+    } else {
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          unsubscribe?.();
+          resolve(new Set());
+        }
+      }, GET_ENTRY_IDS_TIMEOUT_MS);
+    }
+  });
+}
+
 export function useImport() {
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { backend } = useStorage();
   const [isImporting, setIsImporting] = useState(false);
 
   const parseFile = useCallback(async (file: File): Promise<ImportPreview | null> => {
-    if (!firestore || !user) return null;
+    if (!backend) return null;
 
     const text = await file.text();
     let parsed: Record<string, unknown>;
@@ -80,9 +127,7 @@ export function useImport() {
     const rawEntries = parsed.entries as Array<Record<string, unknown>>;
     rawEntries.forEach(validateRawEntry);
 
-    const col = collection(firestore, `users/${user.uid}/entries`);
-    const snapshot = await getDocs(col);
-    const existingIds = new Set(snapshot.docs.map((d) => d.id));
+    const existingIds = await getAllEntryIds(backend);
 
     const entriesById = new Map<string, JournalEntryData & { id: string }>();
     rawEntries.forEach((raw) => {
@@ -98,24 +143,22 @@ export function useImport() {
       skippedCount: entries.length - newEntries.length,
       entries: newEntries,
     };
-  }, [firestore, user]);
+  }, [backend]);
 
   const importEntries = useCallback(async (preview: ImportPreview): Promise<number> => {
-    if (!firestore || !user) return 0;
+    if (!backend) return 0;
     setIsImporting(true);
     try {
       await Promise.all(
-        preview.entries.map((entry) => {
-          const { id, ...data } = entry;
-          const ref = doc(firestore, `users/${user.uid}/entries/${id}`);
-          return setDocumentNonBlocking(ref, data, {});
-        })
+        preview.entries.map(({ id, createdAt, updatedAt, ...data }) =>
+          backend.createEntry(id, { ...data, createdAt, updatedAt } as EntryCreateData)
+        )
       );
       return preview.newCount;
     } finally {
       setIsImporting(false);
     }
-  }, [firestore, user]);
+  }, [backend]);
 
   return { parseFile, importEntries, isImporting };
 }

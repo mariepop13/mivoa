@@ -4,7 +4,6 @@ import { useState, useEffect, useContext, useCallback } from 'react';
 import { format } from 'date-fns';
 import { JournalSidebar } from '@/components/journal-sidebar';
 import { JournalMainContent } from '@/components/journal-main-content';
-import { JournalAuthError } from '@/components/journal-auth-error';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 import { TemplatePromptDialog } from '@/components/template-prompt-dialog';
 import { FirebaseContext } from '@/firebase';
@@ -200,10 +199,6 @@ function JournalApp(): React.JSX.Element {
     }
   }, [journalEntries]);
 
-  if (authState.authError) {
-    return <JournalAuthError error={authState.authError} />;
-  }
-
   if (authState.authLoading || journalEntries.entriesLoading) {
     return <JournalLoadingState />;
   }
@@ -248,8 +243,9 @@ function JournalApp(): React.JSX.Element {
 export default function HomePage(): React.JSX.Element {
   const firebaseContext = useContext(FirebaseContext);
   const { t } = useTranslation();
-  
-  if (!firebaseContext?.areServicesAvailable) {
+  const isLocalMode = process.env.NEXT_PUBLIC_STORAGE_BACKEND === 'local';
+
+  if (!isLocalMode && !firebaseContext?.areServicesAvailable) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center max-w-md px-4">

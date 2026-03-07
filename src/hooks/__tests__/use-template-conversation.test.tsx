@@ -2,17 +2,19 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import type { Firestore } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
 import { useTemplateConversation } from '../use-template-conversation';
-import { useFirestore } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
+import { useStorage } from '@/repositories/storage-provider';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { saveConversationDraft } from '@/app/handlers/journal-handlers';
 import { convertTimestampToDate } from '@/utils/journal-utils';
+import type { StorageBackend } from '@/repositories/storage-backend';
 
-vi.mock('@/firebase');
-vi.mock('@/firebase/auth/use-user');
+vi.mock('@/repositories/storage-provider', () => ({
+  useStorage: vi.fn(),
+  useEntriesByDate: vi.fn(),
+  useEntry: vi.fn(),
+  useAllEntries: vi.fn(),
+}));
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/utils/journal-utils');
 
@@ -31,8 +33,7 @@ const createWrapper = (apiKey: string | null) =>
   );
 
 describe('useTemplateConversation', () => {
-  const mockFirestore = { collection: vi.fn(), doc: vi.fn() } as unknown as Firestore;
-  const mockUser = { uid: 'test-uid', email: 'test@example.com' } as unknown as User;
+  let mockBackend: StorageBackend;
   const mockApiKey = 'test-api-key';
   const mockSelectedDate = new Date('2024-01-15');
   const mockOnSuccess = vi.fn();
@@ -42,20 +43,40 @@ describe('useTemplateConversation', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useFirestore).mockReturnValue(mockFirestore);
-    vi.mocked(useUser).mockReturnValue({ user: mockUser, isLoading: false, error: null });
+    mockBackend = {
+      subscribeToAuthState: vi.fn(),
+      subscribeToEntriesByDate: vi.fn(),
+      subscribeToEntry: vi.fn(),
+      subscribeToAllEntries: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      getEntries: vi.fn(),
+      createEntry: vi.fn(),
+      updateEntry: vi.fn(),
+      deleteEntry: vi.fn(),
+      linkEntries: vi.fn(),
+      unlinkEntries: vi.fn(),
+      updateSettings: vi.fn(),
+      signOut: vi.fn(),
+    };
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend,
+      user: { uid: 'test-uid', displayName: null, email: 'test@example.com', photoURL: null },
+      isUserLoading: false,
+    });
     mockSaveConversationDraft.mockResolvedValue('draft-id-123');
     mockConvertTimestampToDate.mockImplementation((ts) => ts as Date);
   });
 
   const renderWithContext = (
-    firestore: Firestore | null,
-    user: User | null,
+    backend: StorageBackend | null,
     apiKey: string | null,
     onError?: (error: Error) => void
   ) => {
-    vi.mocked(useFirestore).mockReturnValue(firestore as unknown as Firestore);
-    vi.mocked(useUser).mockReturnValue({ user, isLoading: false, error: null });
+    vi.mocked(useStorage).mockReturnValue({
+      backend,
+      user: backend ? { uid: 'test-uid', displayName: null, email: null, photoURL: null } : null,
+      isUserLoading: false,
+    });
 
     return renderHook(
       () => useTemplateConversation({
@@ -67,48 +88,34 @@ describe('useTemplateConversation', () => {
     );
   };
 
-  it('should call onError when firestore is missing', async () => {
-    const { result } = renderWithContext(null, mockUser, mockApiKey);
+  it('should call onError when backend is missing', async () => {
+    const { result } = renderWithContext(null, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('Test prompt');
     });
 
     expect(mockOnError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('missing firestore') })
-    );
-    expect(mockSaveConversationDraft).not.toHaveBeenCalled();
-  });
-
-  it('should call onError when user is missing', async () => {
-    vi.mocked(useUser).mockReturnValue({ user: null, isLoading: false, error: null });
-    const { result } = renderWithContext(mockFirestore, null, mockApiKey);
-
-    await act(async () => {
-      await result.current.createConversationFromPrompt('Test prompt');
-    });
-
-    expect(mockOnError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('missing firestore, user, or API key') })
+      expect.objectContaining({ message: expect.stringContaining('missing backend') })
     );
     expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
   it('should call onError when API key is missing', async () => {
-    const { result } = renderWithContext(mockFirestore, mockUser, null);
+    const { result } = renderWithContext(mockBackend, null);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('Test prompt');
     });
 
     expect(mockOnError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('missing firestore, user, or API key') })
+      expect.objectContaining({ message: expect.stringContaining('missing backend or API key') })
     );
     expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
   it('should call onError when prompt is too short', async () => {
-    const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
+    const { result } = renderWithContext(mockBackend, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('');
@@ -120,12 +127,11 @@ describe('useTemplateConversation', () => {
     expect(mockSaveConversationDraft).not.toHaveBeenCalled();
   });
 
-
   it('should log warning in development mode when dependencies are missing', async () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubEnv('NODE_ENV', 'development');
 
-    const { result } = renderWithContext(null, mockUser, mockApiKey);
+    const { result } = renderWithContext(null, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('Test prompt');
@@ -139,7 +145,7 @@ describe('useTemplateConversation', () => {
 
   it('should handle non-Error exception during conversation creation', async () => {
     mockSaveConversationDraft.mockRejectedValue('String error');
-    const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
+    const { result } = renderWithContext(mockBackend, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('Test prompt');
@@ -153,6 +159,12 @@ describe('useTemplateConversation', () => {
   });
 
   it('should work without onError callback', async () => {
+    vi.mocked(useStorage).mockReturnValue({
+      backend: mockBackend,
+      user: { uid: 'test-uid', displayName: null, email: null, photoURL: null },
+      isUserLoading: false,
+    });
+
     const { result } = renderHook(
       () => useTemplateConversation({
         selectedDate: mockSelectedDate,
@@ -171,7 +183,7 @@ describe('useTemplateConversation', () => {
   });
 
   it('should successfully create conversation from prompt', async () => {
-    const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
+    const { result } = renderWithContext(mockBackend, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt('What am I grateful for today?');
@@ -188,8 +200,7 @@ describe('useTemplateConversation', () => {
               content: 'What am I grateful for today?',
             }),
           ]),
-          firestore: mockFirestore,
-          user: mockUser,
+          backend: mockBackend,
         })
       );
     });
@@ -199,7 +210,7 @@ describe('useTemplateConversation', () => {
 
   it('should sanitize prompt by trimming and limiting length', async () => {
     const longPrompt = `  ${  'a'.repeat(1998)  }  `;
-    const { result } = renderWithContext(mockFirestore, mockUser, mockApiKey);
+    const { result } = renderWithContext(mockBackend, mockApiKey);
 
     await act(async () => {
       await result.current.createConversationFromPrompt(longPrompt);
@@ -218,6 +229,4 @@ describe('useTemplateConversation', () => {
       );
     });
   });
-
 });
-

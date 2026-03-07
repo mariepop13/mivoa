@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import { LogOut, User as UserIcon } from 'lucide-react';
-import { useUser, useAuth } from '@/firebase';
-import { signInWithGoogle, logout } from '@/firebase/non-blocking-login';
+import { FirebaseContext } from '@/firebase';
+import { signInWithGoogle } from '@/firebase/non-blocking-login';
+import { useStorage } from '@/repositories/storage-provider';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,14 +19,21 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
 
 export function UserMenu(): React.JSX.Element {
-  const { user, isLoading } = useUser();
-  const auth = useAuth();
+  const { user, isUserLoading: isLoading, backend } = useStorage();
+  const firebaseCtx = useContext(FirebaseContext);
   const { t } = useTranslation();
   const { toast } = useToast();
 
   const handleLogin = async () => {
+    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) {
+      toast({
+        variant: 'destructive',
+        title: t('signInFailedGeneric'),
+      });
+      return;
+    }
     try {
-      await signInWithGoogle(auth);
+      await signInWithGoogle(firebaseCtx.auth);
     } catch (error) {
       console.error('Login failed:', error);
       toast({
@@ -37,8 +45,15 @@ export function UserMenu(): React.JSX.Element {
   };
 
   const handleLogout = async () => {
+    if (!backend) {
+      toast({
+        variant: 'destructive',
+        title: t('auth.logoutError') || 'Logout failed',
+      });
+      return;
+    }
     try {
-      await logout(auth);
+      await backend.signOut();
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
@@ -51,9 +66,9 @@ export function UserMenu(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div 
-        className="h-10 w-10 rounded-full bg-muted animate-pulse" 
-        role="status" 
+      <div
+        className="h-10 w-10 rounded-full bg-muted animate-pulse"
+        role="status"
         aria-label="Loading user menu"
       >
         <span className="sr-only">Loading user menu</span>
@@ -97,4 +112,3 @@ export function UserMenu(): React.JSX.Element {
     </DropdownMenu>
   );
 }
-

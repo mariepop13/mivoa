@@ -1,34 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/firebase';
+import { useContext, useState } from 'react';
+import { FirebaseContext } from '@/firebase';
 import { signInWithGoogle } from '@/firebase/non-blocking-login';
 import { useTranslation } from '@/hooks/use-translation';
-
-function useLoginHandlers(
-  auth: ReturnType<typeof useAuth>,
-  t: (key: string) => string,
-  setIsLoading: (loading: boolean) => void,
-  setErrorMessage: (error: string | null) => void
-) {
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      await signInWithGoogle(auth);
-    } catch (error) {
-      console.error('Login failed:', error);
-      const message = error instanceof Error
-        ? `${t('signInFailed')} ${error.message}`
-        : t('signInFailedGeneric');
-      setErrorMessage(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { handleGoogleLogin };
-}
 
 function LoginForm({
   isLoading,
@@ -61,17 +36,30 @@ function LoginForm({
 }
 
 export function LoginScreen(): React.JSX.Element {
-  const auth = useAuth();
+  const firebaseCtx = useContext(FirebaseContext);
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { handleGoogleLogin } = useLoginHandlers(
-    auth,
-    t,
-    setIsLoading,
-    setErrorMessage
-  );
+  const handleGoogleLogin = async () => {
+    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) {
+      setErrorMessage(t('signInFailedGeneric'));
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await signInWithGoogle(firebaseCtx.auth);
+    } catch (error) {
+      console.error('Login failed:', error);
+      const message = error instanceof Error
+        ? `${t('signInFailed')} ${error.message}`
+        : t('signInFailedGeneric');
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
@@ -93,4 +81,3 @@ export function LoginScreen(): React.JSX.Element {
     </main>
   );
 }
-

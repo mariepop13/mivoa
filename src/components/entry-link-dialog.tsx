@@ -10,12 +10,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { useFirestore, useCollection, applyMemoMarker } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { collection, query, Timestamp } from 'firebase/firestore';
+import { useAllEntries } from '@/repositories/storage-provider';
+import type { Entry } from '@/repositories/types';
 import { format } from 'date-fns';
 import { getEntryPreview, parseEntryDate } from '@/utils/entry-linking-utils';
-import type { JournalEntryData } from '@/hooks/use-journal-entries';
 
 interface EntryLinkDialogProps {
   open: boolean;
@@ -23,16 +21,6 @@ interface EntryLinkDialogProps {
   currentEntryId: string | null;
   linkedEntryIds?: string[];
   onSelectEntries: (entryIds: string[]) => void;
-}
-
-function getTimestampMillis(value: string | Timestamp | unknown): number {
-  if (value instanceof Timestamp) {
-    return value.toMillis();
-  }
-  if (typeof value === 'string') {
-    return new Date(value).getTime();
-  }
-  return 0;
 }
 
 export function EntryLinkDialog({
@@ -43,45 +31,30 @@ export function EntryLinkDialog({
   onSelectEntries,
 }: EntryLinkDialogProps): React.JSX.Element {
   const { t } = useTranslation();
-  const firestore = useFirestore();
-  const { user } = useUser();
+  const { data: allEntriesRaw, isLoading } = useAllEntries();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
-
-  const entriesCollectionRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/entries`);
-  }, [firestore, user]);
-
-  const allEntriesQuery = useMemo(() => {
-    if (!entriesCollectionRef) return null;
-    return applyMemoMarker(query(entriesCollectionRef));
-  }, [entriesCollectionRef]);
-
-  const { data: allEntriesRaw, isLoading } = useCollection<JournalEntryData>(allEntriesQuery);
 
   const availableEntries = useMemo(() => {
     if (!allEntriesRaw) return [];
 
     return allEntriesRaw
-      .filter((entry) => {
+      .filter((entry: Entry) => {
         if (entry.id === currentEntryId) return false;
         if (entry.isDraft) return false;
         if (linkedEntryIds.includes(entry.id)) return false;
         return true;
       })
-      .sort((a, b) => {
-        const aTime = getTimestampMillis(a.createdAt);
-        const bTime = getTimestampMillis(b.createdAt);
-        return bTime - aTime;
-      });
+      .sort((a: Entry, b: Entry) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
   }, [allEntriesRaw, currentEntryId, linkedEntryIds]);
 
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) return availableEntries;
 
     const queryLower = searchQuery.toLowerCase();
-    return availableEntries.filter((entry) => {
+    return availableEntries.filter((entry: Entry) => {
       const titleMatch = entry.title?.toLowerCase().includes(queryLower);
       const contentMatch = entry.content?.toLowerCase().includes(queryLower);
       const dateMatch = entry.date?.includes(queryLower);
@@ -150,12 +123,14 @@ export function EntryLinkDialog({
               {t('noEntriesFound')}
             </div>
           ) : (
-            filteredEntries.map((entry) => {
+            filteredEntries.map((entry: Entry) => {
               const isSelected = selectedEntryIds.has(entry.id);
               return (
                 <button
                   key={entry.id}
                   onClick={() => handleToggleSelection(entry.id)}
+                  role="checkbox"
+                  aria-checked={isSelected}
                   className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
                     isSelected
                       ? 'bg-primary/10 border-primary text-primary'
@@ -211,4 +186,3 @@ export function EntryLinkDialog({
     </Dialog>
   );
 }
-

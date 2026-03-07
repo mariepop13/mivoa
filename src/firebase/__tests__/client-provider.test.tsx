@@ -11,6 +11,11 @@ vi.mock('../index', () => ({
 describe('FirebaseClientProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.NEXT_PUBLIC_STORAGE_BACKEND = 'firebase';
+  });
+
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_STORAGE_BACKEND;
   });
 
   it('should render children when Firebase initializes successfully', () => {

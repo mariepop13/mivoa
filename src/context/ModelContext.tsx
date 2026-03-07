@@ -1,16 +1,9 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useMemo, useContext, useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp, deleteField } from 'firebase/firestore';
+import { createContext, ReactNode, useCallback, useContext, useState, useEffect } from 'react';
+import { useStorage, useSettings } from '@/repositories/storage-provider';
 
 export const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
-
-interface UserSettings extends Record<string, unknown> {
-  openRouterApiKey?: string;
-  selectedModel?: string;
-  updatedAt?: unknown;
-}
 
 interface ModelContextType {
   selectedModel: string;
@@ -25,15 +18,8 @@ export const ModelContext = createContext<ModelContextType>({
 });
 
 export function ModelProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const { user, isLoading: isUserLoading } = useUser();
-  const firestore = useFirestore();
-
-  const settingsDocRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}/settings/api`);
-  }, [firestore, user]);
-
-  const { data: settingsData, isLoading: isSettingsLoading } = useDoc<UserSettings>(settingsDocRef);
+  const { backend, isUserLoading } = useStorage();
+  const { data: settingsData, isLoading: isSettingsLoading } = useSettings();
 
   const persistedModel = settingsData?.selectedModel || DEFAULT_MODEL;
   const [optimisticModel, setOptimisticModel] = useState<string | null>(null);
@@ -48,8 +34,8 @@ export function ModelProvider({ children }: { children: ReactNode }): React.JSX.
   const isLoading = isSettingsLoading || isUserLoading;
 
   const setSelectedModel = useCallback(async (modelId: string | null) => {
-    if (!settingsDocRef || !user) {
-      console.warn('Cannot save model: missing settings doc ref or user');
+    if (!backend) {
+      console.warn('Cannot save model: storage backend not available');
       return;
     }
 
@@ -57,27 +43,13 @@ export function ModelProvider({ children }: { children: ReactNode }): React.JSX.
     setOptimisticModel(modelToUse);
 
     try {
-      if (modelId) {
-        await setDocumentNonBlocking(
-          settingsDocRef,
-          {
-            selectedModel: modelId,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } else {
-        await updateDocumentNonBlocking(settingsDocRef, {
-          selectedModel: deleteField(),
-          updatedAt: serverTimestamp(),
-        });
-      }
+      await backend.updateSettings({ selectedModel: modelToUse });
     } catch (error) {
       setOptimisticModel(null);
-      console.error('Failed to save selected model to Firestore', error);
+      console.error('Failed to save selected model', error);
       throw error;
     }
-  }, [settingsDocRef, user]);
+  }, [backend]);
 
   return (
     <ModelContext.Provider value={{ selectedModel, setSelectedModel, isLoading }}>
@@ -89,4 +61,3 @@ export function ModelProvider({ children }: { children: ReactNode }): React.JSX.
 export function useModel(): ModelContextType {
   return useContext(ModelContext);
 }
-
