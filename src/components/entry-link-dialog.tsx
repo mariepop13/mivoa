@@ -129,6 +129,8 @@ export function EntryLinkDialog({
                 <button
                   key={entry.id}
                   onClick={() => handleToggleSelection(entry.id)}
+                  role="checkbox"
+                  aria-checked={isSelected}
                   className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
                     isSelected
                       ? 'bg-primary/10 border-primary text-primary'

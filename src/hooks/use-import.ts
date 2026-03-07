@@ -24,7 +24,7 @@ function validateRawEntry(raw: Record<string, unknown>): void {
 
 function isoToString(value: unknown): string {
   if (typeof value === 'string') return value;
-  return new Date().toISOString();
+  return new Date(0).toISOString();
 }
 
 function deserializeEntry(raw: Record<string, unknown>): JournalEntryData & { id: string } {
