@@ -77,11 +77,16 @@ function entryToMarkdown(entry: Entry): string {
 function fetchAllEntries(backend: StorageBackend): Promise<Entry[]> {
   return new Promise((resolve) => {
     let resolved = false;
-    const unsubscribe = backend.subscribeToAllEntries((entries) => {
+    let unsubscribe: (() => void) | null = null;
+
+    const handleEntries = (entries: Entry[]) => {
       if (resolved) return;
       resolved = true;
       resolve(entries);
-    });
+      unsubscribe?.();
+    };
+
+    unsubscribe = backend.subscribeToAllEntries(handleEntries);
     if (resolved) unsubscribe();
   });
 }

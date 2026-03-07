@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useExport } from '../use-export';
 
@@ -17,9 +17,8 @@ vi.mock('jszip', () => ({
   })),
 }));
 
-// Mock URL methods used by triggerDownload
-URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
-URL.revokeObjectURL = vi.fn();
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
 
 const mockBackend = { subscribeToAllEntries: mockSubscribeToAllEntries };
 
@@ -42,6 +41,8 @@ const mockEntry = {
 describe('useExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    URL.revokeObjectURL = vi.fn();
     vi.mocked(useStorage).mockReturnValue({
       backend: mockBackend as never,
       user: { uid: 'test-uid' } as never,
@@ -51,6 +52,11 @@ describe('useExport', () => {
       callback([mockEntry]);
       return () => {};
     });
+  });
+
+  afterEach(() => {
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   it('exports isExporting as false initially', () => {

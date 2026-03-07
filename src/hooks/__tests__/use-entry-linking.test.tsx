@@ -175,8 +175,8 @@ describe('useEntryLinking', () => {
       const entries = await result.current.getLinkedEntries('entry-0', ['entry-3', 'entry-1', 'entry-2']);
 
       expect(entries).toHaveLength(3);
-      const entryIds = entries.map(e => e.id).sort();
-      expect(entryIds).toEqual(['entry-1', 'entry-2', 'entry-3']);
+      const entryIds = entries.map((entry) => entry.id);
+      expect(entryIds).toEqual(['entry-3', 'entry-1', 'entry-2']);
     });
   });
 

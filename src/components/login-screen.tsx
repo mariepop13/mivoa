@@ -42,7 +42,10 @@ export function LoginScreen(): React.JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
-    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) return;
+    if (!firebaseCtx?.areServicesAvailable || !firebaseCtx.auth) {
+      setErrorMessage(t('signInFailedGeneric'));
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
     try {

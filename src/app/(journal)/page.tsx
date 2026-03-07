@@ -4,7 +4,6 @@ import { useState, useEffect, useContext, useCallback } from 'react';
 import { format } from 'date-fns';
 import { JournalSidebar } from '@/components/journal-sidebar';
 import { JournalMainContent } from '@/components/journal-main-content';
-import { JournalAuthError } from '@/components/journal-auth-error';
 import { JournalLoadingState } from '@/components/journal-loading-state';
 import { TemplatePromptDialog } from '@/components/template-prompt-dialog';
 import { FirebaseContext } from '@/firebase';
@@ -199,10 +198,6 @@ function JournalApp(): React.JSX.Element {
       }, 0);
     }
   }, [journalEntries]);
-
-  if (authState.authError) {
-    return <JournalAuthError error={authState.authError} />;
-  }
 
   if (authState.authLoading || journalEntries.entriesLoading) {
     return <JournalLoadingState />;

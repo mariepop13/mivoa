@@ -8,15 +8,18 @@ function getNextEntryId(
   entries: (JournalEntryData & { id: string })[],
   currentEntryId: string
 ): string | null {
-  const currentIndex = entries.findIndex(e => e.id === currentEntryId);
-  const remainingEntries = entries.filter(e => e.id !== currentEntryId);
+  const currentIndex = entries.findIndex((entry) => entry.id === currentEntryId);
+  if (currentIndex === -1) {
+    return entries[0]?.id ?? null;
+  }
+  const remainingEntries = entries.filter((entry) => entry.id !== currentEntryId);
 
   if (remainingEntries.length === 0) {
     return null;
   }
 
-  const nextIndex = currentIndex < remainingEntries.length ? currentIndex : remainingEntries.length - 1;
-  return remainingEntries[nextIndex].id;
+  const nextIndex = Math.min(currentIndex, remainingEntries.length - 1);
+  return remainingEntries[nextIndex]?.id ?? null;
 }
 
 interface UseEntryOperationsParams {

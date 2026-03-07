@@ -20,12 +20,6 @@ describe('useJournalAuth', () => {
     });
   });
 
-  it('should return null authError', () => {
-    const { result } = renderHook(() => useJournalAuth());
-
-    expect(result.current.authError).toBeNull();
-  });
-
   it('should return user and loading state from useStorage', () => {
     vi.mocked(useStorage).mockReturnValue({
       backend: null,
@@ -37,7 +31,6 @@ describe('useJournalAuth', () => {
 
     expect(result.current.user).toBe(mockUser);
     expect(result.current.authLoading).toBe(true);
-    expect(result.current.authError).toBeNull();
   });
 
   it('should return null user when not authenticated', () => {
@@ -45,7 +38,6 @@ describe('useJournalAuth', () => {
 
     expect(result.current.user).toBeNull();
     expect(result.current.authLoading).toBe(false);
-    expect(result.current.authError).toBeNull();
   });
 
   it('should return loading state when auth is loading', () => {
@@ -58,18 +50,5 @@ describe('useJournalAuth', () => {
     const { result } = renderHook(() => useJournalAuth());
 
     expect(result.current.authLoading).toBe(true);
-    expect(result.current.authError).toBeNull();
-  });
-
-  it('always returns null authError regardless of state', () => {
-    vi.mocked(useStorage).mockReturnValue({
-      backend: null,
-      user: null,
-      isUserLoading: false,
-    });
-
-    const { result } = renderHook(() => useJournalAuth());
-
-    expect(result.current.authError).toBeNull();
   });
 });

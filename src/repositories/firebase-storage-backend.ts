@@ -21,7 +21,7 @@ function toAppUser(user: User | null): AppUser | null {
 function timestampToIso(value: unknown): string {
   if (value instanceof Timestamp) return value.toDate().toISOString();
   if (typeof value === 'string') return value;
-  return new Date().toISOString();
+  return new Date(0).toISOString();
 }
 
 function firestoreDocToEntry(id: string, data: Record<string, unknown>): Entry {
@@ -80,47 +80,75 @@ export class FirebaseStorageBackend implements StorageBackend {
       collection(this.firestore, `users/${uid}/entries`),
       where('date', '==', dateKey)
     );
-    return onSnapshot(ref, (snapshot) => {
-      const entries = snapshot.docs.map((d) =>
-        firestoreDocToEntry(d.id, d.data() as Record<string, unknown>)
-      );
-      callback(entries);
-    });
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        const entries = snapshot.docs.map((d) =>
+          firestoreDocToEntry(d.id, d.data() as Record<string, unknown>)
+        );
+        callback(entries);
+      },
+      (error) => {
+        console.error('subscribeToEntriesByDate error:', error);
+        callback([]);
+      }
+    );
   }
 
   subscribeToEntry(entryId: string, callback: (entry: Entry | null) => void): Unsubscribe {
     if (!this.currentUser) { callback(null); return () => {}; }
     const uid = this.currentUser.uid;
     const ref = doc(this.firestore, `users/${uid}/entries/${entryId}`);
-    return onSnapshot(ref, (snapshot) => {
-      if (!snapshot.exists()) { callback(null); return; }
-      callback(firestoreDocToEntry(snapshot.id, snapshot.data() as Record<string, unknown>));
-    });
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        if (!snapshot.exists()) { callback(null); return; }
+        callback(firestoreDocToEntry(snapshot.id, snapshot.data() as Record<string, unknown>));
+      },
+      (error) => {
+        console.error('subscribeToEntry error:', error);
+        callback(null);
+      }
+    );
   }
 
   subscribeToAllEntries(callback: (entries: Entry[]) => void): Unsubscribe {
     if (!this.currentUser) { callback([]); return () => {}; }
     const uid = this.currentUser.uid;
     const ref = collection(this.firestore, `users/${uid}/entries`);
-    return onSnapshot(ref, (snapshot) => {
-      callback(snapshot.docs.map((d) =>
-        firestoreDocToEntry(d.id, d.data() as Record<string, unknown>)
-      ));
-    });
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        callback(snapshot.docs.map((d) =>
+          firestoreDocToEntry(d.id, d.data() as Record<string, unknown>)
+        ));
+      },
+      (error) => {
+        console.error('subscribeToAllEntries error:', error);
+        callback([]);
+      }
+    );
   }
 
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe {
     if (!this.currentUser) { callback(null); return () => {}; }
     const uid = this.currentUser.uid;
     const ref = doc(this.firestore, `users/${uid}/settings/api`);
-    return onSnapshot(ref, (snapshot) => {
-      if (!snapshot.exists()) { callback(null); return; }
-      const data = snapshot.data();
-      callback({
-        openRouterApiKey: data.openRouterApiKey as string | undefined,
-        selectedModel: data.selectedModel as string | undefined,
-      });
-    });
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        if (!snapshot.exists()) { callback(null); return; }
+        const data = snapshot.data();
+        callback({
+          openRouterApiKey: data.openRouterApiKey as string | undefined,
+          selectedModel: data.selectedModel as string | undefined,
+        });
+      },
+      (error) => {
+        console.error('subscribeToSettings error:', error);
+        callback(null);
+      }
+    );
   }
 
   async getEntries(ids: string[]): Promise<Entry[]> {

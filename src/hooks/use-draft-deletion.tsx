@@ -150,7 +150,14 @@ export function useDraftDeletion({
 
   const undoDelete = useCallback(async (): Promise<void> => {
     const undoableDraft = getUndoableDraft();
-    if (!undoableDraft || !backend) {
+    if (!undoableDraft) {
+      return;
+    }
+    if (!backend) {
+      toast({
+        title: t('draftDeleteError'),
+        variant: 'destructive',
+      });
       return;
     }
 

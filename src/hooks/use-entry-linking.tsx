@@ -159,7 +159,10 @@ async function rollbackCacheState(
 
   try {
     const results = await backend.getEntries([entryId]);
-    const currentLinkedIds = (results[0] as unknown as JournalEntryData)?.linkedEntryIds || [];
+    if (results.length === 0) {
+      throw new Error('Entry not found during cache rollback');
+    }
+    const currentLinkedIds = results[0].linkedEntryIds ?? [];
     const oldCacheKey = createCacheKey(currentLinkedIds);
     entryCache.set(oldCacheKey, previousState);
   } catch (fetchError) {
