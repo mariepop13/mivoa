@@ -55,9 +55,9 @@ export function EntryContentForm({
           value={content}
           onChange={(e) => onContentChange(e.target.value)}
           placeholder={t('writeYourThoughts')}
-          className="flex-1 w-full resize-none bg-transparent text-foreground 
-            placeholder:text-muted-foreground/60 focus:outline-none text-base sm:text-lg
-            leading-[1.75] font-serif py-2"
+          className="flex-1 w-full resize-none bg-transparent text-foreground
+            placeholder:text-muted-foreground/50 focus:outline-none text-base sm:text-[1.125rem]
+            leading-[1.85] font-serif py-2 tracking-[0.01em]"
           style={{ minHeight: TEXTAREA_MIN_HEIGHT }}
         />
         <div className="mt-2">
