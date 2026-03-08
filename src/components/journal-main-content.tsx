@@ -40,7 +40,7 @@ interface JournalMainContentProps {
   lastSavedAt: Date | null;
   saveError: string | null;
   isGeneratingSummary: boolean;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   onContentChange: (content: string) => void;
   onSave: () => void;
   onDelete: () => Promise<void>;
@@ -159,7 +159,7 @@ interface RenderEntryContentParams {
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
 }
 
 function renderEntryContent({
@@ -233,7 +233,7 @@ interface RenderContentParams {
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   setViewMode: (mode: 'chat' | 'summary') => void;
 }
 

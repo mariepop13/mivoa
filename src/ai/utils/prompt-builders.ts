@@ -39,6 +39,12 @@ export function buildDailyPromptPrompt(
       if (entry.title) {
         prompt += `Title: ${entry.title}\n`;
       }
+      if (entry.moods && entry.moods.length > 0) {
+        prompt += `Moods: ${entry.moods.join(', ')}\n`;
+      }
+      if (entry.themes && entry.themes.length > 0) {
+        prompt += `Themes: ${entry.themes.join(', ')}\n`;
+      }
       const truncatedContent = entry.content.substring(0, MAX_ENTRY_PREVIEW_LENGTH);
       const hasMore = entry.content.length > MAX_ENTRY_PREVIEW_LENGTH;
       prompt += `Content: ${truncatedContent}${hasMore ? '...' : ''}\n\n`;
