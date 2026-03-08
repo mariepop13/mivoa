@@ -1,5 +1,7 @@
 import { generateChatCompletion } from './openrouter-client';
+import { formatRecentEntriesContext } from '../utils/prompt-builders';
 import type { ChatMessage } from '../types/chat';
+import type { RecentEntry } from '../types/journal';
 
 const CHAT_MAX_TOKENS = 1000;
 const CHAT_TEMPERATURE = 0.8;
@@ -10,10 +12,15 @@ const SYSTEM_PROMPT_FR = `Tu es un assistant de journal intime attentionné et e
 
 function buildConversationMessages(
   conversationHistory: ChatMessage[],
-  language: 'en' | 'fr'
+  language: 'en' | 'fr',
+  recentEntries?: RecentEntry[]
 ): Array<{ role: 'user' | 'assistant' | 'system'; content: string }> {
-  const systemPrompt = language === 'fr' ? SYSTEM_PROMPT_FR : SYSTEM_PROMPT_EN;
-  
+  const basePrompt = language === 'fr' ? SYSTEM_PROMPT_FR : SYSTEM_PROMPT_EN;
+  const recentEntriesContext = recentEntries && recentEntries.length > 0
+    ? `\n\n${formatRecentEntriesContext(recentEntries, language)}`
+    : '';
+  const systemPrompt = `${basePrompt}${recentEntriesContext}`;
+
   const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
     { role: 'system', content: systemPrompt },
   ];
@@ -34,11 +41,12 @@ interface SendChatMessageOptions {
   apiKey: string;
   language: 'en' | 'fr';
   model?: string;
+  recentEntries?: RecentEntry[];
 }
 
 export async function sendChatMessage(options: SendChatMessageOptions): Promise<string> {
-  const { conversationHistory, userMessage, apiKey, language, model } = options;
-  const messages = buildConversationMessages(conversationHistory, language);
+  const { conversationHistory, userMessage, apiKey, language, model, recentEntries } = options;
+  const messages = buildConversationMessages(conversationHistory, language, recentEntries);
   messages.push({ role: 'user', content: userMessage });
 
   const response = await generateChatCompletion(messages, apiKey, {
@@ -63,12 +71,13 @@ interface RegenerateFromMessageOptions {
   apiKey: string;
   language: 'en' | 'fr';
   model?: string;
+  recentEntries?: RecentEntry[];
 }
 
 export async function regenerateFromMessage(
   options: RegenerateFromMessageOptions
 ): Promise<string> {
-  const { conversationHistory, messageIndex, apiKey, language, model } = options;
+  const { conversationHistory, messageIndex, apiKey, language, model, recentEntries } = options;
 
   if (messageIndex < 0 || messageIndex >= conversationHistory.length) {
     throw new Error('Invalid message index');
@@ -81,7 +90,7 @@ export async function regenerateFromMessage(
     throw new Error('Cannot regenerate from non-user message');
   }
 
-  const messages = buildConversationMessages(truncatedHistory.slice(0, -1), language);
+  const messages = buildConversationMessages(truncatedHistory.slice(0, -1), language, recentEntries);
   messages.push({ role: 'user', content: lastMessage.content });
 
   const response = await generateChatCompletion(messages, apiKey, {
