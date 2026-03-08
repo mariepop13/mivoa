@@ -4,7 +4,6 @@ import { CalendarDays, PenLine, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface JournalBottomBarProps {
-  viewMode: 'chat' | 'summary';
   onViewModeChange: (mode: 'chat' | 'summary') => void;
   onSidebarToggle: () => void;
   shouldShowChat: boolean;
@@ -21,6 +20,7 @@ interface BottomBarTabProps {
 function BottomBarTab({ icon, label, isActive, onClick, ariaSelected }: BottomBarTabProps): React.JSX.Element {
   return (
     <button
+      role="tab"
       type="button"
       aria-selected={ariaSelected}
       onClick={onClick}
@@ -52,7 +52,7 @@ export function JournalBottomBar({
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-sm border-t border-border"
       aria-label="Navigation principale"
     >
-      <div className="flex items-stretch h-16">
+      <div role="tablist" className="flex items-stretch h-16">
         <BottomBarTab
           icon={<CalendarDays className="h-5 w-5" />}
           label="Entrées"
