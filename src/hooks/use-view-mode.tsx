@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
 import type { JournalEntryData } from './use-journal-entries';
+import { getEntryKind } from '@/utils/entry-kind';
 
 interface UseViewModeParams {
   selectedEntryId: string | null;
@@ -23,9 +24,10 @@ function calculateViewMode(selectedEntryId: string | null): 'chat' | 'summary' {
 }
 
 export function useViewMode({ selectedEntryId, selectedEntry }: UseViewModeParams): UseViewModeResult {
-  const isDraftSelected = selectedEntry?.isDraft === true;
-  const isConversationEntrySelected = selectedEntry?.conversationMode === true && selectedEntry?.isDraft !== true;
-  const shouldShowTabs = isConversationEntrySelected && !isDraftSelected;
+  const entryKind = selectedEntry ? getEntryKind(selectedEntry) : null;
+  const isDraftSelected = entryKind === 'draft';
+  const isConversationEntrySelected = entryKind === 'conversation';
+  const shouldShowTabs = entryKind === 'conversation';
 
   const [viewMode, setViewMode] = useState<'chat' | 'summary'>(() =>
     calculateViewMode(selectedEntryId)

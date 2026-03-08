@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useDraftDeletion } from '@/hooks/use-draft-deletion';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
+import { getEntryKind } from '@/utils/entry-kind';
 import { SidebarHeader } from './journal-sidebar/sidebar-header';
 import { SidebarActions } from './journal-sidebar/sidebar-actions';
 import { EntriesList } from './journal-sidebar/entries-list';
@@ -47,7 +48,7 @@ export function JournalSidebar({
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const drafts = useMemo(() => entries?.filter(e => e.isDraft) || [], [entries]);
+  const drafts = useMemo(() => entries?.filter(e => getEntryKind(e) === 'draft') || [], [entries]);
 
   const { deleteDraft, deleteDrafts, isDeleting } = useDraftDeletion({
     handleDeleteDraft,
