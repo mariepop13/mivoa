@@ -12,6 +12,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { ChatMessage } from '@/ai/types/chat';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import type { RecentEntry } from '@/ai/types/journal';
+import { getEntryKind } from '@/utils/entry-kind';
 
 const MIN_MESSAGES_FOR_SUMMARY = 2;
 
@@ -100,7 +101,7 @@ function JournalChatComponent({
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentDraftId = initialDraft?.draftId || initialDraft?.entryId || null;
-  const isDraftActive = Boolean(currentDraftId && draftData?.isDraft);
+  const isDraftActive = Boolean(currentDraftId && draftData && getEntryKind(draftData) === 'draft');
 
   const { deleteDialogOpen, setDeleteDialogOpen, isDeleting, handleDeleteDraft } = useDraftDeletionHandler(
     currentDraftId,
