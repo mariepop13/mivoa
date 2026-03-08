@@ -54,8 +54,8 @@ function removeDeletedDraft(draftId: string): void {
 function getUndoableDraft(): DeletedDraftData | null {
   const drafts = getDeletedDrafts();
   const now = Date.now();
-  const validDraft = drafts.find(d => now - d.timestamp < UNDO_TIMEOUT);
-  return validDraft || null;
+  const sorted = [...drafts].sort((a, b) => b.timestamp - a.timestamp);
+  return sorted.find(d => now - d.timestamp < UNDO_TIMEOUT) ?? null;
 }
 
 function normalizeTimestamp(timestamp: Date | string | unknown): Date {
@@ -174,6 +174,7 @@ export function useDraftDeletion({
           timestamp: normalizeTimestamp(msg.timestamp),
         })),
         backend,
+        forceCreate: true,
       });
 
       removeDeletedDraft(undoableDraft.draftId);
@@ -304,19 +305,16 @@ export function useDraftDeletion({
     const successCount = results.filter(r => r.status === 'fulfilled').length;
     const failedCount = results.filter(r => r.status === 'rejected').length;
 
-    if (failedCount > 0 && draftsData && onRestore) {
+    if (failedCount > 0) {
       results.forEach((result, index) => {
-        if (result.status === 'rejected' && draftsData[index]) {
-          onRestore(draftIds[index]);
+        if (result.status === 'rejected') {
+          if (draftsData && onRestore && draftsData[index]) {
+            onRestore(draftIds[index]);
+          }
+          removeDeletedDraft(draftIds[index]);
         }
       });
     }
-
-    draftIds.forEach((id, index) => {
-      if (results[index]?.status === 'fulfilled') {
-        removeDeletedDraft(id);
-      }
-    });
 
     setIsDeleting(false);
     draftIds.forEach(id => deletingRef.current.delete(id));

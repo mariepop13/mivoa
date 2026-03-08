@@ -6,7 +6,6 @@ import { JournalMobileHeader } from '@/components/journal-mobile-header';
 import { JournalViewTabs } from '@/components/journal-view-tabs';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import { useViewMode } from '@/hooks/use-view-mode';
-import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
 import { convertTimestampToDate } from '@/utils/journal-utils';
@@ -15,7 +14,7 @@ function mapConversationHistory(
   conversationHistory: Array<{
     role: 'user' | 'assistant';
     content: string;
-    timestamp: Timestamp | Date | string;
+    timestamp: { toDate(): Date } | Date | string;
   }> | undefined
 ): ChatMessage[] {
   if (!conversationHistory) {

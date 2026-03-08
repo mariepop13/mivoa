@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, memo, useState, useCallback } from 'react';
-import { Timestamp } from 'firebase/firestore';
 import { useChatConversation } from '@/hooks/use-chat-conversation';
 import { useConversationLoader } from '@/hooks/use-conversation-loader';
 import { ChatMessagesList } from '@/components/chat-messages-list';
@@ -34,8 +33,8 @@ interface JournalChatProps {
   recentEntries?: RecentEntry[];
 }
 
-function convertTimestamp(timestamp: Date | Timestamp): Date {
-  return timestamp instanceof Timestamp ? timestamp.toDate() : timestamp;
+function convertTimestamp(timestamp: Date | { toDate(): Date }): Date {
+  return timestamp instanceof Date ? timestamp : timestamp.toDate();
 }
 
 function useDraftDeletionHandler(

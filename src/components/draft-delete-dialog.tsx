@@ -13,8 +13,6 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { format, formatDistanceToNow } from 'date-fns';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
-import { Timestamp } from 'firebase/firestore';
-
 const MAX_PREVIEW_MESSAGES = 5;
 const MAX_CONTENT_PREVIEW_LENGTH = 200;
 
@@ -26,26 +24,29 @@ interface DraftDeleteDialogProps {
   isLoading?: boolean;
 }
 
-function formatDate(date: Date | Timestamp | string | undefined): string {
-  if (!date) return '';
-  if (date instanceof Timestamp) {
-    return format(date.toDate(), 'MMM d, yyyy h:mm a');
-  }
-  if (typeof date === 'string') {
-    return format(new Date(date), 'MMM d, yyyy h:mm a');
-  }
-  return format(date, 'MMM d, yyyy h:mm a');
-}
-
-function formatDateRelative(date: Date | Timestamp | string | undefined): string {
+function formatDate(date: Date | { toDate(): Date } | string | undefined): string {
   if (!date) return '';
   let dateObj: Date;
-  if (date instanceof Timestamp) {
-    dateObj = date.toDate();
-  } else if (typeof date === 'string') {
+  if (typeof date === 'string') {
     dateObj = new Date(date);
-  } else {
+  } else if (date instanceof Date) {
     dateObj = date;
+  } else {
+    dateObj = date.toDate();
+  }
+  if (isNaN(dateObj.getTime())) return '';
+  return format(dateObj, 'MMM d, yyyy h:mm a');
+}
+
+function formatDateRelative(date: Date | { toDate(): Date } | string | undefined): string {
+  if (!date) return '';
+  let dateObj: Date;
+  if (typeof date === 'string') {
+    dateObj = new Date(date);
+  } else if (date instanceof Date) {
+    dateObj = date;
+  } else {
+    dateObj = date.toDate();
   }
   if (isNaN(dateObj.getTime())) return '';
   return formatDistanceToNow(dateObj, { addSuffix: true });

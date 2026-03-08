@@ -123,10 +123,11 @@ interface SaveConversationDraftParams {
   entryDateKey: string;
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }>;
   backend: StorageBackend;
+  forceCreate?: boolean;
 }
 
 export async function saveConversationDraft(params: SaveConversationDraftParams): Promise<string> {
-  const { draftId, entryDateKey, conversationHistory, backend } = params;
+  const { draftId, entryDateKey, conversationHistory, backend, forceCreate } = params;
   const conversationHistoryForStorage = conversationHistory.map((msg) => ({
     role: msg.role,
     content: msg.content,
@@ -134,23 +135,18 @@ export async function saveConversationDraft(params: SaveConversationDraftParams)
   }));
 
   const finalDraftId = draftId || generateEntryId(entryDateKey);
+  const draftPayload = {
+    content: '',
+    date: entryDateKey,
+    conversationMode: true,
+    isDraft: true,
+    conversationHistory: conversationHistoryForStorage,
+  };
 
-  if (draftId) {
-    await backend.updateEntry(finalDraftId, {
-      content: '',
-      date: entryDateKey,
-      conversationMode: true,
-      isDraft: true,
-      conversationHistory: conversationHistoryForStorage,
-    });
+  if (draftId && !forceCreate) {
+    await backend.updateEntry(finalDraftId, draftPayload);
   } else {
-    await backend.createEntry(finalDraftId, {
-      content: '',
-      date: entryDateKey,
-      conversationMode: true,
-      isDraft: true,
-      conversationHistory: conversationHistoryForStorage,
-    });
+    await backend.createEntry(finalDraftId, draftPayload);
   }
 
   return finalDraftId;
