@@ -174,6 +174,7 @@ export function useDraftDeletion({
           timestamp: normalizeTimestamp(msg.timestamp),
         })),
         backend,
+        forceCreate: true,
       });
 
       removeDeletedDraft(undoableDraft.draftId);
