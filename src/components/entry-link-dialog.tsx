@@ -14,6 +14,7 @@ import { useAllEntries } from '@/repositories/storage-provider';
 import type { Entry } from '@/repositories/types';
 import { format } from 'date-fns';
 import { getEntryPreview, parseEntryDate } from '@/utils/entry-linking-utils';
+import { getEntryKind } from '@/utils/entry-kind';
 
 interface EntryLinkDialogProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function EntryLinkDialog({
     return allEntriesRaw
       .filter((entry: Entry) => {
         if (entry.id === currentEntryId) return false;
-        if (entry.isDraft) return false;
+        if (getEntryKind(entry) === 'draft') return false;
         if (linkedEntryIds.includes(entry.id)) return false;
         return true;
       })

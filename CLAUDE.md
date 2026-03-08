@@ -70,7 +70,7 @@ users/{userId}/
 - `keyTakeaways`: string[] - AI-generated insights
 - `conversationHistory`: ChatMessage[] - AI conversation
 - `conversationSummary`: ConversationSummary - AI-generated summary
-- `linkedEntries`: string[] - references to other entries
+- `linkedEntryIds`: string[] - references to other entries
 
 ### StorageBackend Abstraction
 
@@ -115,7 +115,7 @@ if (resolved) unsubscribe(); // handles synchronous callbacks safely
 ### AI Services Architecture
 
 **AI Service Layer** (src/ai/services/):
-- `chat-service.ts`: Streaming chat responses from OpenRouter
+- `chat-service.ts`: Chat responses from OpenRouter
 - `entry-analysis-service.ts`: Extract moods, themes, places, characters, and key takeaways
 - `conversation-summary-service.ts`: Generate conversation summaries with titles and insights
 - `journal-prompt-service.ts`: Generate contextual journal prompts
@@ -123,6 +123,9 @@ if (resolved) unsubscribe(); // handles synchronous callbacks safely
 - `openrouter-client.ts`: Shared OpenRouter API client with streaming support
 
 All AI services use the OpenRouter SDK and handle streaming responses.
+
+**AI Prompt Utilities** (src/ai/utils/):
+- `prompt-builders.ts`: Builds all AI prompts — `buildDailyPromptPrompt`, `formatRecentEntriesContext`, `buildAnalysisPrompt`, `buildTemplatePromptPrompt`, `buildContextualPromptPrompt`
 
 ### Component Organization
 
@@ -204,3 +207,5 @@ Users configure their OpenRouter API key in the app's Settings page (stored via 
 - All dates in Firestore use Firebase Timestamp type
 - Entry date keys use format: YYYY-MM-DD
 - Multi-language support via `src/locales/` (en.json, fr.json)
+- `recentEntries` (entries from last 7 days, max 5) flows from `use-journal-entries` → `JournalMainContent` → `JournalChat` → `useChatConversation` → system prompt in `chat-service.ts`
+- Three entry types: regular entry (write mode), draft (chat in progress, not yet summarized), conversation entry (has `conversationHistory`, shows chat tab)

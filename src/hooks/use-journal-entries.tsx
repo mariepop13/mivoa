@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
-import { useStorage, useEntriesByDate, useEntry } from '@/repositories/storage-provider';
+import { useStorage, useEntriesByDate, useEntry, useAllEntries } from '@/repositories/storage-provider';
+import { getEntryKind } from '@/utils/entry-kind';
 import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
@@ -76,7 +77,7 @@ interface UseJournalEntriesResult {
     draftId?: string | null
   ) => Promise<void>;
   isGeneratingSummary: boolean;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   draftForDate: (JournalEntryData & { id: string }) | null;
   handleSaveDraft: (messages: ChatMessage[], draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
@@ -91,6 +92,7 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
   const { data: entriesRaw, isLoading: entriesLoading } = useEntriesByDate(dateKey);
+  const { data: allEntriesRaw } = useAllEntries();
 
   const entries = useMemo(() => {
     if (!entriesRaw) return null;
@@ -179,32 +181,35 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
   });
 
   const recentEntries = useMemo(() => {
-    if (!entries) return [];
+    if (!allEntriesRaw) return [];
 
     const sevenDaysAgo = new Date(selectedDate);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DAYS_TO_LOOK_BACK);
     const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
 
-    return entries
-      .filter((entry) => entry.date >= sevenDaysAgoKey && entry.id !== selectedEntryId)
+    return (allEntriesRaw as unknown as (JournalEntryData & { id: string })[])
+      .filter((entry) => entry.date >= sevenDaysAgoKey && entry.date <= dateKey && entry.id !== selectedEntryId && !entry.isDraft)
+      .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, MAX_RECENT_ENTRIES)
       .map((entry) => ({
         content: entry.content,
         title: entry.title,
         date: entry.date,
+        moods: entry.moods,
+        themes: entry.themes,
       }));
-  }, [entries, selectedEntryId, selectedDate]);
+  }, [allEntriesRaw, selectedEntryId, selectedDate, dateKey]);
 
   const selectedEntry = entries?.find(e => e.id === selectedEntryId);
 
   const draftForDate = useMemo(() => {
     if (!entries) return null;
-    return entries.find(e => e.isDraft === true) || null;
+    return entries.find(e => getEntryKind(e) === 'draft') || null;
   }, [entries]);
 
   const conversationEntryForDate = useMemo(() => {
     if (!entries) return null;
-    return entries.find(e => e.conversationMode === true && e.isDraft !== true) || null;
+    return entries.find(e => getEntryKind(e) === 'conversation') || null;
   }, [entries]);
 
   const handleSaveDraft = useCallback(async (

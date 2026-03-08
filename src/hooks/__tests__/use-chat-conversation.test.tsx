@@ -207,6 +207,31 @@ describe('useChatConversation', () => {
     expect(result.current.draftId).toBeNull();
   });
 
+  it('forwards recentEntries to sendChatMessage', async () => {
+    const recentEntries = [
+      { content: 'Felt stressed', date: '2024-01-14', moods: ['stressed'] },
+    ];
+
+    const { result } = renderHook(
+      () => useChatConversation({ recentEntries }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThan(0);
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('How am I doing?');
+    });
+
+    await waitFor(() => {
+      expect(chatService.sendChatMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ recentEntries })
+      );
+    });
+  });
+
   it('schedules draft save when onDraftSave is provided', async () => {
     const mockOnDraftSave = vi.fn().mockResolvedValue('saved-draft-id');
     const dateKey = '2024-01-15';

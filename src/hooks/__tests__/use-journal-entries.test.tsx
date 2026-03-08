@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useJournalEntries } from '../use-journal-entries';
-import { useStorage, useEntriesByDate, useEntry } from '@/repositories/storage-provider';
+import { useStorage, useEntriesByDate, useEntry, useAllEntries } from '@/repositories/storage-provider';
 import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { ModelContext } from '@/context/ModelContext';
@@ -61,6 +61,7 @@ describe('useJournalEntries', () => {
       isUserLoading: false,
     });
     vi.mocked(useEntriesByDate).mockReturnValue({ data: null, isLoading: false });
+    vi.mocked(useAllEntries).mockReturnValue({ data: null, isLoading: false });
     vi.mocked(useEntry).mockReturnValue({ data: null, isLoading: false });
     vi.mocked(journalHandlers.generateEntryId).mockReturnValue('test-entry-id');
     vi.mocked(journalHandlers.createEntryDocument).mockResolvedValue(undefined);
@@ -171,20 +172,17 @@ describe('useJournalEntries', () => {
     expect(journalHandlers.saveSummaryAsEntry).toHaveBeenCalled();
   });
 
-  it('calculates recent entries', async () => {
-    const today = new Date('2024-01-15');
-    const threeDaysAgo = new Date('2024-01-12');
-    const oldDate = threeDaysAgo.toISOString().split('T')[0];
+  it('calculates recent entries from all entries across different dates', async () => {
+    // Use noon local time to avoid UTC-midnight timezone edge cases
+    const today = new Date('2024-01-15T12:00:00');
 
-    const mockEntries = [
-      { id: 'entry-1', content: 'Recent', date: '2024-01-15', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 'entry-2', content: 'Old', date: oldDate, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    const allEntries = [
+      { id: 'entry-1', content: 'Today entry', date: '2024-01-15', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'entry-2', content: 'Three days ago', date: '2024-01-12', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'entry-3', content: 'Eight days ago', date: '2024-01-07', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
-    vi.mocked(useEntriesByDate).mockReturnValue({
-      data: mockEntries as any,
-      isLoading: false,
-    });
+    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
 
     const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
 
@@ -194,6 +192,78 @@ describe('useJournalEntries', () => {
 
     const recent = result.current.recentEntries;
     expect(recent.some(e => e.date === '2024-01-15')).toBe(true);
+    expect(recent.some(e => e.date === '2024-01-12')).toBe(true);
+    expect(recent.some(e => e.date === '2024-01-07')).toBe(false);
+  });
+
+  it('excludes entries older than 7 days from recent entries', async () => {
+    // Use noon local time to avoid UTC-midnight timezone edge cases
+    const today = new Date('2024-01-15T12:00:00');
+
+    const allEntries = [
+      { id: 'entry-1', content: 'Within 7 days', date: '2024-01-09', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'entry-2', content: 'Eight days ago', date: '2024-01-07', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'entry-3', content: 'Much older', date: '2023-12-01', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ];
+
+    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.recentEntries).toBeDefined();
+    });
+
+    const recent = result.current.recentEntries;
+    expect(recent.some(e => e.date === '2024-01-09')).toBe(true);
+    expect(recent.some(e => e.date === '2024-01-07')).toBe(false);
+    expect(recent.some(e => e.date === '2023-12-01')).toBe(false);
+  });
+
+  it('excludes drafts from recent entries', async () => {
+    const today = new Date('2024-01-15');
+
+    const allEntries = [
+      { id: 'entry-1', content: 'Normal entry', date: '2024-01-14', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'draft-1', content: 'Draft entry', date: '2024-01-13', isDraft: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ];
+
+    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.recentEntries).toBeDefined();
+    });
+
+    const recent = result.current.recentEntries;
+    expect(recent.some(e => e.date === '2024-01-14')).toBe(true);
+    expect(recent.some(e => e.content === 'Draft entry')).toBe(false);
+  });
+
+  it('excludes the currently selected entry from recent entries', async () => {
+    const today = new Date('2024-01-15');
+
+    const allEntries = [
+      { id: 'selected-entry', content: 'Selected', date: '2024-01-14', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'other-entry', content: 'Other', date: '2024-01-13', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    ];
+
+    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+
+    const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
+
+    await act(async () => {
+      result.current.setSelectedEntryId('selected-entry');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedEntryId).toBe('selected-entry');
+    });
+
+    const recent = result.current.recentEntries;
+    expect(recent.some(e => e.content === 'Selected')).toBe(false);
+    expect(recent.some(e => e.content === 'Other')).toBe(true);
   });
 
   it('should save draft with handleSaveDraft', async () => {
