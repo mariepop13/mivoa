@@ -26,13 +26,16 @@ interface DraftDeleteDialogProps {
 
 function formatDate(date: Date | { toDate(): Date } | string | undefined): string {
   if (!date) return '';
+  let dateObj: Date;
   if (typeof date === 'string') {
-    return format(new Date(date), 'MMM d, yyyy h:mm a');
+    dateObj = new Date(date);
+  } else if (date instanceof Date) {
+    dateObj = date;
+  } else {
+    dateObj = date.toDate();
   }
-  if (date instanceof Date) {
-    return format(date, 'MMM d, yyyy h:mm a');
-  }
-  return format(date.toDate(), 'MMM d, yyyy h:mm a');
+  if (isNaN(dateObj.getTime())) return '';
+  return format(dateObj, 'MMM d, yyyy h:mm a');
 }
 
 function formatDateRelative(date: Date | { toDate(): Date } | string | undefined): string {
