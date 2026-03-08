@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DraftDeleteButton } from '@/components/draft-delete-button';
 import { cn } from '@/lib/utils';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import { getEntryKind } from '@/utils/entry-kind';
 import { getEntryItemClassName, handleEntryClick } from './utils';
 
 interface EntryListItemProps {
@@ -39,7 +40,7 @@ export function EntryListItem({
   onDeleteClick,
 }: EntryListItemProps): React.JSX.Element {
   const isDeleted = deletedDraftIds?.has(entry.id);
-  const {isDraft} = entry;
+  const isDraft = getEntryKind(entry) === 'draft';
   const isSelected = selectedIds?.has(entry.id) ?? false;
   const className = getEntryItemClassName(selectedEntryId, entry.id, isSelectionMode ?? false, isSelected);
 

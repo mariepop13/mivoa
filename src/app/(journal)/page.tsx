@@ -90,6 +90,7 @@ function buildMainContentProps({
   onDateChange: _onDateChange,
   handleNavigateToEntry,
   handleLinksUpdated,
+  linksVersion,
 }: {
   selectedDate: Date;
   journalEntries: ReturnType<typeof useJournalEntries>;
@@ -99,35 +100,44 @@ function buildMainContentProps({
   onDateChange: (date: Date) => void;
   handleNavigateToEntry: (entry: JournalEntryData & { id: string }) => void;
   handleLinksUpdated: () => void;
+  linksVersion: number;
 }) {
   return {
-    selectedDate,
-    selectedEntryId: journalEntries.selectedEntryId,
-    selectedEntry: journalEntries.selectedEntry,
-    selectedEntryData: journalEntries.selectedEntryData,
-    entries: journalEntries.entries,
-    content: journalEntries.content,
-    title: journalEntries.title,
-    isSaving: journalEntries.isSaving,
-    lastSavedAt: journalEntries.lastSavedAt,
-    saveError: journalEntries.saveError,
-    isGeneratingSummary: journalEntries.isGeneratingSummary,
-    recentEntries: journalEntries.recentEntries,
-    onContentChange: handlers.handleContentChange,
-    onSave: handlers.handleSave,
-    onDelete: journalEntries.handleDelete,
-    onSummarize: journalEntries.handleSummarizeConversation,
+    entry: {
+      selectedDate,
+      selectedEntryId: journalEntries.selectedEntryId,
+      selectedEntry: journalEntries.selectedEntry,
+      selectedEntryData: journalEntries.selectedEntryData,
+      entries: journalEntries.entries,
+      content: journalEntries.content,
+      title: journalEntries.title,
+      recentEntries: journalEntries.recentEntries,
+      linksVersion,
+    },
+    actions: {
+      onContentChange: handlers.handleContentChange,
+      onSave: handlers.handleSave,
+      onDelete: journalEntries.handleDelete,
+      onChangeDate: journalEntries.changeEntryDate,
+      onNavigateToEntry: handleNavigateToEntry,
+      onLinksUpdated: handleLinksUpdated,
+    },
+    save: {
+      isSaving: journalEntries.isSaving,
+      lastSavedAt: journalEntries.lastSavedAt,
+      saveError: journalEntries.saveError,
+    },
+    conversation: {
+      isGeneratingSummary: journalEntries.isGeneratingSummary,
+      onSummarize: journalEntries.handleSummarizeConversation,
+      handleSaveDraft: journalEntries.handleSaveDraft,
+      handleDeleteDraft: journalEntries.handleDeleteDraft,
+      conversationEntryForDate: journalEntries.conversationEntryForDate,
+    },
+    dateKey: format(selectedDate, DATE_KEY_FORMAT),
     getEntryTitle,
     onSidebarToggle: () => setIsSidebarOpen(true),
     isSidebarOpen,
-    dateKey: format(selectedDate, DATE_KEY_FORMAT),
-    handleSaveDraft: journalEntries.handleSaveDraft,
-    handleDeleteDraft: journalEntries.handleDeleteDraft,
-    conversationEntryForDate: journalEntries.conversationEntryForDate,
-    onChangeDate: journalEntries.changeEntryDate,
-    onNavigateToEntry: handleNavigateToEntry,
-    setSelectedEntryId: journalEntries.setSelectedEntryId,
-    onLinksUpdated: handleLinksUpdated,
   };
 }
 
@@ -189,15 +199,11 @@ function JournalApp(): React.JSX.Element {
     setSelectedEntryId(entry.id);
   }, [setSelectedEntryId]);
 
+  const [linksVersion, setLinksVersion] = useState(0);
+
   const handleLinksUpdated = useCallback(() => {
-    if (journalEntries.selectedEntryId) {
-      const currentEntryId = journalEntries.selectedEntryId;
-      journalEntries.setSelectedEntryId(null);
-      setTimeout(() => {
-        journalEntries.setSelectedEntryId(currentEntryId);
-      }, 0);
-    }
-  }, [journalEntries]);
+    setLinksVersion((v) => v + 1);
+  }, []);
 
   if (authState.authLoading || journalEntries.entriesLoading) {
     return <JournalLoadingState />;
@@ -222,6 +228,7 @@ function JournalApp(): React.JSX.Element {
     onDateChange: setSelectedDate,
     handleNavigateToEntry,
     handleLinksUpdated,
+    linksVersion,
   });
 
   return (

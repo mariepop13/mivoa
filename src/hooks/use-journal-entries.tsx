@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
 import { useStorage, useEntriesByDate, useEntry } from '@/repositories/storage-provider';
+import { getEntryKind } from '@/utils/entry-kind';
 import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
 import { useSummaryOperations } from './use-summary-operations';
@@ -199,12 +200,12 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
 
   const draftForDate = useMemo(() => {
     if (!entries) return null;
-    return entries.find(e => e.isDraft === true) || null;
+    return entries.find(e => getEntryKind(e) === 'draft') || null;
   }, [entries]);
 
   const conversationEntryForDate = useMemo(() => {
     if (!entries) return null;
-    return entries.find(e => e.conversationMode === true && e.isDraft !== true) || null;
+    return entries.find(e => getEntryKind(e) === 'conversation') || null;
   }, [entries]);
 
   const handleSaveDraft = useCallback(async (
