@@ -9,6 +9,7 @@ import { useViewMode } from '@/hooks/use-view-mode';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
 import { convertTimestampToDate } from '@/utils/journal-utils';
+import { getEntryKind } from '@/utils/entry-kind';
 
 function mapConversationHistory(
   conversationHistory: Array<{
@@ -283,6 +284,7 @@ export function JournalMainContent({
     selectedEntry,
   });
 
+  const entryKind = selectedEntry ? getEntryKind(selectedEntry) : undefined;
   const initialConversation = getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry);
   const onDraftSaveWrapper = createDraftSaveWrapper(handleSaveDraft, initialConversation);
 
@@ -301,6 +303,7 @@ export function JournalMainContent({
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
                 className="w-full sm:w-auto"
+                entryKind={entryKind}
               />
             </div>
           )}
