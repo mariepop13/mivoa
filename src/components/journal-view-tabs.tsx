@@ -3,8 +3,7 @@
 import { MessageSquare, FileText } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
-
-type EntryKind = 'text' | 'draft' | 'conversation';
+import type { EntryKind } from '@/utils/entry-kind';
 
 interface JournalViewTabsProps {
   viewMode: 'chat' | 'summary';
