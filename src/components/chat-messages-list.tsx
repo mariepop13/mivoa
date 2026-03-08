@@ -1,7 +1,6 @@
 'use client';
 
 import { useContext } from 'react';
-import { Timestamp } from 'firebase/firestore';
 import { ChatMessage } from '@/components/chat-message';
 import { ChatEmptyState } from '@/components/chat-empty-state';
 import { ChatTypingIndicator } from '@/components/chat-typing-indicator';
@@ -38,9 +37,9 @@ function renderMessages(
   onUndoEdit?: ChatMessagesListProps['onUndoEdit']
 ): React.JSX.Element[] {
   return messages.map((message, index) => {
-    const timestampMs = message.timestamp instanceof Timestamp 
-      ? message.timestamp.toMillis() 
-      : message.timestamp.getTime();
+    const timestampMs = message.timestamp instanceof Date
+      ? message.timestamp.getTime()
+      : message.timestamp.toMillis();
     return (
       <ChatMessage
         key={`${timestampMs}-${index}`}

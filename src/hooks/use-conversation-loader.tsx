@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/ai/types/chat';
 
 interface UseConversationLoaderParams {
@@ -19,7 +18,7 @@ export function useConversationLoader({
       const loadedMessages: ChatMessage[] = initialDraft.messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp instanceof Timestamp ? msg.timestamp.toDate() : msg.timestamp,
+        timestamp: msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate(),
       }));
       loadConversation(loadedMessages, currentDraftId);
       hasLoadedDraftRef.current = currentDraftId;

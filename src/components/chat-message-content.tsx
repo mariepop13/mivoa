@@ -3,7 +3,6 @@
 import { useContext } from 'react';
 import { format } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import { LanguageContext } from '@/context/LanguageContext';
@@ -49,9 +48,9 @@ export function ChatMessageContent({
 }: ChatMessageContentProps): React.JSX.Element {
   const { language } = useContext(LanguageContext);
   const dateLocale = language === 'fr' ? fr : enUS;
-  const timestampDate = message.timestamp instanceof Timestamp
-    ? message.timestamp.toDate()
-    : message.timestamp;
+  const timestampDate = message.timestamp instanceof Date
+    ? message.timestamp
+    : message.timestamp.toDate();
   const formattedTime = format(timestampDate, 'HH:mm:ss', { locale: dateLocale });
 
   return (
