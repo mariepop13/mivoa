@@ -40,7 +40,7 @@ interface JournalMainContentProps {
   lastSavedAt: Date | null;
   saveError: string | null;
   isGeneratingSummary: boolean;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   onContentChange: (content: string) => void;
   onSave: () => void;
   onDelete: () => Promise<void>;
@@ -122,6 +122,7 @@ function renderChatContent({
   initialConversation,
   setViewMode,
   selectedEntry,
+  recentEntries,
 }: {
   onSummarize: JournalMainContentProps['onSummarize'];
   isGeneratingSummary: boolean;
@@ -131,6 +132,7 @@ function renderChatContent({
   initialConversation: InitialConversation | null;
   setViewMode: (mode: 'chat' | 'summary') => void;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: JournalMainContentProps['recentEntries'];
 }): React.JSX.Element {
   return (
     <JournalChat
@@ -142,6 +144,7 @@ function renderChatContent({
       initialDraft={initialConversation}
       onViewModeChange={setViewMode}
       draftData={selectedEntry?.isDraft ? selectedEntry : null}
+      recentEntries={recentEntries}
     />
   );
 }
@@ -159,7 +162,7 @@ interface RenderEntryContentParams {
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
 }
 
 function renderEntryContent({
@@ -233,7 +236,7 @@ interface RenderContentParams {
   saveError: string | null;
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: JournalMainContentProps['recentEntries'];
   setViewMode: (mode: 'chat' | 'summary') => void;
 }
 
@@ -277,6 +280,7 @@ function renderContent({
       initialConversation,
       setViewMode,
       selectedEntry,
+      recentEntries,
     });
   }
 

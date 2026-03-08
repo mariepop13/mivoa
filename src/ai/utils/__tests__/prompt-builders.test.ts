@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { buildDailyPromptPrompt, buildContextualPromptPrompt, buildAnalysisPrompt, buildTemplatePromptPrompt } from '../prompt-builders';
+import { buildDailyPromptPrompt, buildContextualPromptPrompt, buildAnalysisPrompt, buildTemplatePromptPrompt, formatRecentEntriesContext } from '../prompt-builders';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
 
 vi.mock('date-fns', () => ({
@@ -16,6 +16,64 @@ vi.mock('date-fns/locale', () => ({
 describe('prompt-builders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('formatRecentEntriesContext', () => {
+    it('returns empty string when entries array is empty', () => {
+      expect(formatRecentEntriesContext([], 'en')).toBe('');
+      expect(formatRecentEntriesContext([], 'fr')).toBe('');
+    });
+
+    it('returns English header with entry details', () => {
+      const entries = [{ content: 'Had a great day', date: '2024-01-14', moods: ['happy'], themes: ['work'] }];
+      const result = formatRecentEntriesContext(entries, 'en');
+
+      expect(result).toContain('Here are the user\'s recent journal entries for context');
+      expect(result).toContain('Entry 1 (2024-01-14)');
+      expect(result).toContain('Moods: happy');
+      expect(result).toContain('Themes: work');
+      expect(result).toContain('Had a great day');
+    });
+
+    it('returns French header with entry details', () => {
+      const entries = [{ content: 'Bonne journée', date: '2024-01-14' }];
+      const result = formatRecentEntriesContext(entries, 'fr');
+
+      expect(result).toContain("Voici les entrées récentes de l'utilisateur pour contexte");
+      expect(result).toContain('Bonne journée');
+    });
+
+    it('truncates content longer than 200 characters', () => {
+      const longContent = 'x'.repeat(300);
+      const result = formatRecentEntriesContext([{ content: longContent, date: '2024-01-14' }], 'en');
+
+      expect(result).toContain(`${'x'.repeat(200)}...`);
+      expect(result).not.toContain('x'.repeat(201));
+    });
+
+    it('does not add ellipsis when content is 200 chars or fewer', () => {
+      const shortContent = 'y'.repeat(200);
+      const result = formatRecentEntriesContext([{ content: shortContent, date: '2024-01-14' }], 'en');
+
+      expect(result).not.toContain('...');
+    });
+
+    it('includes title when present', () => {
+      const entries = [{ content: 'Content', date: '2024-01-14', title: 'My Entry Title' }];
+      const result = formatRecentEntriesContext(entries, 'en');
+
+      expect(result).toContain('Title: My Entry Title');
+    });
+
+    it('limits output to 5 entries', () => {
+      const entries = Array.from({ length: 8 }, (_, i) => ({
+        content: `Content ${i}`,
+        date: `2024-01-${14 - i}`,
+      }));
+      const result = formatRecentEntriesContext(entries, 'en');
+
+      expect(result.match(/Entry \d+/g)?.length).toBe(5);
+    });
   });
 
   describe('buildDailyPromptPrompt', () => {
