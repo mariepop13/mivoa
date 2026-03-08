@@ -10,6 +10,38 @@
 
 ---
 
+## Design Decisions
+
+**Why this redesign?** The current design uses Shadcn defaults (purple accent, white background) — clean but generic. As a journaling app, the aesthetic should feel intimate and invite introspection, not look like a generic SaaS product.
+
+### Color Palette Reference (hex → HSL in globals.css)
+
+| Token | Light (`#hex`) | Dark (`#hex`) | Role |
+|---|---|---|---|
+| `--background` | `#FAF7F2` | `#1C1612` | Warm cream / dark brown |
+| `--foreground` | `#3D2B1F` | `#F0EBE3` | Warm brown / cream |
+| `--primary` | `#C4714A` | `#D4845C` | Terracotta (replaces purple) |
+| `--secondary` | `#7C9E8A` | `#8FB09C` | Sage green |
+| `--muted` | `#EDE8E0` | `#2A241E` | Warm off-white / dark warm |
+| `--muted-foreground` | `#7A6A5E` | `#9E8E82` | Warm medium gray |
+| `--border` | `#D8D0C4` | `#3A332A` | Warm light / dark border |
+| `--card` | `#FFFFFF` | `#231E19` | Card backgrounds |
+
+### Typography
+- **Editor textarea**: `font-serif` → already maps to Merriweather via `tailwind.config.ts`
+- **UI elements** (sidebar, buttons, nav): Space Grotesk — unchanged
+- **Chat messages**: Inter — unchanged
+
+### Mobile Navigation
+- Replace `JournalMobileHeader` (top bar) with `JournalBottomBar` (fixed bottom, `md:hidden`)
+- 3 tabs: Entrées (sidebar toggle) | Journal (editor) | Chat IA (chat)
+- Desktop: unchanged
+
+### Out of Scope
+- Login screen redesign, settings page, animation overhaul, dark mode fine-tuning beyond token changes
+
+---
+
 ## Task 1: Update color palette in globals.css
 
 **Files:**
