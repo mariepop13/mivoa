@@ -84,6 +84,63 @@ describe('chat-service', () => {
 
       expect(systemMessage?.content).toContain('journal intime');
     });
+
+    it('appends recent entries context to system prompt when provided', async () => {
+      vi.spyOn(openrouterClient, 'generateChatCompletion').mockResolvedValue('Response');
+
+      const recentEntries = [
+        { content: 'Felt stressed at work', date: '2024-01-14', moods: ['stressed'] },
+        { content: 'Great workout session', date: '2024-01-13', moods: ['energized'] },
+      ];
+
+      await sendChatMessage({
+        conversationHistory: [],
+        userMessage: 'How am I doing?',
+        apiKey: 'test-key',
+        language: 'en',
+        recentEntries,
+      });
+
+      const callArgs = vi.mocked(openrouterClient.generateChatCompletion).mock.calls[0];
+      const systemMessage = callArgs[0].find((msg) => msg.role === 'system');
+
+      expect(systemMessage?.content).toContain('recent journal entries');
+      expect(systemMessage?.content).toContain('stressed');
+      expect(systemMessage?.content).toContain('energized');
+    });
+
+    it('does not append entries context when recentEntries is empty', async () => {
+      vi.spyOn(openrouterClient, 'generateChatCompletion').mockResolvedValue('Response');
+
+      await sendChatMessage({
+        conversationHistory: [],
+        userMessage: 'Hello',
+        apiKey: 'test-key',
+        language: 'en',
+        recentEntries: [],
+      });
+
+      const callArgs = vi.mocked(openrouterClient.generateChatCompletion).mock.calls[0];
+      const systemMessage = callArgs[0].find((msg) => msg.role === 'system');
+
+      expect(systemMessage?.content).not.toContain('recent journal entries');
+    });
+
+    it('does not append entries context when recentEntries is undefined', async () => {
+      vi.spyOn(openrouterClient, 'generateChatCompletion').mockResolvedValue('Response');
+
+      await sendChatMessage({
+        conversationHistory: [],
+        userMessage: 'Hello',
+        apiKey: 'test-key',
+        language: 'en',
+      });
+
+      const callArgs = vi.mocked(openrouterClient.generateChatCompletion).mock.calls[0];
+      const systemMessage = callArgs[0].find((msg) => msg.role === 'system');
+
+      expect(systemMessage?.content).not.toContain('recent journal entries');
+    });
   });
 
   describe('generateInitialMessage', () => {
