@@ -13,6 +13,9 @@ npm run test:ui             # Run tests with Vitest UI
 npm run test:watch          # Run tests in watch mode
 npm run test:ci             # Run full CI check: lint + typecheck + tests
 npm run test:openrouter-key # Test OpenRouter API key validation
+npm run test:e2e            # Run Playwright E2E tests
+npm run test:e2e:ui         # Run Playwright E2E with UI
+npm run test:e2e:full       # Run E2E against Firebase emulators
 ```
 
 To run a single test file:
@@ -34,7 +37,8 @@ npm run typecheck           # Run TypeScript type checking
 
 ### Build & Development
 ```bash
-npm run dev                 # Start development server (localhost:3000)
+NEXT_PUBLIC_STORAGE_BACKEND=local npm run dev  # Local mode (no Firebase)
+npm run dev                 # Firebase mode (requires .env.local)
 npm run build               # Production build (requires NODE_ENV=production)
 npm run start               # Start production server
 ```
@@ -71,6 +75,13 @@ users/{userId}/
 - `conversationHistory`: ChatMessage[] - AI conversation
 - `conversationSummary`: ConversationSummary - AI-generated summary
 - `linkedEntryIds`: string[] - references to other entries
+
+**Entry kinds** (`src/utils/entry-kind.ts`):
+```ts
+type EntryKind = 'text' | 'draft' | 'conversation';
+getEntryKind(entry) // returns 'draft' | 'conversation' | 'text'
+```
+Prefer `getEntryKind(entry) === 'draft'` over raw `entry.isDraft` checks.
 
 ### StorageBackend Abstraction
 
@@ -144,6 +155,14 @@ All AI services use the OpenRouter SDK and handle streaming responses.
 - Feature-specific hooks extract complex logic from components
 - Examples: `use-entry-analysis.tsx`, `use-summary-operations.tsx`, `use-entry-linking.tsx`, `use-message-editing.tsx`
 
+### App Handlers
+
+`src/app/handlers/journal-handlers.ts` — business logic layer between components and `StorageBackend`:
+- `saveConversationDraft` — upsert a chat draft (pass `forceCreate: true` when restoring a deleted draft)
+- `deleteDraft` — remove a draft
+- `saveConversationSummary` — promote a draft to a conversation entry
+- `analyzeEntryContent` — trigger AI analysis
+
 ### API Routes
 
 **Other APIs**:
@@ -170,6 +189,14 @@ All AI services use the OpenRouter SDK and handle streaming responses.
 - Validate data at system boundaries (user input, external APIs)
 - Prefer immutability
 - Never swallow errors silently
+
+### Firebase Abstraction Rule
+**Nothing in `src/components/` or `src/hooks/` may import from `firebase/*`.**
+Firebase types and instances belong only in:
+- `src/firebase/` — Firebase setup and auth
+- `src/repositories/firebase-storage-backend.ts` — Firebase data access
+
+For timestamp handling in components, use `convertTimestampToDate` from `src/utils/journal-utils.ts` or duck-type as `{ toDate(): Date } | Date | string`.
 
 ### Testing Standards
 - Run `npm run test:ci` before committing
