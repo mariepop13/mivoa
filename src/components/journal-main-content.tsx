@@ -36,7 +36,7 @@ export interface EntryState {
   entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   linksVersion: number;
 }
 
@@ -138,6 +138,7 @@ interface ChatContentProps {
   initialConversation: InitialConversation | null;
   setViewMode: (mode: 'chat' | 'summary') => void;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
+  recentEntries: EntryState['recentEntries'];
 }
 
 function ChatContent({
@@ -149,6 +150,7 @@ function ChatContent({
   initialConversation,
   setViewMode,
   selectedEntry,
+  recentEntries,
 }: ChatContentProps): React.JSX.Element {
   return (
     <JournalChat
@@ -160,6 +162,7 @@ function ChatContent({
       initialDraft={initialConversation}
       onViewModeChange={setViewMode}
       draftData={selectedEntry?.isDraft ? selectedEntry : null}
+      recentEntries={recentEntries}
     />
   );
 }
@@ -178,7 +181,7 @@ interface EntryContentProps {
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   selectedEntryData: JournalEntryData | null;
-  recentEntries: Array<{ content: string; title?: string; date: string }>;
+  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
 }
@@ -323,6 +326,7 @@ export function JournalMainContent({
                   initialConversation={initialConversation}
                   setViewMode={setViewMode}
                   selectedEntry={selectedEntry}
+                  recentEntries={recentEntries}
                 />
               ) : (
                 <EntryContent

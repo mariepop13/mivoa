@@ -5,11 +5,13 @@ import { useModel } from '@/context/ModelContext';
 import { sendChatMessage, generateInitialMessage } from '@/ai/services/chat-service';
 import { useMessageEditing } from '@/hooks/use-message-editing';
 import type { ChatMessage } from '@/ai/types/chat';
+import type { RecentEntry } from '@/ai/types/journal';
 
 interface UseChatConversationParams {
   dateKey?: string;
   onDraftSave?: (messages: ChatMessage[], draftId: string | null) => Promise<string | null>;
   onDraftDelete?: (draftId: string) => Promise<void>;
+  recentEntries?: RecentEntry[];
 }
 
 interface UseChatConversationResult {
@@ -32,7 +34,7 @@ const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
 // eslint-disable-next-line max-lines-per-function
 export function useChatConversation(params?: UseChatConversationParams): UseChatConversationResult {
-  const { dateKey, onDraftSave, onDraftDelete } = params || {};
+  const { dateKey, onDraftSave, onDraftDelete, recentEntries } = params || {};
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
   const { selectedModel } = useModel();
@@ -102,6 +104,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     messages,
     onMessagesUpdate: handleMessagesUpdate,
     onDraftSave: handleDraftSave,
+    recentEntries,
   });
 
   useEffect(() => {
@@ -161,6 +164,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
         apiKey,
         language: lang,
         model: selectedModel,
+        recentEntries,
       });
 
       const assistantMessage: ChatMessage = {
@@ -179,7 +183,7 @@ export function useChatConversation(params?: UseChatConversationParams): UseChat
     } finally {
       setIsTyping(false);
     }
-  }, [apiKey, messages, lang, selectedModel, scheduleDraftSave, conversationHistory]);
+  }, [apiKey, messages, lang, selectedModel, recentEntries, scheduleDraftSave, conversationHistory]);
 
   const resetConversation = useCallback(async (): Promise<void> => {
     if (saveTimeoutRef.current) {

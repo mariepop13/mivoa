@@ -4,6 +4,8 @@ export interface RecentEntry {
   content: string;
   title?: string;
   date: string;
+  moods?: string[];
+  themes?: string[];
 }
 
 export interface JournalPrompt {

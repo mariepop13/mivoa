@@ -18,14 +18,42 @@ function sanitizePreviousPrompt(prompt: string): string {
   return sanitized;
 }
 
+export function formatRecentEntriesContext(recentEntries: RecentEntry[], language: 'en' | 'fr'): string {
+  if (recentEntries.length === 0) {
+    return '';
+  }
+
+  let context = language === 'fr'
+    ? `Voici les entrées récentes de l'utilisateur pour contexte :\n\n`
+    : `Here are the user's recent journal entries for context:\n\n`;
+
+  recentEntries.slice(0, MAX_RECENT_ENTRIES_FOR_CONTEXT).forEach((entry, index) => {
+    context += `Entry ${index + 1} (${entry.date}):\n`;
+    if (entry.title) {
+      context += `Title: ${entry.title}\n`;
+    }
+    if (entry.moods && entry.moods.length > 0) {
+      context += `Moods: ${entry.moods.join(', ')}\n`;
+    }
+    if (entry.themes && entry.themes.length > 0) {
+      context += `Themes: ${entry.themes.join(', ')}\n`;
+    }
+    const truncatedContent = entry.content.substring(0, MAX_ENTRY_PREVIEW_LENGTH);
+    const hasMore = entry.content.length > MAX_ENTRY_PREVIEW_LENGTH;
+    context += `Content: ${truncatedContent}${hasMore ? '...' : ''}\n\n`;
+  });
+
+  return context;
+}
+
 export function buildDailyPromptPrompt(
   recentEntries: RecentEntry[],
   language: 'en' | 'fr'
 ): string {
   const dateLocale = language === 'fr' ? fr : enUS;
   const today = format(new Date(), 'EEEE, MMMM d, yyyy', { locale: dateLocale });
-  
-  let prompt = language === 'fr' 
+
+  let prompt = language === 'fr'
     ? `Génère une invite d'écriture personnalisée pour un journal intime pour aujourd'hui (${today}).`
     : `Generate a personalized journaling prompt for today (${today}).`;
 
@@ -33,11 +61,17 @@ export function buildDailyPromptPrompt(
     prompt += language === 'fr'
       ? `\n\nVoici les entrées récentes de l'utilisateur pour contexte (ne mentionne pas ces entrées directement dans l'invite) :\n\n`
       : `\n\nHere are the user's recent entries for context (don't mention these entries directly in the prompt):\n\n`;
-    
+
     recentEntries.slice(0, MAX_RECENT_ENTRIES_FOR_CONTEXT).forEach((entry, index) => {
       prompt += `Entry ${index + 1} (${entry.date}):\n`;
       if (entry.title) {
         prompt += `Title: ${entry.title}\n`;
+      }
+      if (entry.moods && entry.moods.length > 0) {
+        prompt += `Moods: ${entry.moods.join(', ')}\n`;
+      }
+      if (entry.themes && entry.themes.length > 0) {
+        prompt += `Themes: ${entry.themes.join(', ')}\n`;
       }
       const truncatedContent = entry.content.substring(0, MAX_ENTRY_PREVIEW_LENGTH);
       const hasMore = entry.content.length > MAX_ENTRY_PREVIEW_LENGTH;
