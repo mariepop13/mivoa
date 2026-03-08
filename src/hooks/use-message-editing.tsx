@@ -7,11 +7,13 @@ import { useTranslation } from '@/hooks/use-translation';
 import { regenerateFromMessage } from '@/ai/services/chat-service';
 import { truncateConversation } from '@/utils/conversation-utils';
 import type { ChatMessage } from '@/ai/types/chat';
+import type { RecentEntry } from '@/ai/types/journal';
 
 interface UseMessageEditingParams {
   messages: ChatMessage[];
   onMessagesUpdate: (messages: ChatMessage[]) => void;
   onDraftSave?: (messages: ChatMessage[]) => Promise<void>;
+  recentEntries?: RecentEntry[];
 }
 
 interface UseMessageEditingResult {
@@ -28,6 +30,7 @@ export function useMessageEditing({
   messages,
   onMessagesUpdate,
   onDraftSave,
+  recentEntries,
 }: UseMessageEditingParams): UseMessageEditingResult {
   const { apiKey } = useContext(OpenRouterApiKeyContext);
   const { language } = useContext(LanguageContext);
@@ -62,6 +65,7 @@ export function useMessageEditing({
           apiKey,
           language: lang,
           model: selectedModel,
+          recentEntries,
         });
 
         const assistantMessage: ChatMessage = {
@@ -89,7 +93,7 @@ export function useMessageEditing({
         setIsRegenerating(false);
       }
     },
-    [apiKey, lang, selectedModel, onMessagesUpdate, onDraftSave, toast, t]
+    [apiKey, lang, selectedModel, recentEntries, onMessagesUpdate, onDraftSave, toast, t]
   );
 
   const editMessage = useCallback(
