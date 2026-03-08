@@ -11,6 +11,7 @@ import { DraftDeleteDialog } from '@/components/draft-delete-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import type { ChatMessage } from '@/ai/types/chat';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import type { RecentEntry } from '@/ai/types/journal';
 
 const MIN_MESSAGES_FOR_SUMMARY = 2;
 
@@ -29,6 +30,7 @@ interface JournalChatProps {
   initialDraft?: { messages: ChatMessage[]; draftId: string | null; entryId: string | null } | null;
   onViewModeChange?: (mode: 'chat' | 'summary') => void;
   draftData?: (JournalEntryData & { id: string }) | null;
+  recentEntries?: RecentEntry[];
 }
 
 function convertTimestamp(timestamp: Date | Timestamp): Date {
@@ -66,8 +68,8 @@ function useDraftDeletionHandler(
   };
 }
 
-function JournalChatComponent({ 
-  onSummarize, 
+function JournalChatComponent({
+  onSummarize,
   isLoadingSummary = false,
   dateKey,
   onDraftSave,
@@ -75,6 +77,7 @@ function JournalChatComponent({
   initialDraft,
   onViewModeChange,
   draftData,
+  recentEntries,
 }: JournalChatProps): React.JSX.Element {
   const { t } = useTranslation();
   const {
@@ -93,6 +96,7 @@ function JournalChatComponent({
     dateKey,
     onDraftSave,
     onDraftDelete,
+    recentEntries,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentDraftId = initialDraft?.draftId || initialDraft?.entryId || null;
