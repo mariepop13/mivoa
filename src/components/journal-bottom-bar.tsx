@@ -2,6 +2,7 @@
 
 import { CalendarDays, PenLine, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface JournalBottomBarProps {
   onViewModeChange: (mode: 'chat' | 'summary') => void;
@@ -9,20 +10,18 @@ interface JournalBottomBarProps {
   shouldShowChat: boolean;
 }
 
-interface BottomBarTabProps {
+interface NavButtonProps {
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick: () => void;
-  ariaSelected: boolean;
 }
 
-function BottomBarTab({ icon, label, isActive, onClick, ariaSelected }: BottomBarTabProps): React.JSX.Element {
+function NavButton({ icon, label, isActive, onClick }: NavButtonProps): React.JSX.Element {
   return (
     <button
-      role="tab"
       type="button"
-      aria-selected={ariaSelected}
+      aria-current={isActive ? 'page' : undefined}
       onClick={onClick}
       className={cn(
         'flex flex-col items-center justify-center gap-1 flex-1 py-2 px-1 text-xs font-medium transition-colors',
@@ -47,39 +46,36 @@ export function JournalBottomBar({
   onSidebarToggle,
   shouldShowChat,
 }: JournalBottomBarProps): React.JSX.Element {
+  const { t } = useTranslation();
+
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-sm border-t border-border"
-      aria-label="Navigation principale"
+      aria-label={t('bottomNavAriaLabel')}
     >
       <div className="flex items-stretch h-16">
         <button
           type="button"
-          aria-label="Ouvrir les entrées"
           onClick={onSidebarToggle}
           className="flex flex-col items-center justify-center gap-1 flex-1 py-2 px-1 text-xs font-medium transition-colors text-muted-foreground hover:text-foreground"
         >
           <span className="p-1.5 rounded-lg transition-colors">
             <CalendarDays className="h-5 w-5" />
           </span>
-          Entrées
+          {t('bottomNavEntries')}
         </button>
-        <div role="tablist" className="flex flex-1">
-          <BottomBarTab
-            icon={<PenLine className="h-5 w-5" />}
-            label="Journal"
-            isActive={!shouldShowChat}
-            ariaSelected={!shouldShowChat}
-            onClick={() => onViewModeChange('summary')}
-          />
-          <BottomBarTab
-            icon={<Sparkles className="h-5 w-5" />}
-            label="Chat IA"
-            isActive={shouldShowChat}
-            ariaSelected={shouldShowChat}
-            onClick={() => onViewModeChange('chat')}
-          />
-        </div>
+        <NavButton
+          icon={<PenLine className="h-5 w-5" />}
+          label={t('bottomNavJournal')}
+          isActive={!shouldShowChat}
+          onClick={() => onViewModeChange('summary')}
+        />
+        <NavButton
+          icon={<Sparkles className="h-5 w-5" />}
+          label={t('bottomNavChat')}
+          isActive={shouldShowChat}
+          onClick={() => onViewModeChange('chat')}
+        />
       </div>
     </nav>
   );

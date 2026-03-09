@@ -9,40 +9,40 @@ describe('JournalBottomBar', () => {
     shouldShowChat: false,
   };
 
-  it('renders 3 navigation items', () => {
+  it('renders 3 navigation buttons', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /ouvrir les entrées/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /journal/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /chat/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /entr/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /journal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /chat/i })).toBeInTheDocument();
   });
 
-  it('calls onSidebarToggle when Entrées button is clicked', () => {
+  it('calls onSidebarToggle when Entries button is clicked', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: /ouvrir les entrées/i }));
+    fireEvent.click(screen.getByRole('button', { name: /entr/i }));
     expect(defaultProps.onSidebarToggle).toHaveBeenCalledOnce();
   });
 
-  it('calls onViewModeChange with summary when Journal tab is clicked', () => {
+  it('calls onViewModeChange with summary when Journal button is clicked', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('tab',{ name: /journal/i }));
+    fireEvent.click(screen.getByRole('button', { name: /journal/i }));
     expect(defaultProps.onViewModeChange).toHaveBeenCalledWith('summary');
   });
 
-  it('calls onViewModeChange with chat when Chat tab is clicked', () => {
+  it('calls onViewModeChange with chat when Chat button is clicked', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('tab',{ name: /chat/i }));
+    fireEvent.click(screen.getByRole('button', { name: /chat/i }));
     expect(defaultProps.onViewModeChange).toHaveBeenCalledWith('chat');
   });
 
-  it('shows Journal tab as active when shouldShowChat is false', () => {
+  it('shows Journal button as active when shouldShowChat is false', () => {
     render(<JournalBottomBar {...defaultProps} shouldShowChat={false} />);
-    const journalTab = screen.getByRole('tab',{ name: /journal/i });
-    expect(journalTab).toHaveAttribute('aria-selected', 'true');
+    const journalBtn = screen.getByRole('button', { name: /journal/i });
+    expect(journalBtn).toHaveAttribute('aria-current', 'page');
   });
 
-  it('shows Chat tab as active when shouldShowChat is true', () => {
+  it('shows Chat button as active when shouldShowChat is true', () => {
     render(<JournalBottomBar {...defaultProps} shouldShowChat={true} />);
-    const chatTab = screen.getByRole('tab',{ name: /chat/i });
-    expect(chatTab).toHaveAttribute('aria-selected', 'true');
+    const chatBtn = screen.getByRole('button', { name: /chat/i });
+    expect(chatBtn).toHaveAttribute('aria-current', 'page');
   });
 });
