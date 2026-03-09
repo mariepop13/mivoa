@@ -24,9 +24,9 @@ export function EntryContentForm({
   const { t } = useTranslation();
 
   return (
-    <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8">
+    <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 max-w-3xl w-full mx-auto">
       {title && (
-        <div className="pt-5 sm:pt-6 lg:pt-8 pb-5 sm:pb-6 lg:pb-8 border-b border-border/60">
+        <div className="pt-6 sm:pt-8 lg:pt-10 pb-6 sm:pb-8 lg:pb-10 border-b border-border/40">
           <h2 className="text-lg sm:text-xl lg:text-2xl font-headline font-semibold text-foreground">
             <ReactMarkdown
               components={{
