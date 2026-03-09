@@ -23,16 +23,6 @@ function EntryStatusBadge({ entryKind }: { entryKind: EntryKind }): React.JSX.El
       </span>
     );
   }
-  if (entryKind === 'conversation') {
-    return (
-      <span
-        data-testid="entry-status-badge"
-        className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary/20 text-secondary dark:bg-secondary/20 dark:text-secondary"
-      >
-        conversation
-      </span>
-    );
-  }
   return null;
 }
 

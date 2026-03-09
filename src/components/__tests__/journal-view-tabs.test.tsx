@@ -19,9 +19,8 @@ describe('JournalViewTabs', () => {
     expect(screen.getByTestId('entry-status-badge')).toHaveTextContent(/brouillon|draft/i);
   });
 
-  it('shows conversation badge when entryKind is conversation', () => {
+  it('shows no badge when entryKind is conversation', () => {
     render(<JournalViewTabs {...defaultProps} entryKind="conversation" />);
-    expect(screen.getByTestId('entry-status-badge')).toBeInTheDocument();
-    expect(screen.getByTestId('entry-status-badge')).toHaveTextContent(/conversation/i);
+    expect(screen.queryByTestId('entry-status-badge')).toBeNull();
   });
 });
