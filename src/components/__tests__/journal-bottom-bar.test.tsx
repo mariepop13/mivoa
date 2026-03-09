@@ -9,16 +9,16 @@ describe('JournalBottomBar', () => {
     shouldShowChat: false,
   };
 
-  it('renders 3 navigation tabs', () => {
+  it('renders 3 navigation items', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    expect(screen.getByRole('tab',{ name: /entrées/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab',{ name: /journal/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab',{ name: /chat/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ouvrir les entrées/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /journal/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /chat/i })).toBeInTheDocument();
   });
 
-  it('calls onSidebarToggle when Entrées tab is clicked', () => {
+  it('calls onSidebarToggle when Entrées button is clicked', () => {
     render(<JournalBottomBar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('tab',{ name: /entrées/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir les entrées/i }));
     expect(defaultProps.onSidebarToggle).toHaveBeenCalledOnce();
   });
 

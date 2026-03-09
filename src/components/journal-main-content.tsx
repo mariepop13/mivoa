@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { JournalChat } from '@/components/journal-chat';
 import { JournalBottomBar } from '@/components/journal-bottom-bar';
@@ -276,8 +277,14 @@ export function JournalMainContent({
   });
 
   const entryKind = selectedEntry ? getEntryKind(selectedEntry) : undefined;
-  const initialConversation = getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry);
-  const onDraftSaveWrapper = createDraftSaveWrapper(handleSaveDraft, initialConversation);
+  const initialConversation = useMemo(
+    () => getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry),
+    [isDraftSelected, isConversationEntrySelected, selectedEntry]
+  );
+  const onDraftSaveWrapper = useMemo(
+    () => createDraftSaveWrapper(handleSaveDraft, initialConversation),
+    [handleSaveDraft, initialConversation]
+  );
 
   return (
     <div className="flex-1 flex flex-col bg-background">
@@ -300,9 +307,11 @@ export function JournalMainContent({
                 "flex-1 flex flex-col overflow-hidden",
                 "transition-opacity duration-200 ease-in-out"
               )}
-              role="tabpanel"
-              id={shouldShowChat ? "chat-panel" : "summary-panel"}
-              aria-labelledby={shouldShowChat ? "chat-tab" : "summary-tab"}
+              {...(shouldShowTabs && {
+                role: "tabpanel",
+                id: shouldShowChat ? "chat-panel" : "summary-panel",
+                'aria-labelledby': shouldShowChat ? "chat-tab" : "summary-tab",
+              })}
             >
               {shouldShowChat ? (
                 <ChatContent

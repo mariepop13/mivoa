@@ -13,13 +13,14 @@ interface JournalViewTabsProps {
 }
 
 function EntryStatusBadge({ entryKind }: { entryKind: EntryKind }): React.JSX.Element | null {
+  const { t } = useTranslation();
   if (entryKind === 'draft') {
     return (
       <span
         data-testid="entry-status-badge"
         className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
       >
-        brouillon
+        {t('draft')}
       </span>
     );
   }

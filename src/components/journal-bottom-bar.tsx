@@ -14,7 +14,7 @@ interface BottomBarTabProps {
   label: string;
   isActive: boolean;
   onClick: () => void;
-  ariaSelected?: boolean;
+  ariaSelected: boolean;
 }
 
 function BottomBarTab({ icon, label, isActive, onClick, ariaSelected }: BottomBarTabProps): React.JSX.Element {
@@ -52,28 +52,34 @@ export function JournalBottomBar({
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-sm border-t border-border"
       aria-label="Navigation principale"
     >
-      <div role="tablist" className="flex items-stretch h-16">
-        <BottomBarTab
-          icon={<CalendarDays className="h-5 w-5" />}
-          label="Entrées"
-          isActive={false}
-          ariaSelected={undefined}
+      <div className="flex items-stretch h-16">
+        <button
+          type="button"
+          aria-label="Ouvrir les entrées"
           onClick={onSidebarToggle}
-        />
-        <BottomBarTab
-          icon={<PenLine className="h-5 w-5" />}
-          label="Journal"
-          isActive={!shouldShowChat}
-          ariaSelected={!shouldShowChat}
-          onClick={() => onViewModeChange('summary')}
-        />
-        <BottomBarTab
-          icon={<Sparkles className="h-5 w-5" />}
-          label="Chat IA"
-          isActive={shouldShowChat}
-          ariaSelected={shouldShowChat}
-          onClick={() => onViewModeChange('chat')}
-        />
+          className="flex flex-col items-center justify-center gap-1 flex-1 py-2 px-1 text-xs font-medium transition-colors text-muted-foreground hover:text-foreground"
+        >
+          <span className="p-1.5 rounded-lg transition-colors">
+            <CalendarDays className="h-5 w-5" />
+          </span>
+          Entrées
+        </button>
+        <div role="tablist" className="flex flex-1">
+          <BottomBarTab
+            icon={<PenLine className="h-5 w-5" />}
+            label="Journal"
+            isActive={!shouldShowChat}
+            ariaSelected={!shouldShowChat}
+            onClick={() => onViewModeChange('summary')}
+          />
+          <BottomBarTab
+            icon={<Sparkles className="h-5 w-5" />}
+            label="Chat IA"
+            isActive={shouldShowChat}
+            ariaSelected={shouldShowChat}
+            onClick={() => onViewModeChange('chat')}
+          />
+        </div>
       </div>
     </nav>
   );
