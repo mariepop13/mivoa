@@ -33,7 +33,6 @@ export interface EntryState {
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   selectedEntryData: JournalEntryData | null;
-  entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
   recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
@@ -69,10 +68,6 @@ interface JournalMainContentProps {
   save: SaveState;
   conversation: ConversationState;
   dateKey: string;
-  getEntryTitle: (
-    entry: (JournalEntryData & { id: string }) | undefined,
-    allEntries: (JournalEntryData & { id: string })[] | null
-  ) => string;
   onSidebarToggle: () => void;
 }
 
@@ -238,7 +233,6 @@ export function JournalMainContent({
   save,
   conversation,
   dateKey,
-  getEntryTitle,
   onSidebarToggle,
 }: JournalMainContentProps): React.JSX.Element {
   const {
@@ -246,7 +240,6 @@ export function JournalMainContent({
     selectedEntryId,
     selectedEntry,
     selectedEntryData,
-    entries,
     content,
     title,
     recentEntries,

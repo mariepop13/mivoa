@@ -12,7 +12,7 @@ import { useJournalEntries } from '@/hooks/use-journal-entries';
 import { useJournalAuth } from '@/hooks/use-journal-auth';
 import { useJournalHandlers } from '@/hooks/use-journal-handlers';
 import { useTemplateConversation } from '@/hooks/use-template-conversation';
-import { formatEntryTime, getEntryTitle } from '@/utils/journal-utils';
+import { formatEntryTime } from '@/utils/journal-utils';
 import { parseEntryDate } from '@/utils/entry-linking-utils';
 import type { EntryTemplate } from '@/hooks/use-entry-templates';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
@@ -84,7 +84,6 @@ function buildSidebarProps({
 function buildMainContentProps({
   selectedDate,
   journalEntries,
-  isSidebarOpen,
   setIsSidebarOpen,
   handlers,
   onDateChange: _onDateChange,
@@ -94,7 +93,6 @@ function buildMainContentProps({
 }: {
   selectedDate: Date;
   journalEntries: ReturnType<typeof useJournalEntries>;
-  isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   handlers: ReturnType<typeof useJournalHandlers>;
   onDateChange: (date: Date) => void;
@@ -108,7 +106,6 @@ function buildMainContentProps({
       selectedEntryId: journalEntries.selectedEntryId,
       selectedEntry: journalEntries.selectedEntry,
       selectedEntryData: journalEntries.selectedEntryData,
-      entries: journalEntries.entries,
       content: journalEntries.content,
       title: journalEntries.title,
       recentEntries: journalEntries.recentEntries,
@@ -135,9 +132,7 @@ function buildMainContentProps({
       conversationEntryForDate: journalEntries.conversationEntryForDate,
     },
     dateKey: format(selectedDate, DATE_KEY_FORMAT),
-    getEntryTitle,
     onSidebarToggle: () => setIsSidebarOpen(true),
-    isSidebarOpen,
   };
 }
 
@@ -222,7 +217,6 @@ function JournalApp(): React.JSX.Element {
   const mainContentProps = buildMainContentProps({
     selectedDate,
     journalEntries,
-    isSidebarOpen,
     setIsSidebarOpen,
     handlers,
     onDateChange: setSelectedDate,
