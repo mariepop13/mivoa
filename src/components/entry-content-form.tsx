@@ -24,9 +24,9 @@ export function EntryContentForm({
   const { t } = useTranslation();
 
   return (
-    <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8">
+    <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 max-w-3xl w-full mx-auto">
       {title && (
-        <div className="pt-5 sm:pt-6 lg:pt-8 pb-5 sm:pb-6 lg:pb-8 border-b border-border/60">
+        <div className="pt-6 sm:pt-8 lg:pt-10 pb-6 sm:pb-8 lg:pb-10 border-b border-border/40">
           <h2 className="text-lg sm:text-xl lg:text-2xl font-headline font-semibold text-foreground">
             <ReactMarkdown
               components={{
@@ -55,9 +55,11 @@ export function EntryContentForm({
           value={content}
           onChange={(e) => onContentChange(e.target.value)}
           placeholder={t('writeYourThoughts')}
-          className="flex-1 w-full resize-none bg-transparent text-foreground 
-            placeholder:text-muted-foreground/60 focus:outline-none text-base sm:text-lg
-            leading-[1.75] font-serif py-2"
+          aria-label={t('writeYourThoughts')}
+          className="flex-1 w-full resize-none bg-transparent text-foreground
+            placeholder:text-muted-foreground/50 focus:outline-none focus-visible:ring-1
+            focus-visible:ring-ring text-base sm:text-[1.125rem]
+            leading-[1.85] font-serif py-2 tracking-[0.01em]"
           style={{ minHeight: TEXTAREA_MIN_HEIGHT }}
         />
         <div className="mt-2">

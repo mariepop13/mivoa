@@ -1,14 +1,16 @@
 'use client';
 
+import { useMemo } from 'react';
 import { JournalEntry } from '@/components/journal-entry';
 import { JournalChat } from '@/components/journal-chat';
-import { JournalMobileHeader } from '@/components/journal-mobile-header';
+import { JournalBottomBar } from '@/components/journal-bottom-bar';
 import { JournalViewTabs } from '@/components/journal-view-tabs';
 import type { JournalEntryData } from '@/hooks/use-journal-entries';
 import { useViewMode } from '@/hooks/use-view-mode';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
 import { convertTimestampToDate } from '@/utils/journal-utils';
+import { getEntryKind } from '@/utils/entry-kind';
 
 function mapConversationHistory(
   conversationHistory: Array<{
@@ -32,7 +34,6 @@ export interface EntryState {
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   selectedEntryData: JournalEntryData | null;
-  entries: (JournalEntryData & { id: string })[] | null;
   content: string;
   title: string;
   recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
@@ -68,12 +69,7 @@ interface JournalMainContentProps {
   save: SaveState;
   conversation: ConversationState;
   dateKey: string;
-  getEntryTitle: (
-    entry: (JournalEntryData & { id: string }) | undefined,
-    allEntries: (JournalEntryData & { id: string })[] | null
-  ) => string;
   onSidebarToggle: () => void;
-  isSidebarOpen: boolean;
 }
 
 interface InitialConversation {
@@ -238,16 +234,13 @@ export function JournalMainContent({
   save,
   conversation,
   dateKey,
-  getEntryTitle,
   onSidebarToggle,
-  isSidebarOpen,
 }: JournalMainContentProps): React.JSX.Element {
   const {
     selectedDate,
     selectedEntryId,
     selectedEntry,
     selectedEntryData,
-    entries,
     content,
     title,
     recentEntries,
@@ -283,17 +276,19 @@ export function JournalMainContent({
     selectedEntry,
   });
 
-  const initialConversation = getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry);
-  const onDraftSaveWrapper = createDraftSaveWrapper(handleSaveDraft, initialConversation);
+  const entryKind = selectedEntry ? getEntryKind(selectedEntry) : undefined;
+  const initialConversation = useMemo(
+    () => getInitialConversation(isDraftSelected, isConversationEntrySelected, selectedEntry),
+    [isDraftSelected, isConversationEntrySelected, selectedEntry]
+  );
+  const onDraftSaveWrapper = useMemo(
+    () => createDraftSaveWrapper(handleSaveDraft, initialConversation),
+    [handleSaveDraft, initialConversation]
+  );
 
   return (
     <div className="flex-1 flex flex-col bg-background">
-      <JournalMobileHeader
-        title={getEntryTitle(selectedEntry, entries)}
-        onSidebarToggle={onSidebarToggle}
-        isSidebarOpen={isSidebarOpen}
-      />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
         <div className="max-w-5xl mx-auto p-4 sm:p-5 lg:p-8 w-full">
           {shouldShowTabs && (
             <div className="mb-4 sm:mb-5 lg:mb-6 flex items-center justify-center">
@@ -301,6 +296,7 @@ export function JournalMainContent({
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
                 className="w-full sm:w-auto"
+                entryKind={entryKind}
               />
             </div>
           )}
@@ -311,9 +307,11 @@ export function JournalMainContent({
                 "flex-1 flex flex-col overflow-hidden",
                 "transition-opacity duration-200 ease-in-out"
               )}
-              role="tabpanel"
-              id={shouldShowChat ? "chat-panel" : "summary-panel"}
-              aria-labelledby={shouldShowChat ? "chat-tab" : "summary-tab"}
+              {...(shouldShowTabs && {
+                role: "tabpanel",
+                id: shouldShowChat ? "chat-panel" : "summary-panel",
+                'aria-labelledby': shouldShowChat ? "chat-tab" : "summary-tab",
+              })}
             >
               {shouldShowChat ? (
                 <ChatContent
@@ -351,6 +349,11 @@ export function JournalMainContent({
           </div>
         </div>
       </div>
+      <JournalBottomBar
+        onViewModeChange={setViewMode}
+        onSidebarToggle={onSidebarToggle}
+        shouldShowChat={shouldShowChat}
+      />
     </div>
   );
 }

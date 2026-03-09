@@ -3,22 +3,40 @@
 import { MessageSquare, FileText } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
+import type { EntryKind } from '@/utils/entry-kind';
 
 interface JournalViewTabsProps {
   viewMode: 'chat' | 'summary';
   onViewModeChange: (mode: 'chat' | 'summary') => void;
   className?: string;
+  entryKind?: EntryKind;
 }
 
-export function JournalViewTabs({ 
-  viewMode, 
+function EntryStatusBadge({ entryKind }: { entryKind: EntryKind }): React.JSX.Element | null {
+  const { t } = useTranslation();
+  if (entryKind === 'draft') {
+    return (
+      <span
+        data-testid="entry-status-badge"
+        className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+      >
+        {t('draft')}
+      </span>
+    );
+  }
+  return null;
+}
+
+export function JournalViewTabs({
+  viewMode,
   onViewModeChange,
-  className 
+  className,
+  entryKind,
 }: JournalViewTabsProps): React.JSX.Element {
   const { t } = useTranslation();
 
   return (
-    <div 
+    <div
       className={cn(
         "flex items-center gap-1 p-1 sm:p-1.5 bg-muted/50 rounded-lg sm:rounded-lg border border-border/50",
         className
@@ -61,8 +79,8 @@ export function JournalViewTabs({
       >
         <MessageSquare className="h-4 w-4 shrink-0" />
         <span className="whitespace-nowrap">{t('conversation')}</span>
+        {entryKind && entryKind !== 'text' && <EntryStatusBadge entryKind={entryKind} />}
       </button>
     </div>
   );
 }
-
