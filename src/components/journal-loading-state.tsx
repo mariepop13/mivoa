@@ -7,7 +7,7 @@ export function JournalLoadingState(): React.JSX.Element {
 
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <div className="text-muted-foreground">{t('loading')}</div>
+      <div role="status" className="text-muted-foreground">{t('loading')}</div>
     </main>
   );
 }

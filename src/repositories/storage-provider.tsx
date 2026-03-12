@@ -90,9 +90,9 @@ export function useAllEntries(): { data: Entry[] | null; isLoading: boolean } {
 }
 
 export function useSettings(): { data: Settings | null; isLoading: boolean } {
-  const { backend, user } = useStorage();
+  const { backend, user, isUserLoading } = useStorage();
   const [data, setData] = useState<Settings | null | undefined>(() => {
-    if (!backend || !user) return null;
+    if (!backend || isUserLoading || !user) return undefined;
     let syncData: Settings | null | undefined = undefined;
     const unsub = backend.subscribeToSettings((d) => { syncData = d; });
     unsub();
