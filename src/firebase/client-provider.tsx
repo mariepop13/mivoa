@@ -4,6 +4,7 @@ import { useMemo, useEffect, useState, type ReactNode } from 'react';
 import { FirebaseProvider, initializeFirebase } from '@/firebase';
 import { StorageProvider } from '@/repositories/storage-provider';
 import { createBackend } from '@/repositories/create-backend';
+import { LocalStorageBackend } from '@/repositories/local-storage-backend';
 import type { StorageBackend } from '@/repositories/storage-backend';
 
 function reportProductionError(error: unknown): void {
@@ -53,7 +54,9 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }): R
   const [backend, setBackend] = useState<StorageBackend | null>(null);
 
   useEffect(() => {
-    createBackend().then(setBackend);
+    createBackend()
+      .then(setBackend)
+      .catch(() => setBackend(new LocalStorageBackend()));
   }, []);
 
   const firebaseProvider = firebaseServices ? (
@@ -84,4 +87,3 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }): R
     </StorageProvider>
   );
 }
-

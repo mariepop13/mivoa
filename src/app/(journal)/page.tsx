@@ -23,7 +23,6 @@ interface UseJournalEffectsParams {
   selectedDate: Date;
   setContent: (content: string) => void;
   setTitle: (title: string) => void;
-  setSelectedEntryId: (id: string | null) => void;
   selectedEntryData: JournalEntryData | null;
 }
 
@@ -31,14 +30,12 @@ function useJournalEffects({
   selectedDate,
   setContent,
   setTitle,
-  setSelectedEntryId,
   selectedEntryData,
 }: UseJournalEffectsParams): void {
   useEffect(() => {
     setContent('');
     setTitle('');
-    setSelectedEntryId(null);
-  }, [selectedDate, setContent, setTitle, setSelectedEntryId]);
+  }, [selectedDate, setContent, setTitle]);
 
   useEffect(() => {
     if (selectedEntryData && selectedEntryData.content !== undefined) {
@@ -166,7 +163,6 @@ function JournalApp(): React.JSX.Element {
     selectedDate,
     setContent,
     setTitle,
-    setSelectedEntryId,
     selectedEntryData,
   });
 
@@ -174,6 +170,11 @@ function JournalApp(): React.JSX.Element {
     journalEntries,
     setIsSidebarOpen,
   });
+
+  const handleDateChange = useCallback((date: Date) => {
+    setSelectedDate(date);
+    setSelectedEntryId(null);
+  }, [setSelectedEntryId]);
 
   const handleTemplateSelect = useCallback((template: EntryTemplate) => {
     setSelectedTemplate(template);
@@ -189,8 +190,7 @@ function JournalApp(): React.JSX.Element {
   );
 
   const handleNavigateToEntry = useCallback((entry: JournalEntryData & { id: string }) => {
-    const entryDate = parseEntryDate(entry.date);
-    setSelectedDate(entryDate);
+    setSelectedDate(parseEntryDate(entry.date));
     setSelectedEntryId(entry.id);
   }, [setSelectedEntryId]);
 
@@ -211,7 +211,7 @@ function JournalApp(): React.JSX.Element {
     setIsSidebarOpen,
     handlers,
     handleTemplateSelect,
-    onDateChange: setSelectedDate,
+    onDateChange: handleDateChange,
   });
 
   const mainContentProps = buildMainContentProps({
