@@ -200,7 +200,7 @@ function JournalApp(): React.JSX.Element {
     setLinksVersion((v) => v + 1);
   }, []);
 
-  if (authState.authLoading || journalEntries.entriesLoading) {
+  if (authState.authLoading) {
     return <JournalLoadingState />;
   }
 
