@@ -52,7 +52,11 @@ describe('TemplatePromptDialog', () => {
           isLoading: false,
         }}
       >
-        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
           <TemplatePromptDialog
             open={open}
             onOpenChange={mockOnOpenChange}
@@ -178,7 +182,11 @@ describe('TemplatePromptDialog', () => {
           isLoading: false,
         }}
       >
-        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
           <TemplatePromptDialog
             open={false}
             onOpenChange={mockOnOpenChange}
@@ -202,7 +210,11 @@ describe('TemplatePromptDialog', () => {
           isLoading: false,
         }}
       >
-        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
           <TemplatePromptDialog
             open={true}
             onOpenChange={mockOnOpenChange}
@@ -236,7 +248,11 @@ describe('TemplatePromptDialog', () => {
           isLoading: false,
         }}
       >
-        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'] }}>
+        <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
           <TemplatePromptDialog
             open={true}
             onOpenChange={mockOnOpenChange}

@@ -12,7 +12,7 @@ describe('ChatTypingIndicator', () => {
   it('should render three animated dots', () => {
     const { container } = render(<ChatTypingIndicator />);
 
-    const dots = container.querySelectorAll('.animate-pulse');
+    const dots = container.querySelectorAll('.motion-safe\\:animate-pulse');
     expect(dots).toHaveLength(3);
   });
 

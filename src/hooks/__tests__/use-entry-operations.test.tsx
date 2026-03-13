@@ -52,6 +52,7 @@ describe('useEntryOperations', () => {
       subscribeToEntriesByDate: vi.fn(),
       subscribeToEntry: vi.fn(),
       subscribeToAllEntries: vi.fn(),
+      subscribeToEntriesInDateRange: vi.fn(),
       subscribeToSettings: vi.fn(),
       getEntries: vi.fn(),
       createEntry: vi.fn().mockResolvedValue(undefined),

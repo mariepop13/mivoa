@@ -36,6 +36,9 @@ const renderWithContext = (overrides = {}) => {
         language: defaultContexts.language.language as 'en' | 'fr',
         setLanguage: defaultContexts.language.setLanguage,
         supportedLanguages: SUPPORTED_LANGUAGES,
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
       }}
     >
       <OpenRouterApiKeyContext.Provider

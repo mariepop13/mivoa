@@ -51,6 +51,9 @@ describe('DatePicker', () => {
           language,
           setLanguage: vi.fn(),
           supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <DatePicker value={mockDate} onChange={mockOnChange} {...props} />

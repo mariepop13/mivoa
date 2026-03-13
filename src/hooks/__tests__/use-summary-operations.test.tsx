@@ -46,6 +46,9 @@ describe('useSummaryOperations', () => {
           language,
           setLanguage: vi.fn(),
           supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <OpenRouterApiKeyContext.Provider
@@ -77,6 +80,7 @@ describe('useSummaryOperations', () => {
       subscribeToEntriesByDate: vi.fn(),
       subscribeToEntry: vi.fn(),
       subscribeToAllEntries: vi.fn(),
+      subscribeToEntriesInDateRange: vi.fn(),
       subscribeToSettings: vi.fn(),
       getEntries: vi.fn(),
       createEntry: vi.fn(),
