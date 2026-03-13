@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useTranslation } from '../use-translation';
-import { LanguageContext } from '@/context/LanguageContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 vi.mock('@/locales/en.json', () => ({
   default: {
@@ -18,30 +18,27 @@ vi.mock('@/locales/fr.json', () => ({
   },
 }));
 
+const LANGUAGE_STORAGE_KEY = 'mivoa-language';
+
 describe('useTranslation', () => {
-  const mockSetLanguage = vi.fn();
-
-  const renderWithLanguage = (language: 'en' | 'fr') => renderHook(() => useTranslation(), {
-      wrapper: ({ children }) => (
-        <LanguageContext.Provider
-          value={{
-            language,
-            setLanguage: mockSetLanguage,
-            supportedLanguages: ['en', 'fr'],
-          }}
-        >
-          {children}
-        </LanguageContext.Provider>
-      ),
-    });
-
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   afterEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
   });
+
+  const renderWithLanguage = (language: 'en' | 'fr') => {
+    if (language !== 'en') {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    }
+    return renderHook(() => useTranslation(), {
+      wrapper: ({ children }) => <LanguageProvider>{children}</LanguageProvider>,
+    });
+  };
 
   it('should load English translations when language is en', async () => {
     const { result } = renderWithLanguage('en');
@@ -92,6 +89,4 @@ describe('useTranslation', () => {
 
     expect(result.current.isLoading).toBe(true);
   });
-
 });
-
