@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useJournalEntries } from '../use-journal-entries';
-import { useStorage, useEntriesByDate, useEntry, useAllEntries } from '@/repositories/storage-provider';
+import { useStorage, useEntriesByDate, useEntry, useEntriesInDateRange } from '@/repositories/storage-provider';
 import { LanguageContext, SUPPORTED_LANGUAGES } from '@/context/LanguageContext';
 import { OpenRouterApiKeyContext } from '@/context/OpenRouterApiKeyContext';
 import { ModelContext } from '@/context/ModelContext';
@@ -14,7 +14,7 @@ vi.mock('@/repositories/storage-provider', () => ({
   useStorage: vi.fn(),
   useEntriesByDate: vi.fn(),
   useEntry: vi.fn(),
-  useAllEntries: vi.fn(),
+  useEntriesInDateRange: vi.fn(),
 }));
 vi.mock('@/app/handlers/journal-handlers');
 vi.mock('@/ai/services/conversation-summary-service');
@@ -28,7 +28,11 @@ let mockBackend: StorageBackend;
 const mockDate = new Date('2024-01-15');
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+  <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES,
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
     <OpenRouterApiKeyContext.Provider value={{ apiKey: 'test-key', setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
       <ModelContext.Provider value={{ selectedModel: 'test-model', setSelectedModel: vi.fn(), isLoading: false }}>
         {children}
@@ -45,6 +49,7 @@ describe('useJournalEntries', () => {
       subscribeToEntriesByDate: vi.fn(),
       subscribeToEntry: vi.fn(),
       subscribeToAllEntries: vi.fn(),
+      subscribeToEntriesInDateRange: vi.fn(),
       subscribeToSettings: vi.fn(),
       getEntries: vi.fn(),
       createEntry: vi.fn().mockResolvedValue(undefined),
@@ -61,7 +66,7 @@ describe('useJournalEntries', () => {
       isUserLoading: false,
     });
     vi.mocked(useEntriesByDate).mockReturnValue({ data: null, isLoading: false });
-    vi.mocked(useAllEntries).mockReturnValue({ data: null, isLoading: false });
+    vi.mocked(useEntriesInDateRange).mockReturnValue({ data: null, isLoading: false });
     vi.mocked(useEntry).mockReturnValue({ data: null, isLoading: false });
     vi.mocked(journalHandlers.generateEntryId).mockReturnValue('test-entry-id');
     vi.mocked(journalHandlers.createEntryDocument).mockResolvedValue(undefined);
@@ -182,7 +187,7 @@ describe('useJournalEntries', () => {
       { id: 'entry-3', content: 'Eight days ago', date: '2024-01-07', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
-    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+    vi.mocked(useEntriesInDateRange).mockReturnValue({ data: allEntries as any, isLoading: false });
 
     const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
 
@@ -206,7 +211,7 @@ describe('useJournalEntries', () => {
       { id: 'entry-3', content: 'Much older', date: '2023-12-01', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
-    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+    vi.mocked(useEntriesInDateRange).mockReturnValue({ data: allEntries as any, isLoading: false });
 
     const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
 
@@ -228,7 +233,7 @@ describe('useJournalEntries', () => {
       { id: 'draft-1', content: 'Draft entry', date: '2024-01-13', isDraft: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
-    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+    vi.mocked(useEntriesInDateRange).mockReturnValue({ data: allEntries as any, isLoading: false });
 
     const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
 
@@ -249,7 +254,7 @@ describe('useJournalEntries', () => {
       { id: 'other-entry', content: 'Other', date: '2024-01-13', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
-    vi.mocked(useAllEntries).mockReturnValue({ data: allEntries as any, isLoading: false });
+    vi.mocked(useEntriesInDateRange).mockReturnValue({ data: allEntries as any, isLoading: false });
 
     const { result } = renderHook(() => useJournalEntries({ selectedDate: today }), { wrapper });
 

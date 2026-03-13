@@ -130,6 +130,28 @@ export class FirebaseStorageBackend implements StorageBackend {
     );
   }
 
+  subscribeToEntriesInDateRange(fromKey: string, toKey: string, callback: (entries: Entry[]) => void): Unsubscribe {
+    if (!this.currentUser) { callback([]); return () => {}; }
+    const uid = this.currentUser.uid;
+    const ref = query(
+      collection(this.firestore, `users/${uid}/entries`),
+      where('date', '>=', fromKey),
+      where('date', '<=', toKey)
+    );
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        callback(snapshot.docs.map((d) =>
+          firestoreDocToEntry(d.id, d.data() as Record<string, unknown>)
+        ));
+      },
+      (error) => {
+        console.error('subscribeToEntriesInDateRange error:', error);
+        callback([]);
+      }
+    );
+  }
+
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe {
     if (!this.currentUser) { callback(null); return () => {}; }
     const uid = this.currentUser.uid;

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect, startTransition } from 'react';
-import { useStorage, useEntriesByDate, useEntry, useAllEntries } from '@/repositories/storage-provider';
+import { useStorage, useEntriesByDate, useEntry, useEntriesInDateRange } from '@/repositories/storage-provider';
 import { getEntryKind } from '@/utils/entry-kind';
 import { format } from 'date-fns';
 import { useEntryOperations } from './use-entry-operations';
@@ -91,8 +91,14 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
 
+  const sevenDaysAgoKey = useMemo(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - DAYS_TO_LOOK_BACK);
+    return format(d, 'yyyy-MM-dd');
+  }, [selectedDate]);
+
   const { data: entriesRaw, isLoading: entriesLoading } = useEntriesByDate(dateKey);
-  const { data: allEntriesRaw } = useAllEntries();
+  const { data: recentEntriesRaw } = useEntriesInDateRange(sevenDaysAgoKey, dateKey);
 
   const entries = useMemo(() => {
     if (!entriesRaw) return null;
@@ -181,13 +187,9 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
   });
 
   const recentEntries = useMemo(() => {
-    if (!allEntriesRaw) return [];
+    if (!recentEntriesRaw) return [];
 
-    const sevenDaysAgo = new Date(selectedDate);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - DAYS_TO_LOOK_BACK);
-    const sevenDaysAgoKey = format(sevenDaysAgo, 'yyyy-MM-dd');
-
-    return (allEntriesRaw as unknown as (JournalEntryData & { id: string })[])
+    return (recentEntriesRaw as unknown as (JournalEntryData & { id: string })[])
       .filter((entry) => entry.date >= sevenDaysAgoKey && entry.date <= dateKey && entry.id !== selectedEntryId && !entry.isDraft)
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, MAX_RECENT_ENTRIES)
@@ -198,9 +200,12 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
         moods: entry.moods,
         themes: entry.themes,
       }));
-  }, [allEntriesRaw, selectedEntryId, selectedDate, dateKey]);
+  }, [recentEntriesRaw, selectedEntryId, sevenDaysAgoKey, dateKey]);
 
-  const selectedEntry = entries?.find(e => e.id === selectedEntryId);
+  const selectedEntry = useMemo(
+    () => entries?.find(e => e.id === selectedEntryId),
+    [entries, selectedEntryId]
+  );
 
   const draftForDate = useMemo(() => {
     if (!entries) return null;

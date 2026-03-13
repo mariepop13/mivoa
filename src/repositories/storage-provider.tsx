@@ -89,6 +89,18 @@ export function useAllEntries(): { data: Entry[] | null; isLoading: boolean } {
   return { data, isLoading: data === null };
 }
 
+export function useEntriesInDateRange(fromKey: string, toKey: string): { data: Entry[] | null; isLoading: boolean } {
+  const { backend, user } = useStorage();
+  const [data, setData] = useState<Entry[] | null>(null);
+
+  useEffect(() => {
+    if (!backend || !user) return;
+    return backend.subscribeToEntriesInDateRange(fromKey, toKey, setData);
+  }, [backend, user, fromKey, toKey]);
+
+  return { data, isLoading: data === null };
+}
+
 export function useSettings(): { data: Settings | null; isLoading: boolean } {
   const { backend, user, isUserLoading } = useStorage();
   const [data, setData] = useState<Settings | null | undefined>(() => {
