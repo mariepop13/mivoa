@@ -46,7 +46,7 @@ export function SettingsMenu(): React.JSX.Element {
           <Settings2 className="h-[1.2rem] w-[1.2rem]" />
           {!isApiKeyLoading && !apiKey && (
             <span className="absolute top-2 right-2 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
             </span>
           )}

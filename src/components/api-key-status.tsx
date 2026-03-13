@@ -34,6 +34,7 @@ export function ApiKeyStatus({ onReset }: ApiKeyStatusProps): React.JSX.Element 
           onClick={onReset}
           className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
           title={t('resetOpenRouterApiKey')}
+          aria-label={t('resetOpenRouterApiKey')}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>

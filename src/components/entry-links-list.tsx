@@ -126,8 +126,11 @@ export function EntryLinksList({
           {linkedEntries.map((entry) => (
             <div
               key={entry.id}
+              role="button"
+              tabIndex={0}
               className="group relative p-3 rounded-lg border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
               onClick={() => onNavigateToEntry(entry)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigateToEntry(entry); } }}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">

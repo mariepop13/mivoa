@@ -51,6 +51,7 @@ export function ModelSelectionDialog({ open, onOpenChange }: ModelSelectionDialo
           <Input
             type="text"
             placeholder={t('searchModels')}
+            aria-label={t('searchModels')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
