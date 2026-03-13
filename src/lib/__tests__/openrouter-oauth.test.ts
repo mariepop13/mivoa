@@ -155,9 +155,12 @@ describe('openrouter-oauth', () => {
     });
 
     it('should throw error when PKCE data is not found', async () => {
-      mockSessionStorage.getItem.mockReturnValue(null);
+      mockSessionStorage.getItem.mockImplementation((key: string) => {
+        if (key === 'openrouter_oauth_state') return 'stored-state';
+        return null;
+      });
 
-      await expect(exchangeAuthCodeForApiKey('code')).rejects.toThrow('PKCE data not found');
+      await expect(exchangeAuthCodeForApiKey('code', 'stored-state')).rejects.toThrow('PKCE data not found');
     });
 
     it('should throw error when PKCE data is invalid JSON', async () => {
@@ -166,7 +169,7 @@ describe('openrouter-oauth', () => {
         return 'stored-state';
       });
 
-      await expect(exchangeAuthCodeForApiKey('code')).rejects.toThrow('Failed to parse');
+      await expect(exchangeAuthCodeForApiKey('code', 'stored-state')).rejects.toThrow('Failed to parse');
     });
 
     it('should call OpenRouter API with correct parameters', async () => {
@@ -176,7 +179,7 @@ describe('openrouter-oauth', () => {
       };
       vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
-      await exchangeAuthCodeForApiKey('auth-code');
+      await exchangeAuthCodeForApiKey('auth-code', 'stored-state');
 
       expect(fetch).toHaveBeenCalledWith(
         'https://openrouter.ai/api/v1/auth/keys',
@@ -201,7 +204,7 @@ describe('openrouter-oauth', () => {
       };
       vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
-      const result = await exchangeAuthCodeForApiKey('code');
+      const result = await exchangeAuthCodeForApiKey('code', 'stored-state');
 
       expect(result).toBe('api-key-123');
     });
@@ -213,7 +216,7 @@ describe('openrouter-oauth', () => {
       };
       vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
-      await exchangeAuthCodeForApiKey('code');
+      await exchangeAuthCodeForApiKey('code', 'stored-state');
 
       expect(mockSessionStorage.removeItem).toHaveBeenCalledWith('openrouter_oauth_pkce');
       expect(mockSessionStorage.removeItem).toHaveBeenCalledWith('openrouter_oauth_state');
@@ -227,13 +230,13 @@ describe('openrouter-oauth', () => {
       };
       vi.mocked(fetch).mockResolvedValue(mockResponse as Response);
 
-      await expect(exchangeAuthCodeForApiKey('code')).rejects.toThrow('Failed to exchange');
+      await expect(exchangeAuthCodeForApiKey('code', 'stored-state')).rejects.toThrow('Failed to exchange');
     });
 
     it('should handle network errors', async () => {
       vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
 
-      await expect(exchangeAuthCodeForApiKey('code')).rejects.toThrow();
+      await expect(exchangeAuthCodeForApiKey('code', 'stored-state')).rejects.toThrow();
     });
   });
 });

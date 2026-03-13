@@ -64,7 +64,7 @@ function validateAuthCode(code: string): void {
 }
 
 function validateState(state: string | undefined, storedState: string | null): void {
-  if (state && storedState !== state) {
+  if (!state || !storedState || storedState !== state) {
     throw new Error('Invalid state parameter');
   }
 }

@@ -47,7 +47,7 @@ function createErrorResponse(message: string, status: number): NextResponse {
 }
 
 async function verifyFirebaseIdToken(idToken: string): Promise<boolean> {
-  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const firebaseApiKey = process.env.FIREBASE_API_KEY ?? process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!firebaseApiKey) return false;
 
   try {
