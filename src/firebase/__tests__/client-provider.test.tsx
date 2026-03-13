@@ -8,6 +8,20 @@ vi.mock('../index', () => ({
   initializeFirebase: vi.fn(),
 }));
 
+vi.mock('@/repositories/firebase-storage-backend', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  FirebaseStorageBackend: vi.fn(function (this: any) {
+    this.subscribeToAuthState = vi.fn(() => () => {});
+  }),
+}));
+
+vi.mock('@/repositories/local-storage-backend', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  LocalStorageBackend: vi.fn(function (this: any) {
+    this.subscribeToAuthState = vi.fn(() => () => {});
+  }),
+}));
+
 describe('FirebaseClientProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();

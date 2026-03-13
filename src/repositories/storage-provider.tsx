@@ -21,14 +21,23 @@ interface StorageProviderProps {
   children: ReactNode;
 }
 
+function readAuthStateSync(backend: StorageBackend): { user: AppUser | null; isLoading: boolean } {
+  let syncUser: AppUser | null = null;
+  let resolved = false;
+  const unsub = backend.subscribeToAuthState((u) => { syncUser = u; resolved = true; });
+  unsub();
+  return { user: syncUser, isLoading: !resolved };
+}
+
 export function StorageProvider({ backend, children }: StorageProviderProps): React.JSX.Element {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [authState, setAuthState] = useState(() => readAuthStateSync(backend));
+  const { user, isLoading: isUserLoading } = authState;
 
   useEffect(() => {
     const unsubscribe = backend.subscribeToAuthState((authUser) => {
-      setUser(authUser);
-      setIsUserLoading(false);
+      setAuthState((prev) =>
+        prev.user === authUser && !prev.isLoading ? prev : { user: authUser, isLoading: false }
+      );
     });
     return unsubscribe;
   }, [backend]);
@@ -81,13 +90,23 @@ export function useAllEntries(): { data: Entry[] | null; isLoading: boolean } {
 }
 
 export function useSettings(): { data: Settings | null; isLoading: boolean } {
-  const { backend, user } = useStorage();
-  const [data, setData] = useState<Settings | null | undefined>(undefined);
+  const { backend, user, isUserLoading } = useStorage();
+  const [data, setData] = useState<Settings | null | undefined>(() => {
+    if (!backend || isUserLoading || !user) return undefined;
+    let syncData: Settings | null | undefined = undefined;
+    const unsub = backend.subscribeToSettings((d) => { syncData = d; });
+    unsub();
+    return syncData;
+  });
 
   useEffect(() => {
-    if (!backend || !user) { setData(null); return; }
-    return backend.subscribeToSettings(setData);
-  }, [backend, user]);
+    if (!backend) { setData(null); return; }
+    if (isUserLoading) { setData(undefined); return; }
+    if (!user) { setData(null); return; }
+    return backend.subscribeToSettings((d) => {
+      setData((prev) => prev === d ? prev : d);
+    });
+  }, [backend, user, isUserLoading]);
 
   return { data: data ?? null, isLoading: data === undefined };
 }
