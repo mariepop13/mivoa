@@ -100,11 +100,13 @@ export function useSettings(): { data: Settings | null; isLoading: boolean } {
   });
 
   useEffect(() => {
-    if (!backend || !user) { setData(null); return; }
+    if (!backend) { setData(null); return; }
+    if (isUserLoading) { setData(undefined); return; }
+    if (!user) { setData(null); return; }
     return backend.subscribeToSettings((d) => {
       setData((prev) => prev === d ? prev : d);
     });
-  }, [backend, user]);
+  }, [backend, user, isUserLoading]);
 
   return { data: data ?? null, isLoading: data === undefined };
 }

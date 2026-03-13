@@ -51,13 +51,19 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }): R
     () => process.env.NEXT_PUBLIC_STORAGE_BACKEND === 'local' ? null : initializeFirebaseServices(),
     []
   );
-  const [backend, setBackend] = useState<StorageBackend | null>(null);
+  const [backend, setBackend] = useState<StorageBackend | null>(() =>
+    process.env.NEXT_PUBLIC_STORAGE_BACKEND === 'local' ? new LocalStorageBackend() : null
+  );
 
   useEffect(() => {
+    if (backend) return;
     createBackend()
       .then(setBackend)
-      .catch(() => setBackend(new LocalStorageBackend()));
-  }, []);
+      .catch((error) => {
+        console.error('Failed to create storage backend. Falling back to LocalStorageBackend.', error);
+        setBackend(new LocalStorageBackend());
+      });
+  }, [backend]);
 
   const firebaseProvider = firebaseServices ? (
     <FirebaseProvider
