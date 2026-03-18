@@ -105,7 +105,7 @@ async function exchangeCodeWithAPI(code: string, pkce: PKCEPair): Promise<string
 
 export async function exchangeAuthCodeForApiKey(
   code: string,
-  state?: string
+  state: string
 ): Promise<string> {
   validateAuthCode(code);
 

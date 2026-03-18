@@ -75,6 +75,7 @@ export function LanguageProvider({ children }: LanguageProviderProps): React.JSX
   }, []);
 
   useEffect(() => {
+    let isActive = true;
     const loadTranslations = async () => {
       setIsLoading(true);
       setError(null);
@@ -83,23 +84,27 @@ export function LanguageProvider({ children }: LanguageProviderProps): React.JSX
         const module = language === 'fr'
           ? await import('@/locales/fr.json')
           : await import('@/locales/en.json');
+        if (!isActive) return;
         setTranslations(module.default);
       } catch (e) {
+        if (!isActive) return;
         console.error(`Could not load translations for language: ${language}`, e);
         setError(e instanceof Error ? e : new Error('Translation loading failed'));
 
         try {
           const fallbackModule = await import('@/locales/en.json');
+          if (!isActive) return;
           setTranslations(fallbackModule.default);
         } catch (fallbackError) {
           console.error('Failed to load fallback translations', fallbackError);
         }
       } finally {
-        setIsLoading(false);
+        if (isActive) setIsLoading(false);
       }
     };
 
     loadTranslations();
+    return () => { isActive = false; };
   }, [language]);
 
   const setLanguage = useCallback((newLanguage: SupportedLanguage) => {

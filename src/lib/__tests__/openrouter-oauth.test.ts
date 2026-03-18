@@ -133,7 +133,7 @@ describe('openrouter-oauth', () => {
     });
 
     it('should validate code is a non-empty string', async () => {
-      await expect(exchangeAuthCodeForApiKey('')).rejects.toThrow('non-empty string');
+      await expect(exchangeAuthCodeForApiKey('', 'any-state')).rejects.toThrow('non-empty string');
     });
 
     it('should validate state parameter matches stored state', async () => {

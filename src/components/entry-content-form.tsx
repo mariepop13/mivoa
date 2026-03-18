@@ -20,7 +20,13 @@ const EntryTitle = memo(function EntryTitle({ title }: { title: string }) {
   return (
     <div className="pt-6 sm:pt-8 lg:pt-10 pb-6 sm:pb-8 lg:pb-10 border-b border-border/40">
       <h2 className="text-lg sm:text-xl lg:text-2xl font-headline font-semibold text-foreground">
-        <ReactMarkdown components={markdownComponents}>{title}</ReactMarkdown>
+        <ReactMarkdown
+          components={markdownComponents}
+          allowedElements={['p', 'strong', 'em']}
+          unwrapDisallowed
+        >
+          {title}
+        </ReactMarkdown>
       </h2>
     </div>
   );
