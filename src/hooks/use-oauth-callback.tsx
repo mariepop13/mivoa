@@ -44,7 +44,7 @@ async function handleOAuthSuccess(
   state: string | null,
   handlers: OAuthCallbackHandlers
 ): Promise<NodeJS.Timeout> {
-  const apiKey = await exchangeAuthCodeForApiKey(code, state || undefined);
+  const apiKey = await exchangeAuthCodeForApiKey(code, state ?? '');
   await handlers.setApiKey(apiKey);
   handlers.setStatus('success');
   

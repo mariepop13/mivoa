@@ -23,6 +23,9 @@ describe('EntryDateHeader', () => {
           language,
           setLanguage: vi.fn(),
           supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <EntryDateHeader date={mockDate} />
@@ -48,7 +51,7 @@ describe('EntryDateHeader', () => {
   it('should render the formatted date as heading', () => {
     renderWithLanguage('en');
 
-    const heading = screen.getByRole('heading', { level: 1 });
+    const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toBeInTheDocument();
     expect(heading).toHaveTextContent('Monday, January 15, 2024');
   });

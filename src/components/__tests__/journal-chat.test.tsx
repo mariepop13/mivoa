@@ -27,7 +27,11 @@ const mockMessages = [
 ];
 
 const renderWithContext = (props = {}) => render(
-    <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+    <LanguageContext.Provider value={{ language: 'en', setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES,
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
       <JournalChat onSummarize={mockOnSummarize} {...props} />
     </LanguageContext.Provider>
   );

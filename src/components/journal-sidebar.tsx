@@ -90,9 +90,10 @@ export function JournalSidebar({
   return (
     <>
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
       

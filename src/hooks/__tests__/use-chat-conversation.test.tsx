@@ -17,7 +17,11 @@ const mockModel = 'test-model';
 const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
   ({ children }: { children: React.ReactNode }) => (
     <OpenRouterApiKeyContext.Provider value={{ apiKey: 'apiKey' in overrides ? (overrides.apiKey as string | null) : mockApiKey, setApiKey: vi.fn(), resetApiKey: vi.fn(), isLoading: false }}>
-      <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES }}>
+      <LanguageContext.Provider value={{ language: mockLanguage, setLanguage: vi.fn(), supportedLanguages: SUPPORTED_LANGUAGES,
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
+        }}>
         <ModelContext.Provider value={{ selectedModel: mockModel, setSelectedModel: vi.fn(), isLoading: false }}>
           {children}
         </ModelContext.Provider>

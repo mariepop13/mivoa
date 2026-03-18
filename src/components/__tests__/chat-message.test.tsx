@@ -25,6 +25,9 @@ describe('ChatMessage', () => {
           language,
           setLanguage: vi.fn(),
           supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <ChatMessage message={message} messageIndex={0} totalMessages={1} isTyping={false} />

@@ -17,9 +17,9 @@ export function EntryDateHeader({ date }: EntryDateHeaderProps): React.JSX.Eleme
 
   return (
     <div className="mb-6 px-6 pt-6">
-      <h1 className="text-2xl font-headline font-semibold text-foreground mb-2">
+      <h2 className="text-2xl font-headline font-semibold text-foreground mb-2">
         {formattedDate}
-      </h1>
+      </h2>
       <div className="h-px bg-border" />
     </div>
   );

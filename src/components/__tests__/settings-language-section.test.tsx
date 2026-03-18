@@ -32,6 +32,9 @@ describe('SettingsLanguageSection', () => {
           language,
           setLanguage: mockSetLanguage,
           supportedLanguages: SUPPORTED_LANGUAGES,
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <DropdownMenu>

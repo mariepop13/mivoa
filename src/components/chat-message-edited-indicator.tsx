@@ -27,6 +27,7 @@ export function ChatMessageEditedIndicator({
             : 'bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30'
         } cursor-pointer`}
         title={t('viewChanges', 'View changes')}
+        aria-label={t('viewChanges', 'View changes')}
       >
         {t('edited')}
       </button>
@@ -39,6 +40,7 @@ export function ChatMessageEditedIndicator({
               : 'text-muted-foreground hover:text-foreground'
           }`}
           title={t('undoEdit', 'Undo edit')}
+          aria-label={t('undoEdit', 'Undo edit')}
         >
           {t('undo', 'Undo')}
         </button>

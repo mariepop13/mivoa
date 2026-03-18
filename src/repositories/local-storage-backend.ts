@@ -71,6 +71,16 @@ export class LocalStorageBackend implements StorageBackend {
     return () => window.removeEventListener('mivoa:entries:changed', notify);
   }
 
+  subscribeToEntriesInDateRange(fromKey: string, toKey: string, callback: (entries: Entry[]) => void): Unsubscribe {
+    const notify = (): void => {
+      const all = readEntries();
+      callback(Object.values(all).filter((e) => e.date >= fromKey && e.date <= toKey));
+    };
+    notify();
+    window.addEventListener('mivoa:entries:changed', notify);
+    return () => window.removeEventListener('mivoa:entries:changed', notify);
+  }
+
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe {
     const notify = (): void => callback(readSettings());
     notify();

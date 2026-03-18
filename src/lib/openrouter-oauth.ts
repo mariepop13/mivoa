@@ -64,7 +64,7 @@ function validateAuthCode(code: string): void {
 }
 
 function validateState(state: string | undefined, storedState: string | null): void {
-  if (state && storedState !== state) {
+  if (!state || !storedState || storedState !== state) {
     throw new Error('Invalid state parameter');
   }
 }
@@ -105,7 +105,7 @@ async function exchangeCodeWithAPI(code: string, pkce: PKCEPair): Promise<string
 
 export async function exchangeAuthCodeForApiKey(
   code: string,
-  state?: string
+  state: string
 ): Promise<string> {
   validateAuthCode(code);
 

@@ -15,6 +15,12 @@ export interface StorageBackend {
 
   subscribeToAllEntries(callback: (entries: Entry[]) => void): Unsubscribe;
 
+  subscribeToEntriesInDateRange(
+    fromKey: string,
+    toKey: string,
+    callback: (entries: Entry[]) => void
+  ): Unsubscribe;
+
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe;
 
   getEntries(ids: string[]): Promise<Entry[]>;

@@ -45,6 +45,9 @@ describe('JournalEntryActions', () => {
           language: 'en',
           setLanguage: vi.fn(),
           supportedLanguages: ['en', 'fr'],
+          t: (key: string) => key,
+          isLoading: false,
+          error: null,
         }}
       >
         <JournalEntryActions

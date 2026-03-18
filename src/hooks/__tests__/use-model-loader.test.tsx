@@ -51,7 +51,7 @@ const mockModels: OpenRouterModel[] = [
   },
 ];
 
-const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
+const createWrapper = (overrides: { apiKey?: string | null; t?: (key: string) => string } = {}) =>
   ({ children }: { children: React.ReactNode }) => (
     <OpenRouterApiKeyContext.Provider
       value={{
@@ -66,6 +66,9 @@ const createWrapper = (overrides: { apiKey?: string | null } = {}) =>
           language: 'en',
           setLanguage: vi.fn(),
           supportedLanguages: SUPPORTED_LANGUAGES,
+          t: overrides.t ?? ((key: string) => key),
+          isLoading: false,
+          error: null,
         }}
       >
         <ModelContext.Provider
@@ -134,7 +137,8 @@ describe('useModelLoader', () => {
   it('should use translation for error message when error is not an Error instance', async () => {
     vi.mocked(modelService.fetchAvailableModels).mockRejectedValue('String error');
 
-    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper() });
+    const mockT = (key: string) => key === 'errorLoadingModels' ? 'Error loading models' : key;
+    const { result } = renderHook(() => useModelLoader(true), { wrapper: createWrapper({ t: mockT }) });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);

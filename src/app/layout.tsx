@@ -11,15 +11,17 @@ import { Toaster } from '@/components/ui/toaster';
 import { Footer } from '@/components/Footer';
 import { AuthGuard } from '@/components/auth-guard';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
+  display: 'swap',
 });
 const merriweather = Merriweather({
   subsets: ['latin'],
   weight: ['300', '400', '700'],
   variable: '--font-merriweather',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
