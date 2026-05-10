@@ -38,8 +38,13 @@ function writeEntries(entries: Record<string, Entry>): void {
   const storage = getLocalStorage();
   if (!storage) return;
 
-  storage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
-  window.dispatchEvent(new CustomEvent(ENTRIES_CHANGED_EVENT));
+  try {
+    storage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+    window.dispatchEvent(new CustomEvent(ENTRIES_CHANGED_EVENT));
+  } catch (error) {
+    console.error(`Failed to write entries to localStorage (key: ${STORAGE_KEY_ENTRIES}):`, error);
+    throw error;
+  }
 }
 
 function readSettings(): Settings | null {
@@ -58,8 +63,13 @@ function writeSettings(settings: Settings): void {
   const storage = getLocalStorage();
   if (!storage) return;
 
-  storage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-  window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT));
+  try {
+    storage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT));
+  } catch (error) {
+    console.error(`Failed to write settings to localStorage (key: ${STORAGE_KEY_SETTINGS}):`, error);
+    throw error;
+  }
 }
 
 function subscribeToLocalEvent(eventName: string, callback: () => void): Unsubscribe {
