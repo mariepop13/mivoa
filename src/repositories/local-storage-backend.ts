@@ -3,6 +3,8 @@ import type { AppUser, Entry, EntryCreateData, EntryUpdateData, Settings, Unsubs
 
 const STORAGE_KEY_ENTRIES = 'mivoa:local:entries:v1';
 const STORAGE_KEY_SETTINGS = 'mivoa:local:settings:v1';
+const ENTRIES_CHANGED_EVENT = 'mivoa:entries:changed';
+const SETTINGS_CHANGED_EVENT = 'mivoa:settings:changed';
 const LOCAL_USER: AppUser = {
   uid: 'local',
   displayName: 'Local User',
@@ -10,9 +12,22 @@ const LOCAL_USER: AppUser = {
   photoURL: null,
 };
 
-function readEntries(): Record<string, Entry> {
+function getLocalStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_ENTRIES);
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readEntries(): Record<string, Entry> {
+  const storage = getLocalStorage();
+  if (!storage) return {};
+
+  try {
+    const raw = storage.getItem(STORAGE_KEY_ENTRIES);
     return raw ? (JSON.parse(raw) as Record<string, Entry>) : {};
   } catch {
     return {};
@@ -20,13 +35,19 @@ function readEntries(): Record<string, Entry> {
 }
 
 function writeEntries(entries: Record<string, Entry>): void {
-  localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
-  window.dispatchEvent(new CustomEvent('mivoa:entries:changed'));
+  const storage = getLocalStorage();
+  if (!storage) return;
+
+  storage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+  window.dispatchEvent(new CustomEvent(ENTRIES_CHANGED_EVENT));
 }
 
 function readSettings(): Settings | null {
+  const storage = getLocalStorage();
+  if (!storage) return null;
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    const raw = storage.getItem(STORAGE_KEY_SETTINGS);
     return raw ? (JSON.parse(raw) as Settings) : null;
   } catch {
     return null;
@@ -34,8 +55,18 @@ function readSettings(): Settings | null {
 }
 
 function writeSettings(settings: Settings): void {
-  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-  window.dispatchEvent(new CustomEvent('mivoa:settings:changed'));
+  const storage = getLocalStorage();
+  if (!storage) return;
+
+  storage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+  window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT));
+}
+
+function subscribeToLocalEvent(eventName: string, callback: () => void): Unsubscribe {
+  if (typeof window === 'undefined') return () => {};
+
+  window.addEventListener(eventName, callback);
+  return () => window.removeEventListener(eventName, callback);
 }
 
 export class LocalStorageBackend implements StorageBackend {
@@ -50,8 +81,7 @@ export class LocalStorageBackend implements StorageBackend {
       callback(Object.values(all).filter((e) => e.date === dateKey));
     };
     notify();
-    window.addEventListener('mivoa:entries:changed', notify);
-    return () => window.removeEventListener('mivoa:entries:changed', notify);
+    return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
   }
 
   subscribeToEntry(entryId: string, callback: (entry: Entry | null) => void): Unsubscribe {
@@ -60,15 +90,13 @@ export class LocalStorageBackend implements StorageBackend {
       callback(all[entryId] ?? null);
     };
     notify();
-    window.addEventListener('mivoa:entries:changed', notify);
-    return () => window.removeEventListener('mivoa:entries:changed', notify);
+    return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
   }
 
   subscribeToAllEntries(callback: (entries: Entry[]) => void): Unsubscribe {
     const notify = (): void => callback(Object.values(readEntries()));
     notify();
-    window.addEventListener('mivoa:entries:changed', notify);
-    return () => window.removeEventListener('mivoa:entries:changed', notify);
+    return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
   }
 
   subscribeToEntriesInDateRange(fromKey: string, toKey: string, callback: (entries: Entry[]) => void): Unsubscribe {
@@ -77,15 +105,13 @@ export class LocalStorageBackend implements StorageBackend {
       callback(Object.values(all).filter((e) => e.date >= fromKey && e.date <= toKey));
     };
     notify();
-    window.addEventListener('mivoa:entries:changed', notify);
-    return () => window.removeEventListener('mivoa:entries:changed', notify);
+    return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
   }
 
   subscribeToSettings(callback: (settings: Settings | null) => void): Unsubscribe {
     const notify = (): void => callback(readSettings());
     notify();
-    window.addEventListener('mivoa:settings:changed', notify);
-    return () => window.removeEventListener('mivoa:settings:changed', notify);
+    return subscribeToLocalEvent(SETTINGS_CHANGED_EVENT, notify);
   }
 
   async getEntries(ids: string[]): Promise<Entry[]> {

@@ -103,13 +103,7 @@ export function useEntriesInDateRange(fromKey: string, toKey: string): { data: E
 
 export function useSettings(): { data: Settings | null; isLoading: boolean } {
   const { backend, user, isUserLoading } = useStorage();
-  const [data, setData] = useState<Settings | null | undefined>(() => {
-    if (!backend || isUserLoading || !user) return undefined;
-    let syncData: Settings | null | undefined = undefined;
-    const unsub = backend.subscribeToSettings((d) => { syncData = d; });
-    unsub();
-    return syncData;
-  });
+  const [data, setData] = useState<Settings | null | undefined>(undefined);
 
   useEffect(() => {
     if (!backend) { setData(null); return; }
