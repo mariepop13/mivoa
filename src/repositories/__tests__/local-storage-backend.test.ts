@@ -71,4 +71,19 @@ describe('LocalStorageBackend', () => {
 
     expect(settings[0]?.selectedModel).toBe('test-model');
   });
+
+  it('subscriptions are safe when window is unavailable during server rendering', () => {
+    const browserWindow = globalThis.window;
+    vi.stubGlobal('window', undefined);
+
+    try {
+      const settings: (import('../types').Settings | null)[] = [];
+      const unsubscribe = backend.subscribeToSettings((s) => settings.push(s));
+
+      expect(settings).toEqual([null]);
+      expect(unsubscribe).not.toThrow();
+    } finally {
+      vi.stubGlobal('window', browserWindow);
+    }
+  });
 });
