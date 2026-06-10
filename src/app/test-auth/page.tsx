@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore, initiateAnonymousSignIn } from '@/firebase';
+import type { Auth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
+import { FirebaseContext, initiateAnonymousSignIn } from '@/firebase';
 
 export default function TestAuthPage(): React.JSX.Element {
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const firebase = useContext(FirebaseContext);
   const router = useRouter();
   const didRun = useRef(false);
   const [setupError, setSetupError] = useState(false);
@@ -17,21 +18,24 @@ export default function TestAuthPage(): React.JSX.Element {
       router.replace('/');
       return;
     }
+    const auth = firebase?.auth;
+    const firestore = firebase?.firestore;
+
     if (!auth || !firestore || didRun.current) return;
     didRun.current = true;
 
-    async function setup(): Promise<void> {
-      const { user } = await initiateAnonymousSignIn(auth!);
-      const settingsRef = doc(firestore!, `users/${user.uid}/settings/api`);
+    async function setup(authService: Auth, firestoreService: Firestore): Promise<void> {
+      const { user } = await initiateAnonymousSignIn(authService);
+      const settingsRef = doc(firestoreService, `users/${user.uid}/settings/api`);
       await setDoc(settingsRef, { openRouterApiKey: 'test-openrouter-key' });
       router.replace('/');
     }
 
-    setup().catch((error) => {
+    setup(auth, firestore).catch((error) => {
       console.error(error);
       setSetupError(true);
     });
-  }, [auth, firestore, router]);
+  }, [firebase?.auth, firebase?.firestore, router]);
 
   if (setupError) {
     return <div data-testid="test-auth-setup-error">Test auth setup failed.</div>;
