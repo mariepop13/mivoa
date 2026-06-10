@@ -52,15 +52,18 @@ describe('LocalStorageBackend', () => {
     expect(entries).toHaveLength(0);
   });
 
-  it('linkEntries adds ids to both entries', async () => {
+  it('linkEntries creates a bidirectional echo between entries', async () => {
     await backend.createEntry('e1', { content: 'a', date: '2026-01-01' });
     await backend.createEntry('e2', { content: 'b', date: '2026-01-02' });
     await backend.linkEntries('e1', 'e2');
 
     const e1List: import('../types').Entry[] = [];
+    const e2List: import('../types').Entry[] = [];
     backend.subscribeToEntry('e1', (e) => { if (e) e1List.push(e); });
+    backend.subscribeToEntry('e2', (e) => { if (e) e2List.push(e); });
 
     expect(e1List[0].linkedEntryIds).toContain('e2');
+    expect(e2List[0].linkedEntryIds).toContain('e1');
   });
 
   it('updateSettings persists and restores settings', async () => {

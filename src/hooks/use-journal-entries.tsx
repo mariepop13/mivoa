@@ -49,6 +49,8 @@ export interface JournalEntryData {
   linkedEntryIds?: string[];
 }
 
+export type RecentJournalEntry = JournalEntryData & { id: string };
+
 interface UseJournalEntriesParams {
   selectedDate: Date;
   onDateChange?: (date: Date) => void;
@@ -77,7 +79,7 @@ interface UseJournalEntriesResult {
     draftId?: string | null
   ) => Promise<void>;
   isGeneratingSummary: boolean;
-  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
+  recentEntries: RecentJournalEntry[];
   draftForDate: (JournalEntryData & { id: string }) | null;
   handleSaveDraft: (messages: ChatMessage[], draftId: string | null, entryId?: string | null) => Promise<string | null>;
   handleDeleteDraft: (draftId: string) => Promise<void>;
@@ -190,16 +192,15 @@ export function useJournalEntries({ selectedDate, onDateChange }: UseJournalEntr
     if (!recentEntriesRaw) return [];
 
     return (recentEntriesRaw as unknown as (JournalEntryData & { id: string })[])
-      .filter((entry) => entry.date >= sevenDaysAgoKey && entry.date <= dateKey && entry.id !== selectedEntryId && !entry.isDraft)
+      .filter((entry) => (
+        entry.date >= sevenDaysAgoKey &&
+        entry.date <= dateKey &&
+        entry.id !== selectedEntryId &&
+        !entry.isDraft
+      ))
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, MAX_RECENT_ENTRIES)
-      .map((entry) => ({
-        content: entry.content,
-        title: entry.title,
-        date: entry.date,
-        moods: entry.moods,
-        themes: entry.themes,
-      }));
+      .map((entry) => entry);
   }, [recentEntriesRaw, selectedEntryId, sevenDaysAgoKey, dateKey]);
 
   const selectedEntry = useMemo(

@@ -159,7 +159,7 @@ describe('useEntryLinking', () => {
       const entries = await result.current.getLinkedEntries('entry-1', ['entry-2']);
 
       expect(entries).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch linked entries:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch echoes:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });

@@ -32,10 +32,10 @@ export function EntryLinkButton({
       }
       onLinksUpdated?.();
     } catch (error) {
-      console.error('Failed to link entries:', error);
+      console.error('Failed to add echo:', error);
       toast({
         variant: 'destructive',
-        title: t('linkEntryFailed') || 'Failed to link entries',
+        title: t('linkEntryFailed') || 'Failed to add echo',
         description: error instanceof Error ? error.message : undefined,
       });
     }
@@ -67,4 +67,3 @@ export function EntryLinkButton({
     </>
   );
 }
-
