@@ -7,8 +7,7 @@ import { EntryDateHeader } from '@/components/entry-date-header';
 import { EntryContentForm } from '@/components/entry-content-form';
 import { EntryDetections } from '@/components/entry-detections';
 import { EntryLinksList } from '@/components/entry-links-list';
-import type { RecentEntry } from '@/ai/types/journal';
-import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import type { JournalEntryData, RecentJournalEntry } from '@/hooks/use-journal-entries';
 
 interface JournalEntryProps {
   date: Date;
@@ -23,7 +22,7 @@ interface JournalEntryProps {
   error?: string | null;
   hideDate?: boolean;
   canDelete?: boolean;
-  recentEntries?: RecentEntry[];
+  recentEntries?: RecentJournalEntry[];
   places?: string[];
   characters?: string[];
   themes?: string[];
@@ -120,4 +119,3 @@ function JournalEntryComponent({
 }
 
 export const JournalEntry = memo(JournalEntryComponent);
-

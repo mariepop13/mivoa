@@ -5,7 +5,7 @@ import { JournalEntry } from '@/components/journal-entry';
 import { JournalChat } from '@/components/journal-chat';
 import { JournalBottomBar } from '@/components/journal-bottom-bar';
 import { JournalViewTabs } from '@/components/journal-view-tabs';
-import type { JournalEntryData } from '@/hooks/use-journal-entries';
+import type { JournalEntryData, RecentJournalEntry } from '@/hooks/use-journal-entries';
 import { useViewMode } from '@/hooks/use-view-mode';
 import type { ChatMessage } from '@/ai/types/chat';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ export interface EntryState {
   selectedEntryData: JournalEntryData | null;
   content: string;
   title: string;
-  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
+  recentEntries: RecentJournalEntry[];
   linksVersion: number;
 }
 
@@ -176,7 +176,7 @@ interface EntryContentProps {
   selectedEntryId: string | null;
   selectedEntry: (JournalEntryData & { id: string }) | undefined;
   selectedEntryData: JournalEntryData | null;
-  recentEntries: Array<{ content: string; title?: string; date: string; moods?: string[]; themes?: string[] }>;
+  recentEntries: RecentJournalEntry[];
   onNavigateToEntry?: (entry: JournalEntryData & { id: string }) => void;
   onLinksUpdated?: () => void;
 }

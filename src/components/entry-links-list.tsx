@@ -60,7 +60,7 @@ export function EntryLinksList({
       })
       .catch((error) => {
         if (!cancelled) {
-          console.error('Failed to load linked entries:', error);
+          console.error('Failed to load echoes:', error);
           setLinkedEntries([]);
         }
       })
@@ -91,7 +91,7 @@ export function EntryLinksList({
       await unlinkEntry(entryId, entryToUnlink);
       onLinksUpdated?.();
     } catch (error) {
-      console.error('Failed to unlink entry:', error);
+      console.error('Failed to remove echo:', error);
       setLinkedEntries(previousEntries);
     } finally {
       setUnlinkDialogOpen(false);
@@ -185,4 +185,3 @@ export function EntryLinksList({
     </>
   );
 }
-

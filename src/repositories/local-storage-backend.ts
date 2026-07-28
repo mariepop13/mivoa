@@ -88,7 +88,7 @@ export class LocalStorageBackend implements StorageBackend {
   subscribeToEntriesByDate(dateKey: string, callback: (entries: Entry[]) => void): Unsubscribe {
     const notify = (): void => {
       const all = readEntries();
-      callback(Object.values(all).filter((e) => e.date === dateKey));
+      callback(Object.values(all).filter((entry) => entry.date === dateKey));
     };
     notify();
     return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
@@ -112,7 +112,7 @@ export class LocalStorageBackend implements StorageBackend {
   subscribeToEntriesInDateRange(fromKey: string, toKey: string, callback: (entries: Entry[]) => void): Unsubscribe {
     const notify = (): void => {
       const all = readEntries();
-      callback(Object.values(all).filter((e) => e.date >= fromKey && e.date <= toKey));
+      callback(Object.values(all).filter((entry) => entry.date >= fromKey && entry.date <= toKey));
     };
     notify();
     return subscribeToLocalEvent(ENTRIES_CHANGED_EVENT, notify);
@@ -126,7 +126,7 @@ export class LocalStorageBackend implements StorageBackend {
 
   async getEntries(ids: string[]): Promise<Entry[]> {
     const all = readEntries();
-    return ids.map((id) => all[id]).filter((e): e is Entry => e !== undefined);
+    return ids.map((id) => all[id]).filter((entry): entry is Entry => entry !== undefined);
   }
 
   async createEntry(entryId: string, data: EntryCreateData): Promise<void> {

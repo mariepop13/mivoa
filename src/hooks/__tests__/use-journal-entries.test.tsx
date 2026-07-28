@@ -183,7 +183,15 @@ describe('useJournalEntries', () => {
 
     const allEntries = [
       { id: 'entry-1', content: 'Today entry', date: '2024-01-15', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 'entry-2', content: 'Three days ago', date: '2024-01-12', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      {
+        id: 'entry-2',
+        content: 'Three days ago',
+        date: '2024-01-12',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        linkedEntryIds: ['entry-4'],
+        places: ['studio'],
+      },
       { id: 'entry-3', content: 'Eight days ago', date: '2024-01-07', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
 
@@ -199,6 +207,10 @@ describe('useJournalEntries', () => {
     expect(recent.some(e => e.date === '2024-01-15')).toBe(true);
     expect(recent.some(e => e.date === '2024-01-12')).toBe(true);
     expect(recent.some(e => e.date === '2024-01-07')).toBe(false);
+    expect(recent.find((entry) => entry.id === 'entry-2')).toMatchObject({
+      linkedEntryIds: ['entry-4'],
+      places: ['studio'],
+    });
   });
 
   it('excludes entries older than 7 days from recent entries', async () => {

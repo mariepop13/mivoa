@@ -237,7 +237,7 @@ export function useEntryLinking(): UseEntryLinkingResult {
 
       return linkedEntries;
     } catch (err) {
-      console.error('Failed to fetch linked entries:', err);
+      console.error('Failed to fetch echoes:', err);
       return [];
     }
   }, [backend]);
