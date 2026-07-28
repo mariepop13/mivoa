@@ -59,11 +59,13 @@ describe('LocalStorageBackend', () => {
 
     const e1List: import('../types').Entry[] = [];
     const e2List: import('../types').Entry[] = [];
-    backend.subscribeToEntry('e1', (e) => { if (e) e1List.push(e); });
-    backend.subscribeToEntry('e2', (e) => { if (e) e2List.push(e); });
+    const unsubE1 = backend.subscribeToEntry('e1', (e) => { if (e) e1List.push(e); });
+    const unsubE2 = backend.subscribeToEntry('e2', (e) => { if (e) e2List.push(e); });
 
     expect(e1List[0].linkedEntryIds).toContain('e2');
     expect(e2List[0].linkedEntryIds).toContain('e1');
+    unsubE1();
+    unsubE2();
   });
 
   it('updateSettings persists and restores settings', async () => {

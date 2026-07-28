@@ -27,13 +27,18 @@ const APP_STORAGE_KEY_PREFIXES = ['mivoa:', 'mivoa-', 'journal_prompt_'];
 function clearMivoaStorage(): void {
   if (typeof window === 'undefined') return;
 
-  const keysToRemove = Array.from({ length: window.localStorage.length }, (_, index) =>
-    window.localStorage.key(index)
-  ).filter((key): key is string =>
-    Boolean(key && APP_STORAGE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)))
-  );
+  try {
+    const keysToRemove = Array.from({ length: window.localStorage.length }, (_, index) =>
+      window.localStorage.key(index)
+    ).filter((key): key is string =>
+      Boolean(key && APP_STORAGE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)))
+    );
 
-  keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+    keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to clear Mivoa storage: ${message}`);
+  }
 }
 
 async function upsertSeedEntries(backend: LocalStorageBackend, entries: Entry[]): Promise<void> {

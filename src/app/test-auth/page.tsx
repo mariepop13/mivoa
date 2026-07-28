@@ -27,7 +27,7 @@ export default function TestAuthPage(): React.JSX.Element {
     async function setup(authService: Auth, firestoreService: Firestore): Promise<void> {
       const { user } = await initiateAnonymousSignIn(authService);
       const settingsRef = doc(firestoreService, `users/${user.uid}/settings/api`);
-      await setDoc(settingsRef, { openRouterApiKey: 'test-openrouter-key' });
+      await setDoc(settingsRef, { openRouterApiKey: 'test-openrouter-key' }, { merge: true });
       router.replace('/');
     }
 
